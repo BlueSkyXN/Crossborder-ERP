@@ -7,8 +7,8 @@
 ## 当前状态
 
 - 项目阶段：`P4_PURCHASE`
-- 当前已完成：`FEU-002` 用户 Web 代购商品、购物车和订单
-- 下一任务：`FEM-002` 移动 H5 代购商品、购物车和订单
+- 当前已完成：`FEM-002` 移动 H5 代购商品、购物车和订单
+- 下一任务：`E2E-001` 全链路端到端验收
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`

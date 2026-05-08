@@ -1,0 +1,299 @@
+.page {
+  min-height: 100vh;
+  padding: 16px 14px calc(116px + env(safe-area-inset-bottom));
+  background: #f5f7f8;
+  color: #10201d;
+}
+
+.top {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 54px;
+  gap: 10px;
+  align-items: center;
+  padding-bottom: 14px;
+}
+
+.top button {
+  height: 34px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 800;
+}
+
+.top span,
+.detailHead span {
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.top h1 {
+  margin: 3px 0 0;
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.summary div,
+.detail,
+.parcelCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.summary div {
+  padding: 12px;
+}
+
+.summary span,
+.summary strong {
+  display: block;
+}
+
+.summary span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.summary strong {
+  margin-top: 4px;
+  font-size: 22px;
+}
+
+.notice {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-bottom: 12px;
+  padding-bottom: 2px;
+}
+
+.filters button {
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 800;
+}
+
+.filters .activeFilter {
+  border-color: #0f766e;
+  background: #ecfdf5;
+  color: #0f766e;
+}
+
+.loading {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  color: #64748b;
+}
+
+.list {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  margin-right: -14px;
+  padding: 0 14px 2px 0;
+  scroll-snap-type: x mandatory;
+}
+
+.parcelCard {
+  flex: 0 0 78%;
+  min-height: 82px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  color: #10201d;
+  scroll-snap-align: start;
+  text-align: left;
+}
+
+.parcelCard strong,
+.parcelCard span,
+.parcelCard small {
+  display: block;
+}
+
+.parcelCard span,
+.parcelCard small {
+  color: #64748b;
+}
+
+.parcelCard small {
+  grid-column: 1 / -1;
+}
+
+.selected {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 1px #0f766e;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 70px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.info {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.muted {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.detail {
+  margin-top: 12px;
+  padding: 14px;
+}
+
+.detailHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.detailHead h2 {
+  margin: 3px 0 0;
+  font-size: 20px;
+}
+
+.detail dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+}
+
+.detail dl div {
+  min-width: 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.detail dt {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.detail dd {
+  margin: 4px 0 0;
+  color: #0f172a;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.block {
+  margin-top: 14px;
+}
+
+.block h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.block p {
+  margin: 0;
+  color: #64748b;
+}
+
+.photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.photos span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.actionBar {
+  position: fixed;
+  right: 0;
+  bottom: calc(57px + env(safe-area-inset-bottom));
+  left: 0;
+  z-index: 15;
+  padding: 10px 14px;
+  border-top: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.actionBar button {
+  width: 100%;
+  height: 46px;
+  border: 0;
+  border-radius: 8px;
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+@media (max-width: 360px) {
+  .page {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .detail dl {
+    grid-template-columns: 1fr;
+  }
+}

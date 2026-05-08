@@ -7,8 +7,8 @@
 ## 当前状态
 
 - 项目阶段：`P2_PARCEL_WMS`
-- 当前已完成：`FEU-001B` 用户 Web 包裹预报、列表和详情
-- 下一任务：`FEM-001B` 移动 H5 发布预报和包裹详情
+- 当前已完成：`FEM-001B` 移动 H5 发布预报、包裹详情和申请打包入口
+- 下一任务：`BE-006` 运单/打包申请后端基础
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`

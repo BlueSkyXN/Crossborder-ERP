@@ -172,6 +172,7 @@ def test_admin_review_and_set_fee_moves_waybill_to_pending_payment(client, seede
 
     assert fee_response.status_code == 200
     data = fee_response.json()["data"]
+    assert data["user"] == User.objects.get(email="user@example.com").id
     assert data["status"] == WaybillStatus.PENDING_PAYMENT
     assert data["fee_total"] == "25.80"
     assert data["fee_detail_json"]["freight"] == "22.80"

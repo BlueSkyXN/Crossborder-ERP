@@ -212,8 +212,14 @@ body {
 
 .parcel-workspace,
 .parcel-detail,
+.waybill-workspace,
+.waybill-detail,
 .scan-result {
   width: 100%;
+}
+
+.waybill-modal-alert {
+  margin-bottom: 16px;
 }
 
 .scan-card {

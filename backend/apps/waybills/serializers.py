@@ -58,6 +58,7 @@ class WaybillSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "waybill_no",
+            "user",
             "user_email",
             "warehouse",
             "warehouse_name",

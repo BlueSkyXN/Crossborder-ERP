@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { DashboardPage } from "../pages/DashboardPage";
 import { LoginPage } from "../pages/LoginPage";
 import { ParcelsPage } from "../pages/ParcelsPage";
+import { PurchasesPage } from "../pages/PurchasesPage";
 import { WaybillsPage } from "../pages/WaybillsPage";
 import { PublicOnly, RequireAuth } from "./guards";
 
@@ -18,6 +19,9 @@ export const router = createBrowserRouter([
       { path: "/dashboard", element: <DashboardPage /> },
       { path: "/parcels", element: <ParcelsPage /> },
       { path: "/waybills", element: <WaybillsPage /> },
+      { path: "/products", element: <PurchasesPage /> },
+      { path: "/cart", element: <PurchasesPage /> },
+      { path: "/purchases", element: <PurchasesPage /> },
     ],
   },
   { path: "*", element: <Navigate to="/dashboard" replace /> },

@@ -32,18 +32,19 @@
 ## Completed Production Gap Tasks
 
 - `ADDR-001`：本轮已补后端 address API、User Web `/addresses`、Mobile H5 `/me/addresses`、运单创建 `address_id` 和 API E2E snapshot 断言。
+- `FILE-001`：已补本地 files/media app、文件元数据、类型/大小限制、鉴权下载、包裹入库图片 file id 校验和 Admin Web 上传入口。
 
 ## Current Next Task
 
-`FILE-001` 是当前下一项，因为文件上传是汇款凭证、客服图片、包裹图片、商品/内容图片和后续导入导出的共同基础。它可以先用本地 media + SQLite 验证，不需要 PostgreSQL/MySQL/Redis/Docker，也不需要对象存储。
+`FIN-001` 是当前下一项，因为 `FILE-001` 已提供汇款凭证 file id 基础，下一步可以补用户线下汇款提交、后台审核入账和用户财务流水入口。
 
-建议 `FILE-001` 范围：
+建议 `FIN-001` 范围：
 
-- 后端新增 files/media app。
-- 本地 media 存储和文件元数据。
-- 按用途限制文件大小、MIME/扩展名。
-- 会员/后台访问控制和业务引用策略。
-- 对象存储只标记为后续，不在本轮声明已验证。
+- 后端扩展 finance 汇款单、状态机、API 和测试。
+- 用户提交线下汇款单并引用 `REMITTANCE_PROOF` 文件。
+- 后台审核通过后钱包入账，取消后不得入账。
+- User Web/Mobile H5 财务入口，Admin Web 汇款审核入口。
+- 继续保持 SQLite-first，不接真实支付网关。
 
 ## Completion Boundary
 

@@ -13,10 +13,35 @@ class ParcelItemSerializer(serializers.ModelSerializer):
 
 
 class ParcelPhotoSerializer(serializers.ModelSerializer):
+    file_name = serializers.SerializerMethodField()
+    content_type = serializers.SerializerMethodField()
+    download_url = serializers.SerializerMethodField()
+
     class Meta:
         model = ParcelPhoto
-        fields = ["id", "file_id", "photo_type", "created_at"]
+        fields = ["id", "file_id", "photo_type", "file_name", "content_type", "download_url", "created_at"]
         read_only_fields = ["id", "created_at"]
+
+    def _stored_file(self, obj: ParcelPhoto):
+        from apps.files.models import FileStatus, StoredFile
+
+        if not hasattr(obj, "_stored_file_cache"):
+            obj._stored_file_cache = StoredFile.objects.filter(
+                file_id=obj.file_id,
+                status=FileStatus.ACTIVE,
+            ).first()
+        return obj._stored_file_cache
+
+    def get_file_name(self, obj: ParcelPhoto) -> str:
+        stored_file = self._stored_file(obj)
+        return stored_file.original_name if stored_file else ""
+
+    def get_content_type(self, obj: ParcelPhoto) -> str:
+        stored_file = self._stored_file(obj)
+        return stored_file.content_type if stored_file else ""
+
+    def get_download_url(self, obj: ParcelPhoto) -> str:
+        return f"/api/v1/files/{obj.file_id}/download"
 
 
 class InboundRecordSerializer(serializers.ModelSerializer):

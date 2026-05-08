@@ -57,7 +57,7 @@ class AddressSetDefaultView(APIView):
     authentication_classes = [MemberTokenAuthentication]
     permission_classes = [IsMemberAuthenticated]
 
-    @extend_schema(tags=["addresses"], responses={200: AddressSerializer})
+    @extend_schema(tags=["addresses"], request=None, responses={200: AddressSerializer})
     def post(self, request, address_id: int):
         address = get_object_or_404(Address, id=address_id, user=request.user, is_active=True)
         return success_response(AddressSerializer(set_default_address(address=address)).data)

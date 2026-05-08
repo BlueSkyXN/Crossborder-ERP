@@ -1,4 +1,5 @@
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
 from apps.iam.services import seed_iam_demo_data
@@ -86,6 +87,24 @@ def _confirm_demo_configs(admin_client: APIClient, member_client: APIClient, mem
     return warehouse, channel
 
 
+def _upload_admin_parcel_photo(admin_client: APIClient, suffix: str) -> dict:
+    return _api_data(
+        admin_client.post(
+            "/api/v1/admin/files",
+            {
+                "usage": "PARCEL_PHOTO",
+                "file": SimpleUploadedFile(
+                    f"e2e-{suffix.lower()}-photo.jpg",
+                    b"e2e-photo",
+                    content_type="image/jpeg",
+                ),
+            },
+            format="multipart",
+        ),
+        expected_status=201,
+    )
+
+
 def _run_forwarding_flow(
     *,
     admin_client: APIClient,
@@ -120,6 +139,7 @@ def _run_forwarding_flow(
         expected_status=201,
     )
     assert parcel["status"] == "PENDING_INBOUND"
+    photo = _upload_admin_parcel_photo(admin_client, suffix)
 
     inbound = _api_data(
         admin_client.post(
@@ -131,7 +151,7 @@ def _run_forwarding_flow(
                 "length_cm": "30.00",
                 "width_cm": "20.00",
                 "height_cm": "10.00",
-                "photo_file_ids": [f"e2e-{suffix.lower()}-photo"],
+                "photo_file_ids": [photo["file_id"]],
                 "remark": f"E2E {suffix} inbound",
             },
             format="json",

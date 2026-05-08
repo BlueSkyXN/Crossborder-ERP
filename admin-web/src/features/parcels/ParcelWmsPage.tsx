@@ -4,6 +4,7 @@ import {
   PlusOutlined,
   ReloadOutlined,
   SearchOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -26,12 +27,14 @@ import {
   Tabs,
   Tag,
   Typography,
+  Upload,
 } from "antd";
-import type { TableColumnsType } from "antd";
+import type { FormInstance, TableColumnsType } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
 import { ForbiddenPage } from "../../pages/ForbiddenPage";
+import { adminFilesApi } from "../files/api";
 import { warehouseConfigApi } from "../warehouses/api";
 import { parcelWmsApi } from "./api";
 import type {
@@ -188,6 +191,7 @@ export function ParcelWmsPage() {
   const [detailParcel, setDetailParcel] = useState<Parcel | null>(null);
   const [inboundParcel, setInboundParcel] = useState<Parcel | null>(null);
   const [scanResult, setScanResult] = useState<ScanInboundResponse | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   const parcelsQuery = useQuery({
     queryKey: parcelQueryKey,
@@ -238,6 +242,45 @@ export function ParcelWmsPage() {
     queryClient.invalidateQueries({ queryKey: parcelQueryKey });
     queryClient.invalidateQueries({ queryKey: unclaimedQueryKey });
   };
+
+  const appendPhotoFileId = (form: FormInstance<InboundFormValues>, fileId: string) => {
+    const current = parsePhotoFileIds(form.getFieldValue("photo_file_ids"));
+    form.setFieldValue("photo_file_ids", Array.from(new Set([...current, fileId])).join("\n"));
+  };
+
+  const uploadParcelPhoto = (form: FormInstance<InboundFormValues>, file: File) => {
+    setPhotoUploading(true);
+    adminFilesApi
+      .uploadFile(file, "PARCEL_PHOTO")
+      .then((storedFile) => {
+        appendPhotoFileId(form, storedFile.file_id);
+        message.success(`${storedFile.original_name} 已上传`);
+      })
+      .catch((error) => message.error(getErrorMessage(error)))
+      .finally(() => setPhotoUploading(false));
+    return false;
+  };
+
+  const renderPhotoUploadField = (form: FormInstance<InboundFormValues>) => (
+    <Form.Item label="图片凭证">
+      <Space direction="vertical" style={{ width: "100%" }}>
+        <Form.Item name="photo_file_ids" noStyle>
+          <Input.TextArea rows={2} placeholder="上传图片后自动填入文件 ID，也可粘贴已有 ID" />
+        </Form.Item>
+        <Upload
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          beforeUpload={(file) => uploadParcelPhoto(form, file)}
+          disabled={photoUploading}
+          maxCount={1}
+          showUploadList={false}
+        >
+          <Button icon={<UploadOutlined />} loading={photoUploading}>
+            上传图片
+          </Button>
+        </Upload>
+      </Space>
+    </Form.Item>
+  );
 
   const inboundMutation = useMutation({
     mutationFn: ({ parcelId, payload }: { parcelId: number; payload: InboundPayload }) =>
@@ -513,9 +556,7 @@ export function ParcelWmsPage() {
                         </Form.Item>
                       </Col>
                     </Row>
-                    <Form.Item name="photo_file_ids" label="图片凭证">
-                      <Input.TextArea rows={2} placeholder="多个文件 ID 用逗号或换行分隔" />
-                    </Form.Item>
+                    {renderPhotoUploadField(scanForm)}
                     <Form.Item name="remark" label="备注">
                       <Input.TextArea rows={3} />
                     </Form.Item>
@@ -666,7 +707,7 @@ export function ParcelWmsPage() {
                 <Space wrap>
                   {detailParcel.photos.map((photo) => (
                     <Tag key={photo.id} color="blue">
-                      {photo.file_id}
+                      {photo.file_name || photo.file_id}
                     </Tag>
                   ))}
                 </Space>
@@ -729,9 +770,7 @@ export function ParcelWmsPage() {
                   </Form.Item>
                 </Col>
               </Row>
-              <Form.Item name="photo_file_ids" label="图片凭证">
-                <Input.TextArea rows={2} placeholder="多个文件 ID 用逗号或换行分隔" />
-              </Form.Item>
+              {renderPhotoUploadField(inboundForm)}
               <Form.Item name="remark" label="备注">
                 <Input.TextArea rows={4} />
               </Form.Item>

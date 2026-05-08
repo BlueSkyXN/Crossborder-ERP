@@ -20,6 +20,9 @@ export type ParcelPhoto = {
   id: number;
   file_id: string;
   photo_type: string;
+  file_name: string;
+  content_type: string;
+  download_url: string;
   created_at: string;
 };
 

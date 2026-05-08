@@ -481,7 +481,7 @@ export function ParcelsPage() {
                     {selectedParcel.photos.map((photo) => (
                       <span key={photo.id}>
                         <BoxPlotOutlined />
-                        {photo.file_id}
+                        {photo.file_name || photo.file_id}
                       </span>
                     ))}
                   </div>

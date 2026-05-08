@@ -1,0 +1,130 @@
+import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
+
+from apps.files.models import FileStatus, FileUsage, StoredFile
+from apps.iam.services import seed_iam_demo_data
+from apps.members.services import issue_member_access_token, register_user, seed_member_demo_data
+
+
+@pytest.fixture
+def seeded_files(db):
+    seed_iam_demo_data()
+    seed_member_demo_data()
+
+
+def member_token(client, email="user@example.com", password="password123"):
+    response = client.post(
+        reverse("member-login"),
+        {"email": email, "password": password},
+        content_type="application/json",
+    )
+    return response.json()["data"]["access_token"]
+
+
+def admin_token(client, email="admin@example.com"):
+    response = client.post(
+        reverse("admin-login"),
+        {"email": email, "password": "password123"},
+        content_type="application/json",
+    )
+    return response.json()["data"]["access_token"]
+
+
+def image_upload(name="parcel.jpg", content=b"image-bytes", content_type="image/jpeg"):
+    return SimpleUploadedFile(name, content, content_type=content_type)
+
+
+def test_member_upload_download_and_delete_own_file(client, seeded_files):
+    token = member_token(client)
+    response = client.post(
+        reverse("file-list"),
+        {"usage": FileUsage.REMITTANCE_PROOF, "file": image_upload()},
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 201
+    data = response.json()["data"]
+    assert data["file_id"].startswith("F")
+    assert data["download_url"] == f"/api/v1/files/{data['file_id']}/download"
+    assert "storage_key" not in data
+
+    download = client.get(
+        reverse("file-download", kwargs={"file_id": data["file_id"]}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert download.status_code == 200
+    assert download["Content-Type"] == "image/jpeg"
+
+    delete_response = client.delete(
+        reverse("file-detail", kwargs={"file_id": data["file_id"]}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert delete_response.status_code == 200
+    assert StoredFile.objects.get(file_id=data["file_id"]).status == FileStatus.DELETED
+
+
+def test_member_cannot_read_or_delete_other_member_file(client, seeded_files):
+    owner = register_user("file-owner@example.com", "password123")
+    other = register_user("file-other@example.com", "password123")
+    owner_token = issue_member_access_token(owner)
+    other_token = issue_member_access_token(other)
+
+    upload = client.post(
+        reverse("file-list"),
+        {
+            "usage": FileUsage.MESSAGE_ATTACHMENT,
+            "file": image_upload("message.png", b"message", "image/png"),
+        },
+        HTTP_AUTHORIZATION=f"Bearer {owner_token}",
+    )
+    file_id = upload.json()["data"]["file_id"]
+
+    detail = client.get(
+        reverse("file-detail", kwargs={"file_id": file_id}),
+        HTTP_AUTHORIZATION=f"Bearer {other_token}",
+    )
+    delete_response = client.delete(
+        reverse("file-detail", kwargs={"file_id": file_id}),
+        HTTP_AUTHORIZATION=f"Bearer {other_token}",
+    )
+
+    assert detail.status_code == 404
+    assert delete_response.status_code == 404
+    assert StoredFile.objects.get(file_id=file_id).status == FileStatus.ACTIVE
+
+
+def test_upload_rejects_invalid_type_and_oversized_file(client, seeded_files):
+    token = member_token(client)
+    invalid = client.post(
+        reverse("file-list"),
+        {"usage": FileUsage.PARCEL_PHOTO, "file": image_upload("bad.txt", b"bad", "text/plain")},
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    oversized = client.post(
+        reverse("file-list"),
+        {
+            "usage": FileUsage.PARCEL_PHOTO,
+            "file": image_upload("large.jpg", b"x" * (5 * 1024 * 1024 + 1), "image/jpeg"),
+        },
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert invalid.status_code == 400
+    assert invalid.json()["code"] == "VALIDATION_ERROR"
+    assert oversized.status_code == 400
+    assert oversized.json()["code"] == "VALIDATION_ERROR"
+
+
+def test_admin_file_api_uses_admin_download_url(client, seeded_files):
+    token = admin_token(client)
+    response = client.post(
+        reverse("admin-file-list"),
+        {"usage": FileUsage.PARCEL_PHOTO, "file": image_upload("parcel.webp", b"parcel", "image/webp")},
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 201
+    data = response.json()["data"]
+    assert data["download_url"] == f"/api/v1/admin/files/{data['file_id']}/download"
+    assert data["owner_type"] == "ADMIN"

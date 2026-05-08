@@ -1,0 +1,47 @@
+from django.urls import path
+
+from .views import (
+    AdminPurchaseOrderConvertToParcelView,
+    AdminPurchaseOrderDetailView,
+    AdminPurchaseOrderListView,
+    AdminPurchaseOrderMarkArrivedView,
+    AdminPurchaseOrderProcureView,
+    AdminPurchaseOrderReviewView,
+    ManualPurchaseOrderCreateView,
+    PurchaseOrderDetailView,
+    PurchaseOrderListCreateView,
+    PurchaseOrderPayView,
+)
+
+urlpatterns = [
+    path("purchase-orders", PurchaseOrderListCreateView.as_view(), name="purchase-order-list"),
+    path("purchase-orders/manual", ManualPurchaseOrderCreateView.as_view(), name="purchase-order-manual"),
+    path("purchase-orders/<int:purchase_order_id>", PurchaseOrderDetailView.as_view(), name="purchase-order-detail"),
+    path("purchase-orders/<int:purchase_order_id>/pay", PurchaseOrderPayView.as_view(), name="purchase-order-pay"),
+    path("admin/purchase-orders", AdminPurchaseOrderListView.as_view(), name="admin-purchase-order-list"),
+    path(
+        "admin/purchase-orders/<int:purchase_order_id>",
+        AdminPurchaseOrderDetailView.as_view(),
+        name="admin-purchase-order-detail",
+    ),
+    path(
+        "admin/purchase-orders/<int:purchase_order_id>/review",
+        AdminPurchaseOrderReviewView.as_view(),
+        name="admin-purchase-order-review",
+    ),
+    path(
+        "admin/purchase-orders/<int:purchase_order_id>/procure",
+        AdminPurchaseOrderProcureView.as_view(),
+        name="admin-purchase-order-procure",
+    ),
+    path(
+        "admin/purchase-orders/<int:purchase_order_id>/mark-arrived",
+        AdminPurchaseOrderMarkArrivedView.as_view(),
+        name="admin-purchase-order-mark-arrived",
+    ),
+    path(
+        "admin/purchase-orders/<int:purchase_order_id>/convert-to-parcel",
+        AdminPurchaseOrderConvertToParcelView.as_view(),
+        name="admin-purchase-order-convert-to-parcel",
+    ),
+]

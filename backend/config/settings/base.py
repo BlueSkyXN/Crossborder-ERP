@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     "apps.parcels",
     "apps.waybills",
     "apps.finance",
+    "apps.products",
+    "apps.purchases",
 ]
 
 MIDDLEWARE = [
@@ -121,6 +123,9 @@ SPECTACULAR_SETTINGS = {
         "PaymentOrderStatusEnum": "apps.finance.models.PaymentOrderStatus",
         "PaymentBusinessTypeEnum": "apps.finance.models.PaymentBusinessType",
         "RechargeRequestStatusEnum": "apps.finance.models.RechargeRequestStatus",
+        "PurchaseOrderStatusEnum": "apps.purchases.models.PurchaseOrderStatus",
+        "PurchaseOrderSourceTypeEnum": "apps.purchases.models.PurchaseOrderSourceType",
+        "ProcurementTaskStatusEnum": "apps.purchases.models.ProcurementTaskStatus",
     },
 }
 

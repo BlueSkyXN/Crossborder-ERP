@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 项目阶段：`P3_WAYBILL_FINANCE`
-- 当前已完成：`FEM-001C` 移动 H5 申请打包、运单支付、追踪和确认收货
-- 下一任务：`BE-009` 代购后端基础
+- 项目阶段：`P4_PURCHASE`
+- 当前已完成：`BE-009` 代购后端基础、商品/购物车、采购到货转包裹
+- 下一任务：`FEA-005` 后台代购商品/订单管理
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`

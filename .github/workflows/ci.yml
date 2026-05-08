@@ -67,8 +67,8 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint admin web
-        run: pnpm --filter @crossborder-erp/admin-web lint
+      - name: Lint frontend packages
+        run: pnpm lint
 
-      - name: Build admin web
-        run: pnpm --filter @crossborder-erp/admin-web build
+      - name: Build frontend packages
+        run: pnpm build

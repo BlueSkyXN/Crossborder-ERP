@@ -1,9 +1,9 @@
 project: crossborder-erp
 baseline_version: v0.3
 status: in_progress
-current_task: FEA-004
+current_task: FEU-001C
 current_phase: P3_WAYBILL_FINANCE
-last_completed_task: BE-008
+last_completed_task: FEA-004
 blocked_reason: null
 rules:
   - "Agent must read agent-execution/README.md before choosing tasks."
@@ -28,8 +28,8 @@ done_tasks:
   - BE-006
   - BE-007
   - BE-008
-pending_tasks:
   - FEA-004
+pending_tasks:
   - FEU-001C
   - FEM-001C
   - BE-009

@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 项目阶段：`P2_PARCEL_WMS`
-- 当前已完成：`BE-008` 物流轨迹
-- 下一任务：`FEA-004` 后台运单、费用、充值、发货、轨迹
+- 项目阶段：`P3_WAYBILL_FINANCE`
+- 当前已完成：`FEA-004` 后台运单、费用、充值、发货、轨迹
+- 下一任务：`FEU-001C` 用户 Web 运单和支付
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`

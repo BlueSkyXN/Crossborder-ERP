@@ -7,8 +7,8 @@
 ## 当前状态
 
 - 项目阶段：`P1_IDENTITY_CONFIG`
-- 当前已完成：`FEA-002` 后台基础配置页面
-- 下一任务：`FEU-001A` 用户 Web 登录、控制台、仓库地址
+- 当前已完成：`FEU-001A` 用户 Web 登录、控制台、仓库地址
+- 下一任务：`FEM-001A` 移动 H5 登录、寄件首页、仓库地址
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`
@@ -70,7 +70,7 @@ infra/          后续部署、Nginx、脚本
 
 ## 后续启动目标
 
-当前只创建骨架，不安装依赖、不启动服务。后续完成 `BE-001` 和前端初始化后，目标命令会收敛为：
+当前后端、后台管理端和用户 Web 已具备基础开发入口。常用本地命令：
 
 ```bash
 cd backend && uv run python manage.py migrate

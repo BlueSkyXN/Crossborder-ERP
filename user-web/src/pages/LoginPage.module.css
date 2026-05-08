@@ -1,0 +1,156 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.09), transparent 34%),
+    linear-gradient(225deg, rgba(16, 185, 129, 0.1), transparent 32%),
+    #f6f8fb;
+}
+
+.panel {
+  width: min(100%, 1040px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 28px;
+}
+
+.brand {
+  min-height: 520px;
+  padding: 48px;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.badge {
+  align-self: flex-start;
+  margin-bottom: auto;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  color: #bfdbfe;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.brand h1 {
+  margin: 0 0 12px;
+  font-size: 44px;
+  line-height: 1.08;
+}
+
+.brand p {
+  max-width: 520px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 16px;
+}
+
+.metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.metrics span {
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+}
+
+.card {
+  padding: 32px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(17, 24, 39, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.card h2 {
+  margin: 0 0 4px;
+  font-size: 28px;
+}
+
+.card p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.card label {
+  display: grid;
+  gap: 8px;
+  color: #374151;
+  font-weight: 700;
+}
+
+.inputWrap {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.inputWrap input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  color: #111827;
+}
+
+.submit {
+  height: 44px;
+  border: 0;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.error {
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+@media (max-width: 780px) {
+  .page {
+    padding: 16px;
+  }
+
+  .panel {
+    grid-template-columns: 1fr;
+  }
+
+  .brand {
+    min-height: auto;
+    padding: 28px;
+  }
+
+  .brand h1 {
+    font-size: 32px;
+  }
+}

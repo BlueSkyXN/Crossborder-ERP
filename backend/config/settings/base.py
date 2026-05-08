@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "apps.common",
     "apps.iam",
     "apps.members",
+    "apps.addresses",
     "apps.warehouses",
     "apps.parcels",
     "apps.waybills",
@@ -115,6 +116,7 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "ActiveDisabledStatusEnum": "apps.warehouses.models.ConfigStatus",
         "UserStatusEnum": "apps.members.models.UserStatus",
+        "AddressTypeEnum": "apps.addresses.models.AddressType",
         "ParcelStatusEnum": "apps.parcels.models.ParcelStatus",
         "UnclaimedParcelStatusEnum": "apps.parcels.models.UnclaimedParcelStatus",
         "WaybillStatusEnum": "apps.waybills.models.WaybillStatus",

@@ -7,7 +7,7 @@
 - `docs/source-report-gap-map.md`
 - `docs/production-readiness-backlog.md`
 
-后续优先按 `ADDR-001`、`FILE-001`、`FIN-001`、`MSG-001`、`MEMBER-001` 等任务逐项收敛。
+`ADDR-001` 已补齐基础地址簿。后续优先按 `FILE-001`、`FIN-001`、`MSG-001`、`MEMBER-001` 等任务逐项收敛。
 
 ## 已知问题
 

@@ -67,10 +67,11 @@ export type Waybill = {
 
 export type WaybillCreatePayload = {
   parcel_ids: number[];
-  destination_country: string;
-  recipient_name: string;
-  recipient_phone: string;
-  recipient_address: string;
+  address_id?: number;
+  destination_country?: string;
+  recipient_name?: string;
+  recipient_phone?: string;
+  recipient_address?: string;
   postal_code?: string;
   remark?: string;
 };

@@ -1,0 +1,251 @@
+.page {
+  min-height: 100vh;
+  padding: 16px 14px calc(132px + env(safe-area-inset-bottom));
+  background: #f5f7f8;
+  color: #10201d;
+}
+
+.top {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 54px;
+  gap: 10px;
+  align-items: center;
+  padding-bottom: 14px;
+}
+
+.top button {
+  height: 34px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 800;
+}
+
+.top span,
+.formHead span {
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.top h1,
+.formHead h2 {
+  margin: 3px 0 0;
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.notice,
+.error {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.notice {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.summary div,
+.form,
+.card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.summary div {
+  min-width: 0;
+  padding: 12px;
+}
+
+.summary span,
+.summary strong {
+  display: block;
+}
+
+.summary span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.summary strong {
+  margin-top: 4px;
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 14px;
+}
+
+.formHead h2 {
+  font-size: 19px;
+}
+
+.form label {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.form input,
+.form textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #10201d;
+  font: inherit;
+}
+
+.form input {
+  height: 42px;
+  padding: 0 12px;
+}
+
+.form textarea {
+  padding: 12px;
+  resize: vertical;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.checkLine {
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+}
+
+.checkLine input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
+
+.formActions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+}
+
+.formActions button,
+.cardActions button {
+  height: 40px;
+  border: 1px solid #0f766e;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f766e;
+  font-weight: 900;
+}
+
+.formActions button:last-child {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+.formActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.loading {
+  min-height: 100px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  color: #64748b;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+}
+
+.card {
+  padding: 12px;
+}
+
+.defaultCard {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 1px #0f766e;
+}
+
+.card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.card strong,
+.card span {
+  display: block;
+}
+
+.card span {
+  margin-top: 3px;
+  color: #64748b;
+}
+
+.card em {
+  height: 26px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #0f766e;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.card p {
+  margin: 10px 0;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.cardActions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 360px) {
+  .page {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .row,
+  .formActions,
+  .cardActions {
+    grid-template-columns: 1fr;
+  }
+}

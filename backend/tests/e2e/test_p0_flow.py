@@ -143,17 +143,33 @@ def _run_forwarding_flow(
     packable = _api_data(member_client.get("/api/v1/parcels/packable"))["items"]
     assert any(item["id"] == parcel["id"] and item["status"] == "IN_STOCK" for item in packable)
 
+    address = _api_data(
+        member_client.post(
+            "/api/v1/addresses",
+            {
+                "recipient_name": "E2E Receiver",
+                "phone": "15500000000",
+                "country": "美国",
+                "region": "CA",
+                "city": "Los Angeles",
+                "address_line": "100 Demo Street",
+                "postal_code": "90001",
+                "company": "E2E Demo",
+                "is_default": True,
+            },
+            format="json",
+        ),
+        expected_status=201,
+    )
+    assert address["is_default"] is True
+
     waybill = _api_data(
         member_client.post(
             "/api/v1/waybills",
             {
                 "parcel_ids": [parcel["id"]],
                 "channel_id": channel["id"],
-                "destination_country": "美国",
-                "recipient_name": "E2E Receiver",
-                "recipient_phone": "15500000000",
-                "recipient_address": "100 Demo Street, Los Angeles, CA",
-                "postal_code": "90001",
+                "address_id": address["id"],
                 "remark": f"E2E {suffix} waybill",
             },
             format="json",
@@ -161,6 +177,30 @@ def _run_forwarding_flow(
         expected_status=201,
     )
     assert waybill["status"] == "PENDING_REVIEW"
+    assert waybill["recipient_snapshot"]["address_id"] == address["id"]
+    assert waybill["recipient_snapshot"]["name"] == "E2E Receiver"
+    assert waybill["recipient_snapshot"]["address"] == "100 Demo Street"
+
+    _api_data(
+        member_client.put(
+            f"/api/v1/addresses/{address['id']}",
+            {
+                "recipient_name": "E2E Changed Receiver",
+                "phone": "15500009999",
+                "country": "美国",
+                "region": "NY",
+                "city": "New York",
+                "address_line": "900 Changed Street",
+                "postal_code": "10001",
+                "company": "E2E Changed",
+                "is_default": True,
+            },
+            format="json",
+        )
+    )
+    waybill_detail = _api_data(member_client.get(f"/api/v1/waybills/{waybill['id']}"))
+    assert waybill_detail["recipient_snapshot"]["name"] == "E2E Receiver"
+    assert waybill_detail["recipient_snapshot"]["address"] == "100 Demo Street"
 
     reviewed = _api_data(
         admin_client.post(

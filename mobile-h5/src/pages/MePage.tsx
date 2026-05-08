@@ -133,6 +133,12 @@ export function MePage() {
           <button className={styles.secondaryButton} type="button" onClick={() => navigate("/ship/waybills")}>
             我的运单
           </button>
+          <button className={styles.secondaryButton} type="button" onClick={() => navigate("/me/addresses")}>
+            地址簿
+          </button>
+          <button className={styles.secondaryButton} type="button" onClick={() => navigate("/ship/packing")}>
+            申请打包
+          </button>
         </div>
       </section>
     </main>

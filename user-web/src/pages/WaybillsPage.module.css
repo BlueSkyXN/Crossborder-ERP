@@ -180,6 +180,7 @@
 
 .createPanel input,
 .createPanel textarea,
+.addressSelector select,
 .searchInput {
   width: 100%;
   border: 1px solid #d1d5db;
@@ -190,6 +191,7 @@
 }
 
 .createPanel input,
+.addressSelector select,
 .searchInput {
   height: 38px;
   padding: 0 10px;
@@ -266,6 +268,47 @@
   border-radius: 6px;
   background: #fff7ed;
   color: #9a3412;
+}
+
+.addressSelector {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.selectorTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.selectorTitle span {
+  color: #374151;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.selectorTitle button {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.addressSelector small {
+  color: #6b7280;
 }
 
 .primaryButton,

@@ -153,4 +153,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/ADDR-001.md
     depends_on: [AUDIT-001]
-    next: null
+    next: FILE-001
+  - id: FILE-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/FILE-001.md
+    depends_on: [ADDR-001]
+    next: FIN-001

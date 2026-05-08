@@ -1,5 +1,6 @@
 import {
   CopyOutlined,
+  HomeOutlined,
   InboxOutlined,
   PlusOutlined,
   LogoutOutlined,
@@ -158,6 +159,10 @@ export function DashboardPage() {
             <button type="button" onClick={() => navigate("/waybills")}>
               <TruckOutlined />
               运单中心
+            </button>
+            <button type="button" onClick={() => navigate("/addresses")}>
+              <HomeOutlined />
+              地址簿
             </button>
             <button type="button" onClick={() => navigate("/products")}>
               <ShoppingCartOutlined />

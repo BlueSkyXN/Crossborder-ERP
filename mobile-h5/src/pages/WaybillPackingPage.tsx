@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { fetchAddresses } from "../features/addresses/api";
+import type { Address } from "../features/addresses/types";
 import { fetchPackableParcels } from "../features/parcels/api";
 import type { Parcel } from "../features/parcels/types";
 import { createWaybill } from "../features/waybills/api";
@@ -27,7 +29,19 @@ const initialForm: RecipientFormState = {
   remark: "",
 };
 
-function buildPayload(form: RecipientFormState, parcelIds: number[]): WaybillCreatePayload {
+function buildPayload(
+  form: RecipientFormState,
+  parcelIds: number[],
+  addressId: number | null,
+): WaybillCreatePayload {
+  if (addressId) {
+    return {
+      parcel_ids: parcelIds,
+      address_id: addressId,
+      remark: form.remark.trim(),
+    };
+  }
+
   return {
     parcel_ids: parcelIds,
     destination_country: form.destination_country.trim(),
@@ -36,6 +50,17 @@ function buildPayload(form: RecipientFormState, parcelIds: number[]): WaybillCre
     recipient_address: form.recipient_address.trim(),
     postal_code: form.postal_code.trim(),
     remark: form.remark.trim(),
+  };
+}
+
+function addressToForm(address: Address, remark: string): RecipientFormState {
+  return {
+    destination_country: address.country,
+    recipient_name: address.recipient_name,
+    recipient_phone: address.phone,
+    recipient_address: address.address_line,
+    postal_code: address.postal_code,
+    remark,
   };
 }
 
@@ -53,14 +78,20 @@ export function WaybillPackingPage() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<RecipientFormState>(initialForm);
   const [selectedParcelIds, setSelectedParcelIds] = useState<number[]>(initialParcelIds);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [notice, setNotice] = useState("");
 
   const packableQuery = useQuery({
     queryKey: ["mobile", "member", "packable-parcels"],
     queryFn: fetchPackableParcels,
   });
+  const addressesQuery = useQuery({
+    queryKey: ["mobile", "member", "addresses"],
+    queryFn: fetchAddresses,
+  });
 
   const packableParcels = useMemo(() => packableQuery.data ?? [], [packableQuery.data]);
+  const addresses = useMemo(() => addressesQuery.data ?? [], [addressesQuery.data]);
   const selectedParcels = packableParcels.filter((parcel) => selectedParcelIds.includes(parcel.id));
   const selectedWarehouseIds = new Set(selectedParcels.map((parcel) => parcel.warehouse));
   const selectedWeight = selectedParcels.reduce((total, parcel) => total + Number(parcel.weight_kg || 0), 0);
@@ -100,7 +131,7 @@ export function WaybillPackingPage() {
       showNotice("一次运单只能选择同一仓库包裹");
       return;
     }
-    createMutation.mutate(buildPayload(form, selectedParcelIds));
+    createMutation.mutate(buildPayload(form, selectedParcelIds, selectedAddressId));
   };
 
   return (
@@ -124,6 +155,7 @@ export function WaybillPackingPage() {
           {createMutation.error instanceof Error ? createMutation.error.message : "提交失败"}
         </div>
       )}
+      {addressesQuery.isError && <div className={styles.error}>地址簿加载失败，请刷新后重试</div>}
 
       <section className={styles.summary}>
         <div>
@@ -174,10 +206,37 @@ export function WaybillPackingPage() {
       {selectedWarehouseIds.size > 1 && <div className={styles.warning}>已选包裹来自多个仓库，请拆分提交。</div>}
 
       <form className={styles.form} onSubmit={handleSubmit}>
+        <section className={styles.addressPicker}>
+          <div className={styles.pickerHead}>
+            <span>收件地址</span>
+            <button type="button" onClick={() => navigate("/me/addresses")}>
+              管理
+            </button>
+          </div>
+          <select
+            value={selectedAddressId ?? ""}
+            onChange={(event) => {
+              const nextId = Number(event.target.value) || null;
+              setSelectedAddressId(nextId);
+              const address = addresses.find((item) => item.id === nextId);
+              if (address) {
+                setForm((current) => addressToForm(address, current.remark));
+              }
+            }}
+          >
+            <option value="">手工填写收件信息</option>
+            {addresses.map((address) => (
+              <option key={address.id} value={address.id}>
+                {address.is_default ? "默认 · " : ""}{address.recipient_name} · {address.country} {address.region || address.city}
+              </option>
+            ))}
+          </select>
+          {addressesQuery.isLoading && <small>加载地址簿...</small>}
+        </section>
         <label>
           <span>目的国家</span>
           <input
-            required
+            required={!selectedAddressId}
             value={form.destination_country}
             onChange={(event) => setForm((current) => ({ ...current, destination_country: event.target.value }))}
           />
@@ -185,7 +244,7 @@ export function WaybillPackingPage() {
         <label>
           <span>收件人</span>
           <input
-            required
+            required={!selectedAddressId}
             value={form.recipient_name}
             onChange={(event) => setForm((current) => ({ ...current, recipient_name: event.target.value }))}
           />
@@ -193,7 +252,7 @@ export function WaybillPackingPage() {
         <label>
           <span>电话</span>
           <input
-            required
+            required={!selectedAddressId}
             value={form.recipient_phone}
             onChange={(event) => setForm((current) => ({ ...current, recipient_phone: event.target.value }))}
           />
@@ -201,7 +260,7 @@ export function WaybillPackingPage() {
         <label>
           <span>收件地址</span>
           <textarea
-            required
+            required={!selectedAddressId}
             rows={3}
             value={form.recipient_address}
             onChange={(event) => setForm((current) => ({ ...current, recipient_address: event.target.value }))}

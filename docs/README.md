@@ -9,3 +9,4 @@
 - `delivery-completion-audit.md`：P0 需求、用户约束和交付证据映射。
 - `source-report-gap-map.md`：原始 ChatGPT/Gemini 报告与当前实现的差距映射。
 - `production-readiness-backlog.md`：生产级缺口对应的后续 Agent 任务队列。
+- `agent-runs/`：每个正式 Agent 任务的简短证据记录。

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.addresses.services import build_recipient_snapshot, get_active_address, manual_recipient_snapshot
 from apps.parcels.models import Parcel
 from apps.warehouses.models import ConfigStatus, ShippingChannel
 
@@ -90,28 +91,49 @@ class WaybillSerializer(serializers.ModelSerializer):
 
 class WaybillCreateSerializer(serializers.Serializer):
     parcel_ids = serializers.PrimaryKeyRelatedField(queryset=Parcel.objects.all(), many=True)
+    address_id = serializers.IntegerField(required=False, allow_null=True)
     channel_id = serializers.PrimaryKeyRelatedField(
         queryset=ShippingChannel.objects.filter(status=ConfigStatus.ACTIVE),
         source="channel",
         required=False,
         allow_null=True,
     )
-    destination_country = serializers.CharField(max_length=80)
-    recipient_name = serializers.CharField(max_length=100)
-    recipient_phone = serializers.CharField(max_length=30)
-    recipient_address = serializers.CharField(max_length=255)
+    destination_country = serializers.CharField(max_length=80, required=False, allow_blank=True)
+    recipient_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    recipient_phone = serializers.CharField(max_length=30, required=False, allow_blank=True)
+    recipient_address = serializers.CharField(max_length=255, required=False, allow_blank=True)
     postal_code = serializers.CharField(max_length=30, required=False, allow_blank=True)
     remark = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, attrs):
         parcel_ids = [parcel.id for parcel in attrs.pop("parcel_ids")]
         attrs["parcel_ids"] = parcel_ids
-        attrs["recipient_snapshot"] = {
-            "name": attrs.pop("recipient_name"),
-            "phone": attrs.pop("recipient_phone"),
-            "address": attrs.pop("recipient_address"),
-            "postal_code": attrs.pop("postal_code", ""),
+        address_id = attrs.pop("address_id", None)
+        if address_id:
+            request = self.context.get("request")
+            address = get_active_address(user=request.user, address_id=address_id)
+            attrs["destination_country"] = address.country_region
+            attrs["recipient_snapshot"] = build_recipient_snapshot(address)
+            return attrs
+
+        required_fields = {
+            "destination_country": "目的国家不能为空",
+            "recipient_name": "收件人不能为空",
+            "recipient_phone": "电话不能为空",
+            "recipient_address": "收件地址不能为空",
         }
+        errors = {field: [message] for field, message in required_fields.items() if not attrs.get(field, "").strip()}
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        attrs["destination_country"] = attrs.pop("destination_country").strip()
+        attrs["recipient_snapshot"] = manual_recipient_snapshot(
+            recipient_name=attrs.pop("recipient_name").strip(),
+            recipient_phone=attrs.pop("recipient_phone").strip(),
+            recipient_address=attrs.pop("recipient_address").strip(),
+            destination_country=attrs["destination_country"],
+            postal_code=attrs.pop("postal_code", "").strip(),
+        )
         return attrs
 
 

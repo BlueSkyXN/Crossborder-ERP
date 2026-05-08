@@ -29,18 +29,21 @@
 | `PURCHASE-AUTO-001` | P3 | 外链解析/自动采购 | 外部链接解析 provider 接口、人工 fallback、合规边界 | 不抓取真实第三方前不声明自动采购完成 |
 | `QA-BROWSER-001` | P1 | 浏览器级 E2E | Playwright 或等价浏览器 E2E，覆盖三端 P0 主路 | 先确认浏览器二进制和缓存占用；CI 可重复 |
 
+## Completed Production Gap Tasks
+
+- `ADDR-001`：本轮已补后端 address API、User Web `/addresses`、Mobile H5 `/me/addresses`、运单创建 `address_id` 和 API E2E snapshot 断言。
+
 ## Current Next Task
 
-`ADDR-001` 是最适合的下一项，因为它是源报告里的 P0 要求，并且直接影响运单创建、直邮、确认订单、用户资料和移动端个人中心。它不需要 PostgreSQL/MySQL/Redis/Docker，也不会引入外部服务。
+`FILE-001` 是当前下一项，因为文件上传是汇款凭证、客服图片、包裹图片、商品/内容图片和后续导入导出的共同基础。它可以先用本地 media + SQLite 验证，不需要 PostgreSQL/MySQL/Redis/Docker，也不需要对象存储。
 
-建议 `ADDR-001` 范围：
+建议 `FILE-001` 范围：
 
-- 后端新增 `addresses` app。
-- `Address` 字段包含 user、recipient name、phone、country、region、city、postal code、address line、company、is_default、status、created/updated。
-- User Web 增加 `/addresses` 或账户页中的地址管理入口。
-- Mobile H5 在 `/me` 增加地址管理入口和地址列表/表单。
-- Waybill packing 支持选择地址，也保留手工填写 fallback。
-- E2E 增加“创建地址 -> 创建运单时使用地址 -> snapshot 不随地址修改漂移”的断言。
+- 后端新增 files/media app。
+- 本地 media 存储和文件元数据。
+- 按用途限制文件大小、MIME/扩展名。
+- 会员/后台访问控制和业务引用策略。
+- 对象存储只标记为后续，不在本轮声明已验证。
 
 ## Completion Boundary
 

@@ -9,7 +9,7 @@ from apps.members.models import User
 from apps.parcels.models import Parcel, ParcelStatus
 from apps.warehouses.models import ConfigStatus, ShippingChannel
 
-from .models import Waybill, WaybillParcel, WaybillStatus
+from .models import TrackingEvent, TrackingEventSource, Waybill, WaybillParcel, WaybillStatus
 
 
 class StateConflictError(Exception):
@@ -152,9 +152,88 @@ def cancel_waybill(*, waybill: Waybill, reason: str = "") -> Waybill:
     return get_waybill_for_output(locked.id)
 
 
+@transaction.atomic
+def add_tracking_event(
+    *,
+    waybill: Waybill,
+    status_text: str,
+    location: str = "",
+    description: str = "",
+    event_time=None,
+    source: str = TrackingEventSource.MANUAL,
+    operator: AdminUser | None = None,
+) -> TrackingEvent:
+    if not status_text.strip():
+        raise exceptions.ValidationError({"status_text": ["轨迹状态不能为空"]})
+    locked = Waybill.objects.select_for_update().get(id=waybill.id)
+    return TrackingEvent.objects.create(
+        waybill=locked,
+        event_time=event_time or timezone.now(),
+        location=location,
+        status_text=status_text,
+        description=description,
+        source=source,
+        operator=operator,
+    )
+
+
+@transaction.atomic
+def ship_waybill(
+    *,
+    waybill: Waybill,
+    operator: AdminUser | None,
+    status_text: str = "已发货",
+    location: str = "",
+    description: str = "",
+    event_time=None,
+) -> Waybill:
+    locked = Waybill.objects.select_for_update().prefetch_related("parcel_links__parcel").get(id=waybill.id)
+    if locked.status != WaybillStatus.PENDING_SHIPMENT:
+        raise StateConflictError("运单当前状态不允许发货")
+
+    shipped_at = timezone.now()
+    locked.status = WaybillStatus.SHIPPED
+    locked.shipped_at = shipped_at
+    locked.save(update_fields=["status", "shipped_at", "updated_at"])
+    parcel_ids = [link.parcel_id for link in locked.parcel_links.all()]
+    Parcel.objects.filter(id__in=parcel_ids).update(status=ParcelStatus.OUTBOUND, updated_at=timezone.now())
+    TrackingEvent.objects.create(
+        waybill=locked,
+        event_time=event_time or shipped_at,
+        location=location,
+        status_text=status_text,
+        description=description,
+        source=TrackingEventSource.MANUAL,
+        operator=operator,
+    )
+    return get_waybill_for_output(locked.id)
+
+
+@transaction.atomic
+def confirm_receipt(*, waybill: Waybill, user: User, description: str = "") -> Waybill:
+    locked = Waybill.objects.select_for_update().get(id=waybill.id)
+    if locked.user_id != user.id:
+        raise exceptions.NotFound("运单不存在")
+    if locked.status != WaybillStatus.SHIPPED:
+        raise StateConflictError("运单当前状态不允许确认收货")
+
+    signed_at = timezone.now()
+    locked.status = WaybillStatus.SIGNED
+    locked.signed_at = signed_at
+    locked.save(update_fields=["status", "signed_at", "updated_at"])
+    TrackingEvent.objects.create(
+        waybill=locked,
+        event_time=signed_at,
+        status_text="已签收",
+        description=description,
+        source=TrackingEventSource.MEMBER,
+    )
+    return get_waybill_for_output(locked.id)
+
+
 def get_waybill_for_output(waybill_id: int) -> Waybill:
     return (
         Waybill.objects.select_related("user", "warehouse", "channel", "reviewed_by", "fee_set_by")
-        .prefetch_related("parcel_links__parcel")
+        .prefetch_related("parcel_links__parcel", "tracking_events")
         .get(id=waybill_id)
     )

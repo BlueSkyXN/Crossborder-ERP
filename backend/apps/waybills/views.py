@@ -9,9 +9,26 @@ from apps.iam.permissions import HasAdminPermission
 from apps.members.authentication import MemberTokenAuthentication
 from apps.members.permissions import IsMemberAuthenticated
 
-from .models import Waybill
-from .serializers import WaybillCreateSerializer, WaybillFeeSerializer, WaybillReviewSerializer, WaybillSerializer
-from .services import StateConflictError, create_waybill, review_waybill, set_waybill_fee
+from .models import TrackingEvent, Waybill
+from .serializers import (
+    ConfirmReceiptSerializer,
+    TrackingEventCreateSerializer,
+    TrackingEventSerializer,
+    WaybillCreateSerializer,
+    WaybillFeeSerializer,
+    WaybillReviewSerializer,
+    WaybillSerializer,
+    WaybillShipSerializer,
+)
+from .services import (
+    StateConflictError,
+    add_tracking_event,
+    confirm_receipt,
+    create_waybill,
+    review_waybill,
+    set_waybill_fee,
+    ship_waybill,
+)
 
 
 def state_conflict_response(exc: StateConflictError):
@@ -56,6 +73,47 @@ class WaybillDetailView(APIView):
             user=request.user,
         )
         return success_response(WaybillSerializer(waybill).data)
+
+
+class WaybillTrackingEventListView(APIView):
+    authentication_classes = [MemberTokenAuthentication]
+    permission_classes = [IsMemberAuthenticated]
+
+    @extend_schema(tags=["waybills"], responses={200: TrackingEventSerializer(many=True)})
+    def get(self, request, waybill_id: int):
+        waybill = get_object_or_404(Waybill, id=waybill_id, user=request.user)
+        events = TrackingEvent.objects.filter(waybill=waybill).select_related("operator")
+        return success_response({"items": TrackingEventSerializer(events, many=True).data})
+
+
+class WaybillTrackingQueryView(APIView):
+    authentication_classes = [MemberTokenAuthentication]
+    permission_classes = [IsMemberAuthenticated]
+
+    @extend_schema(tags=["waybills"], responses={200: TrackingEventSerializer(many=True)})
+    def get(self, request):
+        waybill_no = request.query_params.get("waybill_no", "").strip()
+        if not waybill_no:
+            return error_response("VALIDATION_ERROR", "waybill_no 不能为空", status=status.HTTP_400_BAD_REQUEST)
+        waybill = get_object_or_404(Waybill, waybill_no=waybill_no, user=request.user)
+        events = TrackingEvent.objects.filter(waybill=waybill).select_related("operator")
+        return success_response({"waybill": WaybillSerializer(waybill).data, "items": TrackingEventSerializer(events, many=True).data})
+
+
+class WaybillConfirmReceiptView(APIView):
+    authentication_classes = [MemberTokenAuthentication]
+    permission_classes = [IsMemberAuthenticated]
+
+    @extend_schema(tags=["waybills"], request=ConfirmReceiptSerializer, responses={200: WaybillSerializer})
+    def post(self, request, waybill_id: int):
+        serializer = ConfirmReceiptSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        waybill = get_object_or_404(Waybill, id=waybill_id, user=request.user)
+        try:
+            signed = confirm_receipt(waybill=waybill, user=request.user, **serializer.validated_data)
+        except StateConflictError as exc:
+            return state_conflict_response(exc)
+        return success_response(WaybillSerializer(signed).data)
 
 
 class AdminWaybillListView(APIView):
@@ -103,3 +161,38 @@ class AdminWaybillSetFeeView(APIView):
         except StateConflictError as exc:
             return state_conflict_response(exc)
         return success_response(WaybillSerializer(fee_set).data)
+
+
+class AdminWaybillShipView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "waybills.view"
+
+    @extend_schema(tags=["admin-waybills"], request=WaybillShipSerializer, responses={200: WaybillSerializer})
+    def post(self, request, waybill_id: int):
+        serializer = WaybillShipSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        waybill = get_object_or_404(Waybill, id=waybill_id)
+        try:
+            shipped = ship_waybill(waybill=waybill, operator=request.user, **serializer.validated_data)
+        except StateConflictError as exc:
+            return state_conflict_response(exc)
+        return success_response(WaybillSerializer(shipped).data)
+
+
+class AdminWaybillTrackingEventCreateView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "waybills.view"
+
+    @extend_schema(
+        tags=["admin-waybills"],
+        request=TrackingEventCreateSerializer,
+        responses={201: TrackingEventSerializer},
+    )
+    def post(self, request, waybill_id: int):
+        serializer = TrackingEventCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        waybill = get_object_or_404(Waybill, id=waybill_id)
+        event = add_tracking_event(waybill=waybill, operator=request.user, **serializer.validated_data)
+        return success_response(TrackingEventSerializer(event).data, status=status.HTTP_201_CREATED)

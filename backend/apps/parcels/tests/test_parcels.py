@@ -3,7 +3,7 @@ from django.urls import reverse
 
 from apps.iam.services import seed_iam_demo_data
 from apps.members.services import register_user, seed_member_demo_data
-from apps.parcels.models import InboundRecord, Parcel, ParcelStatus, UnclaimedParcel
+from apps.parcels.models import InboundRecord, Parcel, ParcelPhoto, ParcelStatus, UnclaimedParcel
 from apps.parcels.services import forecast_parcel
 from apps.warehouses.models import Warehouse
 from apps.warehouses.services import seed_warehouse_demo_data
@@ -73,7 +73,13 @@ def test_admin_inbound_moves_parcel_to_in_stock(client, seeded_parcels):
 
     response = client.post(
         reverse("admin-parcel-inbound", kwargs={"parcel_id": parcel.id}),
-        {"weight_kg": "1.250", "length_cm": "20.00", "width_cm": "10.00", "height_cm": "8.00"},
+        {
+            "weight_kg": "1.250",
+            "length_cm": "20.00",
+            "width_cm": "10.00",
+            "height_cm": "8.00",
+            "photo_file_ids": ["inbound-photo-001"],
+        },
         content_type="application/json",
         HTTP_AUTHORIZATION=f"Bearer {token}",
     )
@@ -82,7 +88,9 @@ def test_admin_inbound_moves_parcel_to_in_stock(client, seeded_parcels):
     body = response.json()
     assert body["data"]["status"] == ParcelStatus.IN_STOCK
     assert body["data"]["weight_kg"] == "1.250"
+    assert body["data"]["photos"][0]["file_id"] == "inbound-photo-001"
     assert InboundRecord.objects.filter(parcel=parcel).exists()
+    assert ParcelPhoto.objects.filter(parcel=parcel, file_id="inbound-photo-001").exists()
 
     packable = client.get(
         reverse("parcel-packable-list"),

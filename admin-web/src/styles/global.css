@@ -210,6 +210,23 @@ body {
   width: 100%;
 }
 
+.parcel-workspace,
+.parcel-detail,
+.scan-result {
+  width: 100%;
+}
+
+.scan-card {
+  height: 100%;
+}
+
+.scan-tracking-input.ant-input {
+  height: 52px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
 .filter-bar {
   max-width: 360px;
 }

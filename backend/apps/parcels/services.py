@@ -13,7 +13,9 @@ from .models import (
     InboundRecord,
     Parcel,
     ParcelItem,
+    ParcelPhoto,
     ParcelStatus,
+    PhotoType,
     UnclaimedParcel,
     UnclaimedParcelStatus,
 )
@@ -84,6 +86,7 @@ def _inbound_pending_parcel(
     length_cm: Decimal | None = None,
     width_cm: Decimal | None = None,
     height_cm: Decimal | None = None,
+    photo_file_ids: list[str] | None = None,
     remark: str = "",
 ) -> Parcel:
     if parcel.status != ParcelStatus.PENDING_INBOUND:
@@ -113,6 +116,8 @@ def _inbound_pending_parcel(
         dimensions_json=_dimensions_json(length_cm, width_cm, height_cm),
         remark=remark,
     )
+    for file_id in dict.fromkeys(file_id.strip() for file_id in photo_file_ids or [] if file_id.strip()):
+        ParcelPhoto.objects.create(parcel=parcel, file_id=file_id, photo_type=PhotoType.INBOUND)
     return parcel
 
 
@@ -125,6 +130,7 @@ def inbound_parcel(
     length_cm: Decimal | None = None,
     width_cm: Decimal | None = None,
     height_cm: Decimal | None = None,
+    photo_file_ids: list[str] | None = None,
     remark: str = "",
 ) -> Parcel:
     locked = Parcel.objects.select_for_update().select_related("warehouse", "user").get(id=parcel.id)
@@ -135,6 +141,7 @@ def inbound_parcel(
         length_cm=length_cm,
         width_cm=width_cm,
         height_cm=height_cm,
+        photo_file_ids=photo_file_ids,
         remark=remark,
     )
 
@@ -149,6 +156,7 @@ def scan_inbound(
     length_cm: Decimal | None = None,
     width_cm: Decimal | None = None,
     height_cm: Decimal | None = None,
+    photo_file_ids: list[str] | None = None,
     remark: str = "",
 ) -> InboundResult:
     _assert_active_warehouse(warehouse)
@@ -167,6 +175,7 @@ def scan_inbound(
                 length_cm=length_cm,
                 width_cm=width_cm,
                 height_cm=height_cm,
+                photo_file_ids=photo_file_ids,
                 remark=remark,
             )
         )

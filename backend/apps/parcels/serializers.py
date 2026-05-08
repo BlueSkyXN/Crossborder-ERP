@@ -74,6 +74,12 @@ class InboundRequestSerializer(serializers.Serializer):
     length_cm = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     width_cm = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     height_cm = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
+    photo_file_ids = serializers.ListField(
+        child=serializers.CharField(max_length=120),
+        required=False,
+        allow_empty=True,
+        write_only=True,
+    )
     remark = serializers.CharField(required=False, allow_blank=True)
 
 

@@ -658,7 +658,7 @@ export function WarehouseConfigPage() {
   }
 
   return (
-    <Space direction="vertical" size={16} className="workspace-page">
+    <Space orientation="vertical" size={16} className="workspace-page">
       <div className="page-heading">
         <div>
           <Typography.Title level={2}>基础配置</Typography.Title>
@@ -670,7 +670,7 @@ export function WarehouseConfigPage() {
       </div>
 
       <Card>
-        <Space direction="vertical" size={16} className="config-page">
+        <Space orientation="vertical" size={16} className="config-page">
           <Tabs
             activeKey={activeResource}
             onChange={(key) => {
@@ -695,7 +695,7 @@ export function WarehouseConfigPage() {
             />
           </div>
           {activeQueryError && (
-            <Alert type="error" showIcon message={getErrorMessage(activeQueryError)} />
+            <Alert type="error" showIcon title={getErrorMessage(activeQueryError)} />
           )}
           {renderTable()}
         </Space>

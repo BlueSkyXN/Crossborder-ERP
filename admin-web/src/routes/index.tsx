@@ -6,6 +6,7 @@ import { ForbiddenPage } from "../pages/ForbiddenPage";
 import { LoginPage } from "../pages/LoginPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { adminRouteMeta } from "../features/auth/menu";
+import { ParcelWmsPage } from "../features/parcels/ParcelWmsPage";
 import { WarehouseConfigPage } from "../features/warehouses/WarehouseConfigPage";
 import { PublicOnly, RequireAuth } from "./guards";
 
@@ -26,6 +27,8 @@ export const router = createBrowserRouter([
             element:
               route.resource === "warehouses" ? (
                 <WarehouseConfigPage />
+              ) : route.resource === "parcels" ? (
+                <ParcelWmsPage />
               ) : (
                 <WorkspacePage route={route} />
               ),

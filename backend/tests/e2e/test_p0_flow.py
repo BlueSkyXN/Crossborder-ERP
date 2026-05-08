@@ -105,6 +105,67 @@ def _upload_admin_parcel_photo(admin_client: APIClient, suffix: str) -> dict:
     )
 
 
+def _upload_member_remittance_proof(member_client: APIClient, suffix: str) -> dict:
+    return _api_data(
+        member_client.post(
+            "/api/v1/files",
+            {
+                "usage": "REMITTANCE_PROOF",
+                "file": SimpleUploadedFile(
+                    f"e2e-{suffix.lower()}-remittance.jpg",
+                    b"e2e-remittance-proof",
+                    content_type="image/jpeg",
+                ),
+            },
+            format="multipart",
+        ),
+        expected_status=201,
+    )
+
+
+def _run_offline_remittance_flow(
+    *,
+    admin_client: APIClient,
+    member_client: APIClient,
+    amount: str,
+    suffix: str,
+) -> dict:
+    proof = _upload_member_remittance_proof(member_client, suffix)
+    remittance = _api_data(
+        member_client.post(
+            "/api/v1/remittances",
+            {
+                "amount": amount,
+                "currency": "CNY",
+                "proof_file_id": proof["file_id"],
+                "remark": f"E2E {suffix} offline remittance",
+            },
+            format="json",
+        ),
+        expected_status=201,
+    )
+    assert remittance["status"] == "PENDING"
+    assert remittance["proof_file_id"] == proof["file_id"]
+
+    approved = _api_data(
+        admin_client.post(
+            f"/api/v1/admin/remittances/{remittance['id']}/approve",
+            {"review_remark": f"E2E {suffix} approved"},
+            format="json",
+        )
+    )
+    assert approved["type"] == "OFFLINE_REMITTANCE"
+    assert approved["amount"] == amount
+
+    wallet = _api_data(member_client.get("/api/v1/wallet"))
+    assert wallet["balance"] == amount
+    return {
+        "request_no": remittance["request_no"],
+        "proof_file_id": proof["file_id"],
+        "wallet_balance": wallet["balance"],
+    }
+
+
 def _run_forwarding_flow(
     *,
     admin_client: APIClient,
@@ -244,15 +305,12 @@ def _run_forwarding_flow(
     )
     assert fee_set["status"] == "PENDING_PAYMENT"
 
-    recharge = _api_data(
-        admin_client.post(
-            f"/api/v1/admin/users/{member['id']}/wallet/recharge",
-            {"amount": "100.00", "currency": "CNY", "remark": f"E2E {suffix} recharge"},
-            format="json",
-        ),
-        expected_status=201,
+    remittance = _run_offline_remittance_flow(
+        admin_client=admin_client,
+        member_client=member_client,
+        amount="100.00",
+        suffix=suffix,
     )
-    assert recharge["type"] == "ADMIN_RECHARGE"
 
     paid = _api_data(
         member_client.post(
@@ -305,6 +363,7 @@ def _run_forwarding_flow(
         "tracking_no": tracking_no,
         "parcel_no": parcel["parcel_no"],
         "waybill_no": waybill["waybill_no"],
+        "remittance_no": remittance["request_no"],
         "status": signed["status"],
     }
 

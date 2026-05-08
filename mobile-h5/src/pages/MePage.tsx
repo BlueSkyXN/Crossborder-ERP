@@ -101,6 +101,22 @@ export function MePage() {
 
       <section className={styles.panel}>
         <div className={styles.sectionHead}>
+          <span>Finance</span>
+          <h2>财务中心</h2>
+          <p>线下汇款、钱包余额和财务流水。</p>
+        </div>
+        <div className={styles.quickGrid}>
+          <button className={styles.primaryButton} type="button" onClick={() => navigate("/me/finance")}>
+            线下汇款
+          </button>
+          <button className={styles.secondaryButton} type="button" onClick={() => navigate("/ship/waybills")}>
+            运单支付
+          </button>
+        </div>
+      </section>
+
+      <section className={styles.panel}>
+        <div className={styles.sectionHead}>
           <span>Purchase</span>
           <h2>我的代购</h2>
           <p>从这里进入代购订单、手工代购和商品选购。</p>

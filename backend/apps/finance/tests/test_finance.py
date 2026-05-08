@@ -1,11 +1,15 @@
 from decimal import Decimal
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
+from apps.files.models import FileUsage
 from apps.finance.models import (
     PaymentOrder,
     PaymentOrderStatus,
+    RechargeRequest,
+    RechargeRequestStatus,
     Wallet,
     WalletTransaction,
     WalletTransactionType,
@@ -13,7 +17,7 @@ from apps.finance.models import (
 from apps.iam.models import AdminUser
 from apps.iam.services import seed_iam_demo_data
 from apps.members.models import User
-from apps.members.services import seed_member_demo_data
+from apps.members.services import issue_member_access_token, register_user, seed_member_demo_data
 from apps.parcels.services import forecast_parcel, inbound_parcel
 from apps.warehouses.models import ShippingChannel, Warehouse
 from apps.warehouses.services import seed_warehouse_demo_data
@@ -35,6 +39,19 @@ def member_token(client, email="user@example.com", password="password123"):
         content_type="application/json",
     )
     return response.json()["data"]["access_token"]
+
+
+def upload_remittance_proof(client, token, name="remittance.jpg"):
+    response = client.post(
+        reverse("file-list"),
+        {
+            "usage": FileUsage.REMITTANCE_PROOF,
+            "file": SimpleUploadedFile(name, b"remittance-proof", content_type="image/jpeg"),
+        },
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert response.status_code == 201
+    return response.json()["data"]["file_id"]
 
 
 def admin_token(client, email="finance@example.com"):
@@ -89,6 +106,176 @@ def test_admin_recharge_generates_wallet_transaction(client, seeded_finance):
     wallet_response = client.get(reverse("wallet-detail"), HTTP_AUTHORIZATION=f"Bearer {member_token(client)}")
     assert wallet_response.status_code == 200
     assert wallet_response.json()["data"]["balance"] == "100.00"
+
+
+def test_member_submits_offline_remittance_with_own_proof(client, seeded_finance):
+    token = member_token(client)
+    proof_file_id = upload_remittance_proof(client, token)
+
+    response = client.post(
+        reverse("remittance-list"),
+        {"amount": "120.50", "proof_file_id": proof_file_id, "remark": "bank transfer"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 201
+    data = response.json()["data"]
+    assert data["request_no"].startswith("RCG")
+    assert data["status"] == RechargeRequestStatus.PENDING
+    assert data["amount"] == "120.50"
+    assert data["proof_file_id"] == proof_file_id
+    assert data["proof_file_name"] == "remittance.jpg"
+    assert data["proof_download_url"] == f"/api/v1/files/{proof_file_id}/download"
+    assert Wallet.objects.get(user__email="user@example.com").balance == 0
+
+
+def test_member_cannot_submit_remittance_with_another_members_proof(client, seeded_finance):
+    owner = register_user("remittance-owner@example.com", "password123")
+    other = register_user("remittance-other@example.com", "password123")
+    owner_token = issue_member_access_token(owner)
+    other_token = issue_member_access_token(other)
+    proof_file_id = upload_remittance_proof(client, owner_token)
+
+    response = client.post(
+        reverse("remittance-list"),
+        {"amount": "88.00", "proof_file_id": proof_file_id},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {other_token}",
+    )
+
+    assert response.status_code == 400
+    assert response.json()["code"] == "VALIDATION_ERROR"
+    assert RechargeRequest.objects.count() == 0
+
+
+def test_member_lists_only_own_offline_remittances(client, seeded_finance):
+    user_token = member_token(client)
+    other = register_user("remittance-list-other@example.com", "password123")
+    other_token = issue_member_access_token(other)
+    user_proof_id = upload_remittance_proof(client, user_token, "own.jpg")
+    other_proof_id = upload_remittance_proof(client, other_token, "other.jpg")
+
+    client.post(
+        reverse("remittance-list"),
+        {"amount": "50.00", "proof_file_id": user_proof_id},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {user_token}",
+    )
+    client.post(
+        reverse("remittance-list"),
+        {"amount": "75.00", "proof_file_id": other_proof_id},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {other_token}",
+    )
+
+    response = client.get(reverse("remittance-list"), HTTP_AUTHORIZATION=f"Bearer {user_token}")
+
+    assert response.status_code == 200
+    items = response.json()["data"]["items"]
+    assert len(items) == 1
+    assert items[0]["proof_file_id"] == user_proof_id
+
+
+def test_admin_approves_offline_remittance_once(client, seeded_finance):
+    user = User.objects.get(email="user@example.com")
+    member = member_token(client)
+    proof_file_id = upload_remittance_proof(client, member)
+    submit = client.post(
+        reverse("remittance-list"),
+        {"amount": "230.00", "proof_file_id": proof_file_id, "remark": "offline bank transfer"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {member}",
+    )
+    remittance_id = submit.json()["data"]["id"]
+    admin = admin_token(client)
+
+    approve = client.post(
+        reverse("admin-remittance-approve", kwargs={"remittance_id": remittance_id}),
+        {"review_remark": "received"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {admin}",
+    )
+    repeat = client.post(
+        reverse("admin-remittance-approve", kwargs={"remittance_id": remittance_id}),
+        {"review_remark": "received again"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {admin}",
+    )
+
+    assert approve.status_code == 200
+    assert approve.json()["data"]["type"] == WalletTransactionType.OFFLINE_REMITTANCE
+    assert approve.json()["data"]["balance_after"] == "230.00"
+    assert repeat.status_code == 409
+    assert repeat.json()["code"] == "STATE_CONFLICT"
+    assert Wallet.objects.get(user=user).balance == Decimal("230.00")
+    assert WalletTransaction.objects.filter(type=WalletTransactionType.OFFLINE_REMITTANCE).count() == 1
+    remittance = RechargeRequest.objects.get(id=remittance_id)
+    assert remittance.status == RechargeRequestStatus.COMPLETED
+    assert remittance.review_remark == "received"
+    assert remittance.operator.email == "finance@example.com"
+    assert remittance.reviewed_at is not None
+
+
+def test_admin_cancels_offline_remittance_without_credit(client, seeded_finance):
+    user = User.objects.get(email="user@example.com")
+    member = member_token(client)
+    proof_file_id = upload_remittance_proof(client, member)
+    submit = client.post(
+        reverse("remittance-list"),
+        {"amount": "60.00", "proof_file_id": proof_file_id},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {member}",
+    )
+    remittance_id = submit.json()["data"]["id"]
+    admin = admin_token(client)
+
+    cancel = client.post(
+        reverse("admin-remittance-cancel", kwargs={"remittance_id": remittance_id}),
+        {"review_remark": "amount not matched"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {admin}",
+    )
+    approve_after_cancel = client.post(
+        reverse("admin-remittance-approve", kwargs={"remittance_id": remittance_id}),
+        {"review_remark": "late approve"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {admin}",
+    )
+
+    assert cancel.status_code == 200
+    assert cancel.json()["data"]["status"] == RechargeRequestStatus.CANCELLED
+    assert approve_after_cancel.status_code == 409
+    assert Wallet.objects.get(user=user).balance == Decimal("0.00")
+    assert WalletTransaction.objects.filter(type=WalletTransactionType.OFFLINE_REMITTANCE).count() == 0
+
+
+def test_admin_remittance_review_requires_finance_permission(client, seeded_finance):
+    member = member_token(client)
+    proof_file_id = upload_remittance_proof(client, member)
+    submit = client.post(
+        reverse("remittance-list"),
+        {"amount": "45.00", "proof_file_id": proof_file_id},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {member}",
+    )
+    remittance_id = submit.json()["data"]["id"]
+    warehouse_admin = admin_token(client, email="warehouse@example.com")
+
+    list_response = client.get(
+        reverse("admin-remittance-list"),
+        HTTP_AUTHORIZATION=f"Bearer {warehouse_admin}",
+    )
+    review_response = client.post(
+        reverse("admin-remittance-approve", kwargs={"remittance_id": remittance_id}),
+        {"review_remark": "try"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {warehouse_admin}",
+    )
+
+    assert list_response.status_code == 403
+    assert review_response.status_code == 403
+    assert WalletTransaction.objects.filter(type=WalletTransactionType.OFFLINE_REMITTANCE).count() == 0
 
 
 def test_admin_deduct_decreases_balance_and_blocks_overdraft(client, seeded_finance):

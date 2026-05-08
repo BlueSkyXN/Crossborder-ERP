@@ -116,7 +116,6 @@ export function ParcelsPage() {
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
   const [selectedParcelId, setSelectedParcelId] = useState<number | null>(null);
-  const [packNotice, setPackNotice] = useState("");
 
   const meQuery = useQuery({
     queryKey: ["member", "me"],
@@ -242,7 +241,6 @@ export function ParcelsPage() {
           {forecastMutation.error instanceof Error ? forecastMutation.error.message : "数据加载失败，请刷新后重试。"}
         </div>
       )}
-      {packNotice && <div className={styles.notice}>{packNotice}</div>}
 
       <section className={styles.workspace}>
         <form className={styles.forecastCard} onSubmit={handleSubmit}>
@@ -494,10 +492,7 @@ export function ParcelsPage() {
                 <button
                   className={styles.packButton}
                   type="button"
-                  onClick={() => {
-                    setPackNotice(`${selectedParcel.parcel_no} 已可申请打包，运单创建将在下一模块接入。`);
-                    window.setTimeout(() => setPackNotice(""), 2400);
-                  }}
+                  onClick={() => navigate(`/waybills?parcel_id=${selectedParcel.id}`)}
                 >
                   <InboxOutlined />
                   申请打包

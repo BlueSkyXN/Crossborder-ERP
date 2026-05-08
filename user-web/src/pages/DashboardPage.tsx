@@ -15,14 +15,8 @@ import { useNavigate } from "react-router-dom";
 import { fetchMe } from "../features/auth/api";
 import { useAuthStore } from "../features/auth/store";
 import { fetchWarehouseAddress, fetchWarehouses } from "../features/warehouses/api";
+import { fetchWallet, fetchWaybills } from "../features/waybills/api";
 import styles from "./DashboardPage.module.css";
-
-const statusEntries = [
-  { label: "待预报包裹", value: 0, icon: <InboxOutlined /> },
-  { label: "待打包运单", value: 0, icon: <TruckOutlined /> },
-  { label: "待支付金额", value: "¥0.00", icon: <WalletOutlined /> },
-  { label: "代购订单", value: 0, icon: <ShoppingCartOutlined /> },
-];
 
 function copyWithTextarea(value: string) {
   const textarea = document.createElement("textarea");
@@ -59,6 +53,14 @@ export function DashboardPage() {
   const warehousesQuery = useQuery({
     queryKey: ["member", "warehouses"],
     queryFn: fetchWarehouses,
+  });
+  const waybillsQuery = useQuery({
+    queryKey: ["member", "waybills"],
+    queryFn: fetchWaybills,
+  });
+  const walletQuery = useQuery({
+    queryKey: ["member", "wallet"],
+    queryFn: fetchWallet,
   });
 
   const warehouses = useMemo(() => warehousesQuery.data ?? [], [warehousesQuery.data]);
@@ -104,8 +106,16 @@ export function DashboardPage() {
   };
 
   const user = meQuery.data ?? persistedUser;
-  const hasError = meQuery.isError || warehousesQuery.isError || addressQuery.isError;
+  const hasError = meQuery.isError || warehousesQuery.isError || addressQuery.isError || waybillsQuery.isError || walletQuery.isError;
   const isLoading = meQuery.isLoading || warehousesQuery.isLoading || addressQuery.isLoading;
+  const waybills = waybillsQuery.data ?? [];
+  const pendingPaymentWaybills = waybills.filter((waybill) => waybill.status === "PENDING_PAYMENT");
+  const statusEntries = [
+    { label: "待预报包裹", value: 0, icon: <InboxOutlined /> },
+    { label: "待打包运单", value: waybills.filter((waybill) => waybill.status === "PENDING_PACKING").length, icon: <TruckOutlined /> },
+    { label: "待支付金额", value: `¥${pendingPaymentWaybills.reduce((total, waybill) => total + Number(waybill.fee_total || 0), 0).toFixed(2)}`, icon: <WalletOutlined /> },
+    { label: "代购订单", value: 0, icon: <ShoppingCartOutlined /> },
+  ];
 
   return (
     <main className={styles.page}>
@@ -124,6 +134,10 @@ export function DashboardPage() {
             <button type="button" onClick={() => navigate("/parcels")}>
               <InboxOutlined />
               包裹列表
+            </button>
+            <button type="button" onClick={() => navigate("/waybills")}>
+              <TruckOutlined />
+              运单中心
             </button>
           </div>
         </div>
@@ -151,7 +165,7 @@ export function DashboardPage() {
         </div>
         <div className={styles.balanceCard}>
           <span>账户余额</span>
-          <strong>¥0.00</strong>
+          <strong>¥{walletQuery.data?.balance || "0.00"}</strong>
         </div>
       </section>
 

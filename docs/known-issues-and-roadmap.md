@@ -1,5 +1,14 @@
 # 已知问题和下一阶段计划
 
+## 源报告差距审计
+
+`DOC-001` 完成的是 SQLite-first P0 主链路交付，不等于完整满足原始 ChatGPT/Gemini 两套分析报告。`AUDIT-001` 已把源报告与当前实现的差距拆到：
+
+- `docs/source-report-gap-map.md`
+- `docs/production-readiness-backlog.md`
+
+后续优先按 `ADDR-001`、`FILE-001`、`FIN-001`、`MSG-001`、`MEMBER-001` 等任务逐项收敛。
+
 ## 已知问题
 
 ### PostgreSQL/MySQL 未真实验证

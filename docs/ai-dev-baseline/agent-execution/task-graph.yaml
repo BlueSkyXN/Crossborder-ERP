@@ -143,4 +143,14 @@ tasks:
     phase: P5_DELIVERY
     file: tasks/DOC-001.md
     depends_on: [E2E-001]
+    next: AUDIT-001
+  - id: AUDIT-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/AUDIT-001.md
+    depends_on: [DOC-001]
+    next: ADDR-001
+  - id: ADDR-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/ADDR-001.md
+    depends_on: [AUDIT-001]
     next: null

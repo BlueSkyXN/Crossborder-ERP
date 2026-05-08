@@ -7,8 +7,8 @@
 ## 当前状态
 
 - 项目阶段：`P2_PARCEL_WMS`
-- 当前已完成：`FEM-001A` 移动 H5 登录、寄件首页、仓库地址
-- 下一任务：`BE-005` 包裹预报和扫描入库
+- 当前已完成：`BE-005` 包裹预报和扫描入库
+- 下一任务：`FEA-003` 后台待入库、扫描入库、包裹详情
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`

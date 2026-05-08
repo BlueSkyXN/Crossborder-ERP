@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "apps.finance",
     "apps.products",
     "apps.purchases",
+    "apps.tickets",
 ]
 
 MIDDLEWARE = [
@@ -132,6 +133,8 @@ SPECTACULAR_SETTINGS = {
         "PurchaseOrderStatusEnum": "apps.purchases.models.PurchaseOrderStatus",
         "PurchaseOrderSourceTypeEnum": "apps.purchases.models.PurchaseOrderSourceType",
         "ProcurementTaskStatusEnum": "apps.purchases.models.ProcurementTaskStatus",
+        "TicketStatusEnum": "apps.tickets.models.TicketStatus",
+        "TicketTypeEnum": "apps.tickets.models.TicketType",
     },
 }
 

@@ -4,6 +4,7 @@ import {
   InboxOutlined,
   PlusOutlined,
   LogoutOutlined,
+  MessageOutlined,
   ReloadOutlined,
   ShoppingCartOutlined,
   TruckOutlined,
@@ -167,6 +168,10 @@ export function DashboardPage() {
             <button type="button" onClick={() => navigate("/finance")}>
               <WalletOutlined />
               财务中心
+            </button>
+            <button type="button" onClick={() => navigate("/tickets")}>
+              <MessageOutlined />
+              消息工单
             </button>
             <button type="button" onClick={() => navigate("/products")}>
               <ShoppingCartOutlined />

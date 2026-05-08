@@ -4,6 +4,7 @@ import {
   DeploymentUnitOutlined,
   DollarOutlined,
   InboxOutlined,
+  MessageOutlined,
   SafetyOutlined,
   ShoppingCartOutlined,
   ShoppingOutlined,
@@ -84,6 +85,14 @@ export const adminRouteMeta: AdminRouteMeta[] = [
     label: "商品管理",
     icon: <ShoppingOutlined />,
     description: "商品资料、分类和基础上架信息。",
+  },
+  {
+    permission: "tickets.view",
+    resource: "tickets",
+    path: "/tickets",
+    label: "客服工单",
+    icon: <MessageOutlined />,
+    description: "用户留言、客服回复和工单处理状态。",
   },
   {
     permission: "iam.role.view",

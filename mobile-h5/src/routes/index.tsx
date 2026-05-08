@@ -12,6 +12,7 @@ import { ParcelListPage } from "../pages/ParcelListPage";
 import { ProductHomePage } from "../pages/ProductHomePage";
 import { PurchaseOrdersPage } from "../pages/PurchaseOrdersPage";
 import { ShipHomePage } from "../pages/ShipHomePage";
+import { TicketsMobilePage } from "../pages/TicketsMobilePage";
 import { WaybillListPage } from "../pages/WaybillListPage";
 import { WaybillPackingPage } from "../pages/WaybillPackingPage";
 import { PublicOnly, RequireAuth } from "./guards";
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
           { path: "/me", element: <MePage /> },
           { path: "/me/addresses", element: <AddressBookPage /> },
           { path: "/me/finance", element: <FinanceMobilePage /> },
+          { path: "/me/tickets", element: <TicketsMobilePage /> },
           { path: "/me/purchases", element: <PurchaseOrdersPage /> },
           { path: "/me/purchases/manual", element: <ManualPurchasePage /> },
         ],

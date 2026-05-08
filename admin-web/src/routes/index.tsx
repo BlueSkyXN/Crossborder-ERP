@@ -10,6 +10,7 @@ import { FinancePage } from "../features/finance/FinancePage";
 import { ParcelWmsPage } from "../features/parcels/ParcelWmsPage";
 import { ProductCatalogPage } from "../features/products/ProductCatalogPage";
 import { PurchaseOpsPage } from "../features/purchases/PurchaseOpsPage";
+import { TicketOpsPage } from "../features/tickets/TicketOpsPage";
 import { WaybillOpsPage } from "../features/waybills/WaybillOpsPage";
 import { WarehouseConfigPage } from "../features/warehouses/WarehouseConfigPage";
 import { PublicOnly, RequireAuth } from "./guards";
@@ -41,6 +42,8 @@ export const router = createBrowserRouter([
                 <PurchaseOpsPage />
               ) : route.resource === "products" ? (
                 <ProductCatalogPage />
+              ) : route.resource === "tickets" ? (
+                <TicketOpsPage />
               ) : (
                 <WorkspacePage route={route} />
               ),

@@ -203,7 +203,12 @@ def member_can_access_file(*, stored_file: StoredFile, member: User) -> bool:
 
     from apps.parcels.models import ParcelPhoto
 
-    return ParcelPhoto.objects.filter(file_id=stored_file.file_id, parcel__user=member).exists()
+    if ParcelPhoto.objects.filter(file_id=stored_file.file_id, parcel__user=member).exists():
+        return True
+
+    from apps.tickets.models import TicketMessage
+
+    return TicketMessage.objects.filter(file_id=stored_file.file_id, ticket__user=member).exists()
 
 
 def get_member_file(*, member: User, file_id: str) -> StoredFile:

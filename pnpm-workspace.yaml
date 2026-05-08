@@ -1,0 +1,5 @@
+packages:
+  - "admin-web"
+  - "user-web"
+  - "mobile-h5"
+  - "packages/*"

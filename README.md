@@ -8,7 +8,7 @@
 
 - 项目阶段：`P0_FOUNDATION`
 - 当前已完成：`INIT-001` 项目骨架和实施决策固化
-- 下一任务：`BE-002` 后台 IAM 和 RBAC
+- 下一任务：`BE-003` 用户和会员资料
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`

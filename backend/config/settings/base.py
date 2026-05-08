@@ -14,7 +14,10 @@ for env_file in (REPO_ROOT / ".env", BASE_DIR / ".env"):
     if env_file.exists():
         environ.Env.read_env(env_file)
 
-SECRET_KEY = env("DJANGO_SECRET_KEY", default="dev-secret-change-in-real-env")
+SECRET_KEY = env(
+    "DJANGO_SECRET_KEY",
+    default="dev-secret-change-in-real-env-please-keep-at-least-32-bytes",
+)
 DEBUG = env.bool("DJANGO_DEBUG", default=True)
 ALLOWED_HOSTS = env.list(
     "DJANGO_ALLOWED_HOSTS",
@@ -31,6 +34,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "apps.common",
+    "apps.iam",
 ]
 
 MIDDLEWARE = [

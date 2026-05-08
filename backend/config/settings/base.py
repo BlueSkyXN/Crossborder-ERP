@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "apps.members",
     "apps.warehouses",
     "apps.parcels",
+    "apps.waybills",
 ]
 
 MIDDLEWARE = [
@@ -113,6 +114,7 @@ SPECTACULAR_SETTINGS = {
         "UserStatusEnum": "apps.members.models.UserStatus",
         "ParcelStatusEnum": "apps.parcels.models.ParcelStatus",
         "UnclaimedParcelStatusEnum": "apps.parcels.models.UnclaimedParcelStatus",
+        "WaybillStatusEnum": "apps.waybills.models.WaybillStatus",
     },
 }
 

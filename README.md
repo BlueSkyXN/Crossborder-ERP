@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 项目阶段：`P4_PURCHASE`
-- 当前已完成：`FEM-002` 移动 H5 代购商品、购物车和订单
-- 下一任务：`E2E-001` 全链路端到端验收
+- 项目阶段：`P5_DELIVERY`
+- 当前已完成：`E2E-001` 全链路端到端验收
+- 下一任务：`DOC-001` 交付文档收口
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`
@@ -73,12 +73,59 @@ infra/          后续部署、Nginx、脚本
 当前后端、后台管理端和用户 Web 已具备基础开发入口。常用本地命令：
 
 ```bash
-cd backend && uv run python manage.py migrate
-cd backend && uv run python manage.py seed_demo
-cd backend && uv run python manage.py runserver
+(cd backend && uv run python manage.py migrate)
+(cd backend && uv run python manage.py seed_demo)
+(cd backend && uv run python manage.py runserver)
 pnpm --filter admin-web dev
 pnpm --filter user-web dev
 pnpm --filter mobile-h5 dev
 ```
 
 实际可运行命令以每个任务完成后的 README 更新为准。PostgreSQL/MySQL/Redis/Docker 相关配置在后续明确需要时再引入；在真实环境验证前只标记为配置兼容。
+
+## 端到端验收
+
+`E2E-001` 固化了 no-Docker、SQLite-first 的可重复验收命令：
+
+```bash
+npm run e2e
+```
+
+该命令会通过 `uv run pytest tests/e2e/test_p0_flow.py -s` 自动跑通：
+
+- 后台确认仓库、渠道、包装和增值服务 demo 配置。
+- 用户登录并读取专属仓库地址。
+- 用户提交包裹预报，后台扫描入库。
+- 用户申请打包，后台审核、设置费用、充值。
+- 用户余额支付，后台发货并添加轨迹。
+- 用户查询轨迹并确认收货到 `SIGNED`。
+- 用户提交手工代购，后台审核、采购、到货并转为 `Parcel.IN_STOCK`。
+- 代购转入包裹后继续申请打包创建运单。
+
+验收账号：
+
+| 类型 | 邮箱 | 密码 |
+| --- | --- | --- |
+| Admin | `admin@example.com` | `password123` |
+| Member | `user@example.com` | `password123` |
+
+如需浏览器手工复现三端界面，先启动后端和三端前端：
+
+```bash
+(cd backend && uv run python manage.py migrate)
+(cd backend && uv run python manage.py seed_demo)
+(cd backend && uv run python manage.py runserver)
+pnpm --filter admin-web dev
+pnpm --filter user-web dev
+pnpm --filter mobile-h5 dev
+```
+
+访问地址：
+
+| 端 | 地址 |
+| --- | --- |
+| Admin Web | `http://localhost:3001` |
+| User Web | `http://localhost:3002` |
+| Mobile H5 | `http://localhost:3003` |
+
+当前没有引入 Playwright 项目依赖；`npm run e2e` 先覆盖 API 级完整业务闭环，三端浏览器路径按上述启动命令和既有页面入口手工复现。若命令失败，脚本会打印阻塞提示，优先查看 pytest 断言和最近一次 API response body。

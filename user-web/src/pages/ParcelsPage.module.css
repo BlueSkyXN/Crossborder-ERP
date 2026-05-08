@@ -1,0 +1,469 @@
+.page {
+  min-height: 100vh;
+  padding: 24px;
+  color: #111827;
+}
+
+.header,
+.summaryGrid,
+.workspace {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.brand strong,
+.brand span {
+  display: block;
+}
+
+.brand span {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.backButton,
+.iconButton,
+.accountButton,
+.primaryButton,
+.packButton,
+.pagination button {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.backButton,
+.accountButton {
+  height: 40px;
+  padding: 0 14px;
+}
+
+.iconButton {
+  width: 40px;
+  height: 40px;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.summaryGrid article,
+.forecastCard,
+.listCard,
+.detailCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.summaryGrid article {
+  padding: 18px;
+}
+
+.summaryGrid span,
+.summaryGrid strong {
+  display: block;
+}
+
+.summaryGrid span {
+  color: #6b7280;
+}
+
+.summaryGrid strong {
+  margin-top: 6px;
+  font-size: 28px;
+}
+
+.alert,
+.notice {
+  max-width: 1180px;
+  margin: 0 auto 16px;
+  padding: 12px 14px;
+  border-radius: 6px;
+}
+
+.alert {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.notice {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr) 320px;
+  gap: 16px;
+  align-items: start;
+}
+
+.forecastCard,
+.listCard,
+.detailCard {
+  padding: 20px;
+}
+
+.sectionTitle,
+.listHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.sectionTitle h1,
+.sectionTitle h2,
+.listHeader h2 {
+  margin: 0 0 4px;
+}
+
+.sectionTitle p,
+.listHeader p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.forecastCard label {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.forecastCard input,
+.forecastCard select,
+.forecastCard textarea,
+.searchInput {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+}
+
+.forecastCard input,
+.forecastCard select,
+.searchInput {
+  height: 38px;
+  padding: 0 10px;
+}
+
+.forecastCard textarea {
+  padding: 10px;
+  resize: vertical;
+}
+
+.inlineFields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px;
+  gap: 10px;
+}
+
+.primaryButton,
+.packButton {
+  height: 40px;
+  padding: 0 14px;
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.primaryButton {
+  width: 100%;
+}
+
+.primaryButton:disabled,
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.searchInput {
+  max-width: 260px;
+}
+
+.statusTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.statusTabs button {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #374151;
+}
+
+.statusTabs .activeTab {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 900;
+}
+
+.empty {
+  padding: 28px;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #6b7280;
+  text-align: center;
+}
+
+.parcelList {
+  display: grid;
+  gap: 10px;
+}
+
+.parcelRow {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.parcelRow button {
+  width: 100%;
+  min-height: 68px;
+  padding: 12px;
+  border: 0;
+  background: transparent;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(120px, 0.6fr) 110px;
+  gap: 12px;
+  align-items: center;
+  color: #111827;
+  text-align: left;
+}
+
+.parcelRow strong,
+.parcelRow small {
+  display: block;
+}
+
+.parcelRow small {
+  margin-top: 3px;
+  color: #6b7280;
+}
+
+.selectedRow {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 84px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.info {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.muted {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.pagination button {
+  height: 34px;
+  padding: 0 12px;
+}
+
+.detailList {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.detailList div {
+  padding: 10px;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+.detailList dt {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.detailList dd {
+  margin: 4px 0 0;
+  font-weight: 900;
+}
+
+.detailBlock {
+  margin-top: 16px;
+}
+
+.detailBlock h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.detailBlock p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.detailBlock ul {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.detailBlock li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+.photoTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.photoTags span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.packButton {
+  width: 100%;
+  margin-top: 18px;
+}
+
+@media (max-width: 1080px) {
+  .workspace {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .forecastCard {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 780px) {
+  .page {
+    padding: 16px;
+  }
+
+  .header,
+  .listHeader {
+    flex-direction: column;
+  }
+
+  .headerActions,
+  .backButton,
+  .accountButton,
+  .searchInput {
+    width: 100%;
+  }
+
+  .summaryGrid,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .forecastCard {
+    grid-column: auto;
+  }
+
+  .parcelRow button {
+    grid-template-columns: 1fr;
+  }
+}

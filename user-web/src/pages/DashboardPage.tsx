@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 
 import { fetchMe } from "../features/auth/api";
 import { useAuthStore } from "../features/auth/store";
+import { fetchPurchaseOrders } from "../features/purchases/api";
 import { fetchWarehouseAddress, fetchWarehouses } from "../features/warehouses/api";
 import { fetchWallet, fetchWaybills } from "../features/waybills/api";
 import styles from "./DashboardPage.module.css";
@@ -57,6 +58,10 @@ export function DashboardPage() {
   const waybillsQuery = useQuery({
     queryKey: ["member", "waybills"],
     queryFn: fetchWaybills,
+  });
+  const purchaseOrdersQuery = useQuery({
+    queryKey: ["member", "purchase-orders"],
+    queryFn: fetchPurchaseOrders,
   });
   const walletQuery = useQuery({
     queryKey: ["member", "wallet"],
@@ -106,15 +111,30 @@ export function DashboardPage() {
   };
 
   const user = meQuery.data ?? persistedUser;
-  const hasError = meQuery.isError || warehousesQuery.isError || addressQuery.isError || waybillsQuery.isError || walletQuery.isError;
+  const hasError =
+    meQuery.isError ||
+    warehousesQuery.isError ||
+    addressQuery.isError ||
+    waybillsQuery.isError ||
+    purchaseOrdersQuery.isError ||
+    walletQuery.isError;
   const isLoading = meQuery.isLoading || warehousesQuery.isLoading || addressQuery.isLoading;
   const waybills = waybillsQuery.data ?? [];
+  const purchaseOrders = purchaseOrdersQuery.data ?? [];
   const pendingPaymentWaybills = waybills.filter((waybill) => waybill.status === "PENDING_PAYMENT");
+  const pendingPaymentPurchases = purchaseOrders.filter((order) => order.status === "PENDING_PAYMENT");
   const statusEntries = [
     { label: "待预报包裹", value: 0, icon: <InboxOutlined /> },
     { label: "待打包运单", value: waybills.filter((waybill) => waybill.status === "PENDING_PACKING").length, icon: <TruckOutlined /> },
-    { label: "待支付金额", value: `¥${pendingPaymentWaybills.reduce((total, waybill) => total + Number(waybill.fee_total || 0), 0).toFixed(2)}`, icon: <WalletOutlined /> },
-    { label: "代购订单", value: 0, icon: <ShoppingCartOutlined /> },
+    {
+      label: "待支付金额",
+      value: `¥${(
+        pendingPaymentWaybills.reduce((total, waybill) => total + Number(waybill.fee_total || 0), 0) +
+        pendingPaymentPurchases.reduce((total, order) => total + Number(order.total_amount || 0), 0)
+      ).toFixed(2)}`,
+      icon: <WalletOutlined />,
+    },
+    { label: "代购订单", value: purchaseOrders.length, icon: <ShoppingCartOutlined /> },
   ];
 
   return (
@@ -138,6 +158,10 @@ export function DashboardPage() {
             <button type="button" onClick={() => navigate("/waybills")}>
               <TruckOutlined />
               运单中心
+            </button>
+            <button type="button" onClick={() => navigate("/products")}>
+              <ShoppingCartOutlined />
+              商品代购
             </button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { DotLoading, Empty, ErrorBlock, Tabs } from "antd-mobile";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { fetchMe } from "../features/auth/api";
 import { useAuthStore } from "../features/auth/store";
@@ -23,6 +24,7 @@ function copyWithTextarea(value: string) {
 }
 
 export function ShipHomePage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const persistedUser = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
@@ -30,7 +32,6 @@ export function ShipHomePage() {
   const [mode, setMode] = useState<ShipMode>("consolidation");
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
-  const [actionNotice, setActionNotice] = useState("");
 
   const meQuery = useQuery({
     queryKey: ["mobile", "member", "me"],
@@ -80,11 +81,6 @@ export function ShipHomePage() {
   const handleLogout = () => {
     logout();
     queryClient.clear();
-  };
-
-  const showPendingNotice = () => {
-    setActionNotice("后续接入");
-    window.setTimeout(() => setActionNotice(""), 8000);
   };
 
   const user = meQuery.data ?? persistedUser;
@@ -202,11 +198,10 @@ export function ShipHomePage() {
       </section>
 
       <div className={styles.actionBar}>
-        {actionNotice && <div className={styles.actionNotice}>{actionNotice}</div>}
-        <button type="button" className={styles.secondary} onClick={showPendingNotice}>
+        <button type="button" className={styles.secondary} onClick={() => navigate("/ship/parcels")}>
           申请打包
         </button>
-        <button type="button" className={styles.primary} onClick={showPendingNotice}>
+        <button type="button" className={styles.primary} onClick={() => navigate("/ship/forecast")}>
           发布预报
         </button>
       </div>

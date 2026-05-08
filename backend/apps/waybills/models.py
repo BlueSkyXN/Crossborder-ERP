@@ -14,6 +14,12 @@ class WaybillStatus(models.TextChoices):
     PROBLEM = "PROBLEM", "问题单"
 
 
+class TrackingEventSource(models.TextChoices):
+    MANUAL = "MANUAL", "人工"
+    MEMBER = "MEMBER", "会员"
+    SYSTEM = "SYSTEM", "系统"
+
+
 class Waybill(models.Model):
     waybill_no = models.CharField(max_length=30, unique=True)
     user = models.ForeignKey("members.User", on_delete=models.PROTECT, related_name="waybills")
@@ -79,3 +85,24 @@ class WaybillParcel(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["waybill", "parcel"], name="uq_waybill_parcel_once"),
         ]
+
+
+class TrackingEvent(models.Model):
+    waybill = models.ForeignKey(Waybill, on_delete=models.CASCADE, related_name="tracking_events")
+    event_time = models.DateTimeField()
+    location = models.CharField(max_length=120, blank=True)
+    status_text = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    source = models.CharField(max_length=30, choices=TrackingEventSource.choices, default=TrackingEventSource.MANUAL)
+    operator = models.ForeignKey(
+        "iam.AdminUser",
+        on_delete=models.PROTECT,
+        related_name="tracking_events",
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "tracking_events"
+        ordering = ["event_time", "id"]

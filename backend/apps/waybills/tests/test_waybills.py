@@ -3,15 +3,17 @@ from decimal import Decimal
 import pytest
 from django.urls import reverse
 
+from apps.finance.services import admin_recharge, pay_with_wallet
+from apps.iam.models import AdminUser
 from apps.iam.services import seed_iam_demo_data
 from apps.members.models import User
-from apps.members.services import seed_member_demo_data
+from apps.members.services import register_user, seed_member_demo_data
 from apps.parcels.models import Parcel, ParcelStatus
 from apps.parcels.services import forecast_parcel, inbound_parcel
 from apps.warehouses.models import ShippingChannel, Warehouse
 from apps.warehouses.services import seed_warehouse_demo_data
-from apps.waybills.models import Waybill, WaybillStatus
-from apps.waybills.services import cancel_waybill
+from apps.waybills.models import TrackingEvent, Waybill, WaybillStatus
+from apps.waybills.services import cancel_waybill, create_waybill, review_waybill, set_waybill_fee
 
 
 @pytest.fixture
@@ -44,6 +46,30 @@ def create_in_stock_parcel(tracking_no="WB10001"):
     warehouse = Warehouse.objects.get(code="SZ")
     parcel = forecast_parcel(user=user, warehouse=warehouse, tracking_no=tracking_no)
     return inbound_parcel(parcel=parcel, operator=None, weight_kg=Decimal("1.250"))
+
+
+def create_paid_waybill(tracking_no="WBPAID10001"):
+    user = User.objects.get(email="user@example.com")
+    operator = AdminUser.objects.get(email="warehouse@example.com")
+    finance_operator = AdminUser.objects.get(email="finance@example.com")
+    parcel = create_in_stock_parcel(tracking_no)
+    waybill = create_waybill(
+        user=user,
+        parcel_ids=[parcel.id],
+        channel=ShippingChannel.objects.get(code="TEST_AIR"),
+        destination_country="US",
+        recipient_snapshot={
+            "name": "Tracking Receiver",
+            "phone": "15500000000",
+            "address": "100 Tracking Street",
+            "postal_code": "90001",
+        },
+    )
+    reviewed = review_waybill(waybill=waybill, operator=operator)
+    fee_set = set_waybill_fee(waybill=reviewed, operator=operator, fee_total=Decimal("18.00"))
+    admin_recharge(user=user, operator=finance_operator, amount=Decimal("50.00"))
+    result = pay_with_wallet(waybill=fee_set, user=user, idempotency_key=f"pay-{tracking_no}")
+    return result.waybill
 
 
 def waybill_payload(parcel_id: int):
@@ -219,3 +245,108 @@ def test_cancel_waybill_restores_requested_parcels(seeded_waybills):
     assert cancelled.status == WaybillStatus.CANCELLED
     parcel.refresh_from_db()
     assert parcel.status == ParcelStatus.IN_STOCK
+
+
+def test_admin_ship_waybill_creates_tracking_and_marks_parcels_outbound(client, seeded_waybills):
+    waybill = create_paid_waybill("WBTRACK10001")
+    token = admin_token(client)
+
+    response = client.post(
+        reverse("admin-waybill-ship", kwargs={"waybill_id": waybill.id}),
+        {
+            "status_text": "已从仓库发出",
+            "location": "深圳仓",
+            "description": "人工发货验收",
+        },
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["status"] == WaybillStatus.SHIPPED
+    assert data["tracking_events"][0]["status_text"] == "已从仓库发出"
+    assert data["tracking_events"][0]["location"] == "深圳仓"
+    assert TrackingEvent.objects.filter(waybill_id=waybill.id).count() == 1
+    parcel = waybill.parcel_links.first().parcel
+    parcel.refresh_from_db()
+    assert parcel.status == ParcelStatus.OUTBOUND
+
+
+def test_member_can_query_tracking_and_confirm_receipt(client, seeded_waybills):
+    waybill = create_paid_waybill("WBTRACK10002")
+    token = admin_token(client)
+    client.post(
+        reverse("admin-waybill-ship", kwargs={"waybill_id": waybill.id}),
+        {"status_text": "已揽收", "location": "深圳"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    member = member_token(client)
+
+    list_response = client.get(
+        reverse("waybill-tracking-event-list", kwargs={"waybill_id": waybill.id}),
+        HTTP_AUTHORIZATION=f"Bearer {member}",
+    )
+    assert list_response.status_code == 200
+    assert list_response.json()["data"]["items"][0]["status_text"] == "已揽收"
+
+    query_response = client.get(
+        f"{reverse('waybill-tracking-query')}?waybill_no={waybill.waybill_no}",
+        HTTP_AUTHORIZATION=f"Bearer {member}",
+    )
+    assert query_response.status_code == 200
+    assert query_response.json()["data"]["waybill"]["waybill_no"] == waybill.waybill_no
+
+    receipt_response = client.post(
+        reverse("waybill-confirm-receipt", kwargs={"waybill_id": waybill.id}),
+        {"description": "用户确认收货"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {member}",
+    )
+    assert receipt_response.status_code == 200
+    assert receipt_response.json()["data"]["status"] == WaybillStatus.SIGNED
+    assert [event.status_text for event in TrackingEvent.objects.filter(waybill=waybill)] == ["已揽收", "已签收"]
+
+
+def test_tracking_query_does_not_expose_other_users_waybill(client, seeded_waybills):
+    other_user = register_user("tracking-other@example.com", "password123")
+    warehouse = Warehouse.objects.get(code="SZ")
+    other_parcel = forecast_parcel(user=other_user, warehouse=warehouse, tracking_no="WBTRACKOTHER")
+    inbound_parcel(parcel=other_parcel, operator=None, weight_kg=Decimal("1.000"))
+    other_waybill = create_waybill(
+        user=other_user,
+        parcel_ids=[other_parcel.id],
+        destination_country="US",
+        recipient_snapshot={"name": "Other Receiver"},
+    )
+
+    response = client.get(
+        f"{reverse('waybill-tracking-query')}?waybill_no={other_waybill.waybill_no}",
+        HTTP_AUTHORIZATION=f"Bearer {member_token(client)}",
+    )
+
+    assert response.status_code == 404
+    assert response.json()["code"] == "NOT_FOUND"
+
+
+def test_ship_requires_pending_shipment(client, seeded_waybills):
+    parcel = create_in_stock_parcel("WBTRACK10003")
+    user_token = member_token(client)
+    create_response = client.post(
+        reverse("waybill-list"),
+        waybill_payload(parcel.id),
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {user_token}",
+    )
+    waybill_id = create_response.json()["data"]["id"]
+
+    response = client.post(
+        reverse("admin-waybill-ship", kwargs={"waybill_id": waybill_id}),
+        {"status_text": "提前发货"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {admin_token(client)}",
+    )
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "STATE_CONFLICT"

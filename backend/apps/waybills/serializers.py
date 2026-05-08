@@ -3,7 +3,26 @@ from rest_framework import serializers
 from apps.parcels.models import Parcel
 from apps.warehouses.models import ConfigStatus, ShippingChannel
 
-from .models import Waybill, WaybillParcel
+from .models import TrackingEvent, Waybill, WaybillParcel
+
+
+class TrackingEventSerializer(serializers.ModelSerializer):
+    operator_name = serializers.CharField(source="operator.name", read_only=True, allow_null=True)
+
+    class Meta:
+        model = TrackingEvent
+        fields = [
+            "id",
+            "waybill",
+            "event_time",
+            "location",
+            "status_text",
+            "description",
+            "source",
+            "operator_name",
+            "created_at",
+        ]
+        read_only_fields = fields
 
 
 class WaybillParcelSerializer(serializers.ModelSerializer):
@@ -32,6 +51,7 @@ class WaybillSerializer(serializers.ModelSerializer):
     reviewed_by_name = serializers.CharField(source="reviewed_by.name", read_only=True, allow_null=True)
     fee_set_by_name = serializers.CharField(source="fee_set_by.name", read_only=True, allow_null=True)
     parcels = WaybillParcelSerializer(source="parcel_links", many=True, read_only=True)
+    tracking_events = TrackingEventSerializer(many=True, read_only=True)
 
     class Meta:
         model = Waybill
@@ -60,6 +80,7 @@ class WaybillSerializer(serializers.ModelSerializer):
             "shipped_at",
             "signed_at",
             "parcels",
+            "tracking_events",
             "created_at",
             "updated_at",
         ]
@@ -101,3 +122,21 @@ class WaybillFeeSerializer(serializers.Serializer):
     fee_total = serializers.DecimalField(max_digits=10, decimal_places=2)
     fee_detail_json = serializers.DictField(required=False, allow_empty=True)
     fee_remark = serializers.CharField(required=False, allow_blank=True)
+
+
+class WaybillShipSerializer(serializers.Serializer):
+    status_text = serializers.CharField(max_length=120, required=False, default="已发货")
+    location = serializers.CharField(max_length=120, required=False, allow_blank=True)
+    description = serializers.CharField(required=False, allow_blank=True)
+    event_time = serializers.DateTimeField(required=False, allow_null=True)
+
+
+class TrackingEventCreateSerializer(serializers.Serializer):
+    status_text = serializers.CharField(max_length=120)
+    location = serializers.CharField(max_length=120, required=False, allow_blank=True)
+    description = serializers.CharField(required=False, allow_blank=True)
+    event_time = serializers.DateTimeField(required=False, allow_null=True)
+
+
+class ConfirmReceiptSerializer(serializers.Serializer):
+    description = serializers.CharField(required=False, allow_blank=True)

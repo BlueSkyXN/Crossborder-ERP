@@ -5,6 +5,8 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework import exceptions
 
+from apps.files.models import FileUsage
+from apps.files.services import assert_admin_files_usable
 from apps.iam.models import AdminUser
 from apps.members.models import User
 from apps.warehouses.models import ConfigStatus, Warehouse
@@ -91,6 +93,11 @@ def _inbound_pending_parcel(
 ) -> Parcel:
     if parcel.status != ParcelStatus.PENDING_INBOUND:
         raise StateConflictError("包裹当前状态不允许入库")
+    normalized_photo_file_ids = assert_admin_files_usable(
+        file_ids=photo_file_ids,
+        allowed_usages={FileUsage.PARCEL_PHOTO},
+        field_name="photo_file_ids",
+    )
 
     parcel.status = ParcelStatus.IN_STOCK
     parcel.weight_kg = weight_kg
@@ -116,7 +123,7 @@ def _inbound_pending_parcel(
         dimensions_json=_dimensions_json(length_cm, width_cm, height_cm),
         remark=remark,
     )
-    for file_id in dict.fromkeys(file_id.strip() for file_id in photo_file_ids or [] if file_id.strip()):
+    for file_id in normalized_photo_file_ids:
         ParcelPhoto.objects.create(parcel=parcel, file_id=file_id, photo_type=PhotoType.INBOUND)
     return parcel
 

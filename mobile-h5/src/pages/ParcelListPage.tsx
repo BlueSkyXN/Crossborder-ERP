@@ -188,7 +188,7 @@ export function ParcelListPage() {
             ) : (
               <div className={styles.photos}>
                 {selectedParcel.photos.map((photo) => (
-                  <span key={photo.id}>{photo.file_id}</span>
+                  <span key={photo.id}>{photo.file_name || photo.file_id}</span>
                 ))}
               </div>
             )}

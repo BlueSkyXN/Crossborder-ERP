@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 项目阶段：`P5_DELIVERY`
-- 当前已完成：`DOC-001` 交付文档、部署说明、演示脚本
-- 下一任务：无；进入验收和下一阶段规划
+- 项目阶段：`P6_PRODUCTION_GAP`
+- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务
+- 下一任务：`FIN-001` 线下汇款与财务中心
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`
@@ -212,5 +212,5 @@ pnpm --filter mobile-h5 dev
 - 真实在线支付、支付回调、退款、汇款审核不在 P0 范围；当前使用后台人工充值和余额支付。
 - 自动采购、商品链接解析、外部电商抓取不在 P0 范围；当前支持自营商品和手工代购。
 - PostgreSQL/MySQL/Redis/Celery/Docker 均未真实验证，不能作为生产可用结论。
-- 文件上传、对象存储、图片访问控制、打印模板和硬件接入后续补齐。
+- 本地文件上传、元数据、鉴权下载和包裹图片引用已完成；对象存储、缩略图、文件安全扫描、打印模板和硬件接入后续补齐。
 - 复杂运费公式、首发国家/渠道、验证码、找回密码、多语言等保留 `TODO_CONFIRM`。

@@ -159,3 +159,8 @@ tasks:
     file: tasks/FILE-001.md
     depends_on: [ADDR-001]
     next: FIN-001
+  - id: FIN-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/FIN-001.md
+    depends_on: [FILE-001]
+    next: MSG-001

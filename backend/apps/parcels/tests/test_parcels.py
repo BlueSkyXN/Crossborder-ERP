@@ -1,6 +1,9 @@
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
 
+from apps.files.models import FileUsage
 from apps.iam.services import seed_iam_demo_data
 from apps.members.services import register_user, seed_member_demo_data
 from apps.parcels.models import InboundRecord, Parcel, ParcelPhoto, ParcelStatus, UnclaimedParcel
@@ -34,6 +37,19 @@ def admin_token(client, email="admin@example.com"):
     return response.json()["data"]["access_token"]
 
 
+def upload_admin_parcel_photo(client, token, name="inbound-photo.jpg"):
+    response = client.post(
+        reverse("admin-file-list"),
+        {
+            "usage": FileUsage.PARCEL_PHOTO,
+            "file": SimpleUploadedFile(name, b"inbound-photo", content_type="image/jpeg"),
+        },
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert response.status_code == 201
+    return response.json()["data"]
+
+
 def test_member_forecast_creates_pending_inbound_parcel(client, seeded_parcels):
     warehouse = Warehouse.objects.get(code="SZ")
     token = member_token(client)
@@ -65,11 +81,13 @@ def test_member_forecast_creates_pending_inbound_parcel(client, seeded_parcels):
     assert data["items"][0]["name"] == "T-shirt"
 
 
+@override_settings(MEDIA_ROOT="/tmp/crossborder-erp-test-media")
 def test_admin_inbound_moves_parcel_to_in_stock(client, seeded_parcels):
     warehouse = Warehouse.objects.get(code="SZ")
     user = register_user("inbound-user@example.com", "password123")
     parcel = forecast_parcel(user=user, warehouse=warehouse, tracking_no="SF10002")
     token = admin_token(client)
+    uploaded = upload_admin_parcel_photo(client, token)
 
     response = client.post(
         reverse("admin-parcel-inbound", kwargs={"parcel_id": parcel.id}),
@@ -78,7 +96,7 @@ def test_admin_inbound_moves_parcel_to_in_stock(client, seeded_parcels):
             "length_cm": "20.00",
             "width_cm": "10.00",
             "height_cm": "8.00",
-            "photo_file_ids": ["inbound-photo-001"],
+            "photo_file_ids": [uploaded["file_id"]],
         },
         content_type="application/json",
         HTTP_AUTHORIZATION=f"Bearer {token}",
@@ -88,9 +106,10 @@ def test_admin_inbound_moves_parcel_to_in_stock(client, seeded_parcels):
     body = response.json()
     assert body["data"]["status"] == ParcelStatus.IN_STOCK
     assert body["data"]["weight_kg"] == "1.250"
-    assert body["data"]["photos"][0]["file_id"] == "inbound-photo-001"
+    assert body["data"]["photos"][0]["file_id"] == uploaded["file_id"]
+    assert body["data"]["photos"][0]["file_name"] == "inbound-photo.jpg"
     assert InboundRecord.objects.filter(parcel=parcel).exists()
-    assert ParcelPhoto.objects.filter(parcel=parcel, file_id="inbound-photo-001").exists()
+    assert ParcelPhoto.objects.filter(parcel=parcel, file_id=uploaded["file_id"]).exists()
 
     packable = client.get(
         reverse("parcel-packable-list"),
@@ -98,6 +117,31 @@ def test_admin_inbound_moves_parcel_to_in_stock(client, seeded_parcels):
     )
     assert packable.status_code == 200
     assert packable.json()["data"]["items"][0]["id"] == parcel.id
+
+    member_download = client.get(
+        reverse("file-download", kwargs={"file_id": uploaded["file_id"]}),
+        HTTP_AUTHORIZATION=f"Bearer {member_token(client, email='inbound-user@example.com')}",
+    )
+    assert member_download.status_code == 200
+
+
+@override_settings(MEDIA_ROOT="/tmp/crossborder-erp-test-media")
+def test_admin_inbound_rejects_unknown_photo_file_id(client, seeded_parcels):
+    warehouse = Warehouse.objects.get(code="SZ")
+    user = register_user("bad-photo-user@example.com", "password123")
+    parcel = forecast_parcel(user=user, warehouse=warehouse, tracking_no="SF10002-BAD")
+    token = admin_token(client)
+
+    response = client.post(
+        reverse("admin-parcel-inbound", kwargs={"parcel_id": parcel.id}),
+        {"weight_kg": "1.250", "photo_file_ids": ["missing-file"]},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 400
+    assert response.json()["code"] == "VALIDATION_ERROR"
+    assert not ParcelPhoto.objects.filter(parcel=parcel).exists()
 
 
 def test_duplicate_inbound_returns_state_conflict(client, seeded_parcels):

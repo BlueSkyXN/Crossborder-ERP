@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db import IntegrityError
 from django.db.models import Prefetch
 from rest_framework import exceptions
 
@@ -63,6 +64,154 @@ def update_cart_item(*, cart_item: CartItem, quantity: int) -> CartItem:
 @transaction.atomic
 def delete_cart_item(*, cart_item: CartItem) -> None:
     CartItem.objects.filter(id=cart_item.id).delete()
+
+
+def get_admin_categories():
+    return ProductCategory.objects.select_related("parent").all()
+
+
+def get_admin_products():
+    return Product.objects.select_related("category").prefetch_related("skus").all()
+
+
+def get_admin_skus():
+    return ProductSku.objects.select_related("product", "product__category").all()
+
+
+@transaction.atomic
+def create_product_category(*, parent: ProductCategory | None = None, name: str, sort_order: int = 0, status: str = CatalogStatus.ACTIVE) -> ProductCategory:
+    return ProductCategory.objects.create(parent=parent, name=name, sort_order=sort_order, status=status)
+
+
+@transaction.atomic
+def update_product_category(
+    *,
+    category: ProductCategory,
+    parent: ProductCategory | None = None,
+    name: str,
+    sort_order: int = 0,
+    status: str = CatalogStatus.ACTIVE,
+) -> ProductCategory:
+    locked = ProductCategory.objects.select_for_update().get(id=category.id)
+    if parent and parent.id == locked.id:
+        raise exceptions.ValidationError({"parent_id": ["分类不能选择自己作为上级"]})
+    locked.parent = parent
+    locked.name = name
+    locked.sort_order = sort_order
+    locked.status = status
+    locked.save(update_fields=["parent", "name", "sort_order", "status", "updated_at"])
+    return locked
+
+
+@transaction.atomic
+def disable_product_category(*, category: ProductCategory) -> ProductCategory:
+    locked = ProductCategory.objects.select_for_update().get(id=category.id)
+    locked.status = CatalogStatus.DISABLED
+    locked.save(update_fields=["status", "updated_at"])
+    return locked
+
+
+@transaction.atomic
+def create_product(
+    *,
+    category: ProductCategory | None = None,
+    title: str,
+    description: str = "",
+    status: str = CatalogStatus.ACTIVE,
+    main_image_file_id: str = "",
+) -> Product:
+    return Product.objects.create(
+        category=category,
+        title=title,
+        description=description,
+        status=status,
+        main_image_file_id=main_image_file_id,
+    )
+
+
+@transaction.atomic
+def update_product(
+    *,
+    product: Product,
+    category: ProductCategory | None = None,
+    title: str,
+    description: str = "",
+    status: str = CatalogStatus.ACTIVE,
+    main_image_file_id: str = "",
+) -> Product:
+    locked = Product.objects.select_for_update().get(id=product.id)
+    locked.category = category
+    locked.title = title
+    locked.description = description
+    locked.status = status
+    locked.main_image_file_id = main_image_file_id
+    locked.save(update_fields=["category", "title", "description", "status", "main_image_file_id", "updated_at"])
+    return Product.objects.select_related("category").prefetch_related("skus").get(id=locked.id)
+
+
+@transaction.atomic
+def disable_product(*, product: Product) -> Product:
+    locked = Product.objects.select_for_update().get(id=product.id)
+    locked.status = CatalogStatus.DISABLED
+    locked.save(update_fields=["status", "updated_at"])
+    ProductSku.objects.filter(product=locked).update(status=CatalogStatus.DISABLED)
+    return Product.objects.select_related("category").prefetch_related("skus").get(id=locked.id)
+
+
+@transaction.atomic
+def create_product_sku(
+    *,
+    product: Product,
+    sku_code: str,
+    spec_json: dict | None = None,
+    price,
+    stock: int = 0,
+    status: str = CatalogStatus.ACTIVE,
+) -> ProductSku:
+    try:
+        return ProductSku.objects.create(
+            product=product,
+            sku_code=sku_code,
+            spec_json=spec_json or {},
+            price=price,
+            stock=stock,
+            status=status,
+        )
+    except IntegrityError as exc:
+        raise exceptions.ValidationError({"sku_code": ["SKU 编码已存在"]}) from exc
+
+
+@transaction.atomic
+def update_product_sku(
+    *,
+    sku: ProductSku,
+    product: Product,
+    sku_code: str,
+    spec_json: dict | None = None,
+    price,
+    stock: int = 0,
+    status: str = CatalogStatus.ACTIVE,
+) -> ProductSku:
+    locked = ProductSku.objects.select_for_update().get(id=sku.id)
+    locked.product = product
+    locked.sku_code = sku_code
+    locked.spec_json = spec_json or {}
+    locked.price = price
+    locked.stock = stock
+    locked.status = status
+    try:
+        locked.save(update_fields=["product", "sku_code", "spec_json", "price", "stock", "status", "updated_at"])
+    except IntegrityError as exc:
+        raise exceptions.ValidationError({"sku_code": ["SKU 编码已存在"]}) from exc
+    return ProductSku.objects.select_related("product", "product__category").get(id=locked.id)
+
+
+@transaction.atomic
+def disable_product_sku(*, sku: ProductSku) -> ProductSku:
+    locked = ProductSku.objects.select_for_update().get(id=sku.id)
+    locked.status = CatalogStatus.DISABLED
+    locked.save(update_fields=["status", "updated_at"])
+    return ProductSku.objects.select_related("product", "product__category").get(id=locked.id)
 
 
 @transaction.atomic

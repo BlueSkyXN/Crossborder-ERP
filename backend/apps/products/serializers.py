@@ -13,9 +13,22 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 
 
 class ProductSkuSerializer(serializers.ModelSerializer):
+    product_title = serializers.CharField(source="product.title", read_only=True)
+
     class Meta:
         model = ProductSku
-        fields = ["id", "sku_code", "spec_json", "price", "stock", "status", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "product",
+            "product_title",
+            "sku_code",
+            "spec_json",
+            "price",
+            "stock",
+            "status",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = fields
 
 
@@ -88,3 +101,42 @@ class CartItemCreateSerializer(serializers.Serializer):
 
 class CartItemUpdateSerializer(serializers.Serializer):
     quantity = serializers.IntegerField(min_value=1)
+
+
+class ProductCategoryInputSerializer(serializers.Serializer):
+    parent_id = serializers.PrimaryKeyRelatedField(
+        queryset=ProductCategory.objects.all(),
+        source="parent",
+        required=False,
+        allow_null=True,
+    )
+    name = serializers.CharField(max_length=120)
+    sort_order = serializers.IntegerField(min_value=0, required=False, default=0)
+    status = serializers.ChoiceField(choices=CatalogStatus.choices, required=False, default=CatalogStatus.ACTIVE)
+
+
+class ProductInputSerializer(serializers.Serializer):
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=ProductCategory.objects.all(),
+        source="category",
+        required=False,
+        allow_null=True,
+    )
+    title = serializers.CharField(max_length=160)
+    description = serializers.CharField(required=False, allow_blank=True)
+    status = serializers.ChoiceField(choices=CatalogStatus.choices, required=False, default=CatalogStatus.ACTIVE)
+    main_image_file_id = serializers.CharField(max_length=120, required=False, allow_blank=True)
+
+
+class ProductSkuInputSerializer(serializers.Serializer):
+    product_id = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), source="product")
+    sku_code = serializers.CharField(max_length=80)
+    spec_json = serializers.DictField(required=False, allow_empty=True)
+    price = serializers.DecimalField(max_digits=12, decimal_places=2)
+    stock = serializers.IntegerField(min_value=0, required=False, default=0)
+    status = serializers.ChoiceField(choices=CatalogStatus.choices, required=False, default=CatalogStatus.ACTIVE)
+
+    def validate_price(self, value):
+        if value < 0:
+            raise serializers.ValidationError("价格不能为负数")
+        return value

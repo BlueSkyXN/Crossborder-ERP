@@ -351,6 +351,46 @@ def mark_purchase_order_arrived(
 
 
 @transaction.atomic
+def mark_purchase_order_exception(
+    *,
+    purchase_order: PurchaseOrder,
+    operator: AdminUser,
+    remark: str = "",
+) -> PurchaseOrder:
+    locked = PurchaseOrder.objects.select_for_update().get(id=purchase_order.id)
+    if locked.status not in {
+        PurchaseOrderStatus.PENDING_REVIEW,
+        PurchaseOrderStatus.PENDING_PROCUREMENT,
+        PurchaseOrderStatus.PROCURED,
+    }:
+        raise StateConflictError("代购订单当前状态不允许标记异常")
+    task, _ = ProcurementTask.objects.select_for_update().get_or_create(purchase_order=locked)
+    task.assignee = task.assignee or operator
+    task.remark = remark
+    task.save(update_fields=["assignee", "remark", "updated_at"])
+    locked.status = PurchaseOrderStatus.EXCEPTION
+    locked.review_remark = remark or locked.review_remark
+    locked.save(update_fields=["status", "review_remark", "updated_at"])
+    return get_purchase_order_for_output(locked.id)
+
+
+@transaction.atomic
+def cancel_purchase_order(*, purchase_order: PurchaseOrder, reason: str = "") -> PurchaseOrder:
+    locked = PurchaseOrder.objects.select_for_update().get(id=purchase_order.id)
+    if locked.status not in {PurchaseOrderStatus.PENDING_PAYMENT, PurchaseOrderStatus.EXCEPTION}:
+        raise StateConflictError("代购订单当前状态不允许取消")
+    locked.status = PurchaseOrderStatus.CANCELLED
+    locked.review_remark = reason or locked.review_remark
+    locked.save(update_fields=["status", "review_remark", "updated_at"])
+    task = getattr(locked, "procurement_task", None)
+    if task:
+        task.status = ProcurementTaskStatus.CANCELLED
+        task.remark = reason or task.remark
+        task.save(update_fields=["status", "remark", "updated_at"])
+    return get_purchase_order_for_output(locked.id)
+
+
+@transaction.atomic
 def convert_purchase_order_to_parcel(
     *,
     purchase_order: PurchaseOrder,

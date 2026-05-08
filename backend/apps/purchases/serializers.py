@@ -165,6 +165,14 @@ class PurchaseArrivedSerializer(serializers.Serializer):
     remark = serializers.CharField(max_length=255, required=False, allow_blank=True)
 
 
+class PurchaseExceptionSerializer(serializers.Serializer):
+    remark = serializers.CharField(max_length=255, required=False, allow_blank=True)
+
+
+class PurchaseCancelSerializer(serializers.Serializer):
+    reason = serializers.CharField(max_length=255, required=False, allow_blank=True)
+
+
 class PurchaseConvertToParcelSerializer(serializers.Serializer):
     warehouse_id = serializers.PrimaryKeyRelatedField(
         queryset=Warehouse.objects.filter(status=ConfigStatus.ACTIVE),

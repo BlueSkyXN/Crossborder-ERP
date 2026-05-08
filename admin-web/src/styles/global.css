@@ -206,6 +206,14 @@ body {
   width: 100%;
 }
 
+.config-page {
+  width: 100%;
+}
+
+.filter-bar {
+  max-width: 360px;
+}
+
 .page-heading {
   display: flex;
   align-items: flex-start;

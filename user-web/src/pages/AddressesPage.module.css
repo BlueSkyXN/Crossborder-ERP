@@ -1,0 +1,311 @@
+.page {
+  min-height: 100vh;
+  padding: 24px;
+  color: #111827;
+}
+
+.header,
+.workspace,
+.notice,
+.alert {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.brand strong,
+.brand span {
+  display: block;
+}
+
+.brand span {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.backButton,
+.iconButton,
+.primaryButton,
+.formActions button,
+.addressHead button,
+.cardActions button {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.backButton,
+.primaryButton,
+.formActions button {
+  height: 40px;
+  padding: 0 14px;
+}
+
+.iconButton {
+  width: 40px;
+  height: 40px;
+}
+
+.notice,
+.alert {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 6px;
+}
+
+.notice {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.alert {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.formPanel,
+.listPanel,
+.addressCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.formPanel,
+.listPanel {
+  padding: 20px;
+}
+
+.sectionTitle,
+.listHeader,
+.addressHead,
+.cardActions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sectionTitle,
+.listHeader {
+  margin-bottom: 16px;
+}
+
+.sectionTitle h1,
+.listHeader h2 {
+  margin: 0 0 4px;
+}
+
+.sectionTitle p,
+.listHeader p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.formPanel label {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.formPanel input,
+.formPanel textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+}
+
+.formPanel input {
+  height: 38px;
+  padding: 0 10px;
+}
+
+.formPanel textarea {
+  padding: 10px;
+  resize: vertical;
+}
+
+.inlineFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.checkLine {
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+}
+
+.checkLine input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
+
+.formActions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+}
+
+.primaryButton {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.primaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.empty {
+  padding: 28px;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #6b7280;
+  text-align: center;
+}
+
+.addressList {
+  display: grid;
+  gap: 12px;
+}
+
+.addressCard {
+  padding: 16px;
+}
+
+.defaultCard {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+
+.addressHead strong,
+.addressHead span {
+  display: block;
+}
+
+.addressHead span {
+  margin-top: 3px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.addressHead button,
+.cardActions button,
+.defaultBadge {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.defaultBadge {
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.addressCard p {
+  margin: 12px 0;
+  color: #111827;
+  line-height: 1.5;
+}
+
+.addressCard dl {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.addressCard dl div {
+  padding: 10px;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+.addressCard dt {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.addressCard dd {
+  margin: 4px 0 0;
+  font-weight: 900;
+}
+
+.cardActions {
+  justify-content: flex-end;
+}
+
+@media (max-width: 860px) {
+  .page {
+    padding: 16px;
+  }
+
+  .header {
+    flex-direction: column;
+  }
+
+  .backButton,
+  .iconButton {
+    width: 100%;
+  }
+
+  .workspace,
+  .inlineFields,
+  .formActions,
+  .addressCard dl {
+    grid-template-columns: 1fr;
+  }
+}

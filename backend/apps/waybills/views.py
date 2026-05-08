@@ -50,7 +50,7 @@ class WaybillListCreateView(APIView):
 
     @extend_schema(tags=["waybills"], request=WaybillCreateSerializer, responses={201: WaybillSerializer})
     def post(self, request):
-        serializer = WaybillCreateSerializer(data=request.data)
+        serializer = WaybillCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         try:
             waybill = create_waybill(user=request.user, **serializer.validated_data)

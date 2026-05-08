@@ -10,7 +10,7 @@
 - Admin Web、User Web、Mobile H5 已覆盖登录、仓库地址、包裹预报、扫描入库、申请打包、审核计费、余额支付、发货轨迹、确认收货、商品/购物车/手工代购最小链路。
 - `npm run e2e` 已覆盖 API 级 P0 主流程。
 
-但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。差距集中在地址簿、会员后台、线下汇款、文件上传、客服消息、内容 CMS、无主包裹用户认领、批量导入、发货批次/转单、应付供应商、积分推广、浏览器级 E2E 和生产化运维边界。
+但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；剩余差距集中在会员后台、线下汇款、文件上传、客服消息、内容 CMS、无主包裹用户认领、批量导入、发货批次/转单、应付供应商、积分推广、浏览器级 E2E 和生产化运维边界。
 
 ## Source Scope
 
@@ -44,7 +44,7 @@
 
 | 层 | 已确认实现 | 证据 |
 | --- | --- | --- |
-| Backend apps | `common`、`iam`、`members`、`warehouses`、`parcels`、`waybills`、`finance`、`products`、`purchases` | `backend/config/settings/base.py` L36-L44 |
+| Backend apps | `common`、`addresses`、`iam`、`members`、`warehouses`、`parcels`、`waybills`、`finance`、`products`、`purchases` | `backend/config/settings/base.py` |
 | Backend routes | 上述 app 均挂到 `/api/v1/`，并暴露 OpenAPI/Swagger | `backend/config/urls.py` L7-L17 |
 | Members | 用户 email/phone/status、会员档案、会员编号、仓库识别码 | `backend/apps/members/models.py` L4-L47 |
 | Parcels | 包裹、包裹明细、入库图片 file_id、入库记录、无主包裹模型 | `backend/apps/parcels/models.py` L6-L130 |
@@ -52,8 +52,8 @@
 | Finance | 钱包、支付单、余额流水、后台充值记录 | `backend/apps/finance/models.py` L6-L136 |
 | Products/Purchases | 商品分类、商品、SKU、购物车、代购订单、采购任务 | `backend/apps/products/models.py` L6-L78；`backend/apps/purchases/models.py` L6-L120 |
 | Admin Web routes | 控制台、会员、仓库、包裹、运单、财务、代购、商品、角色权限入口 | `admin-web/src/features/auth/menu.tsx` L23-L96 |
-| User Web routes | dashboard、parcels、waybills、products/cart/purchases | `user-web/src/routes/index.tsx` L10-L28 |
-| Mobile H5 routes | home/category、ship、forecast、parcels、packing、waybills、cart、me、purchases/manual | `mobile-h5/src/routes/index.tsx` L17-L44 |
+| User Web routes | dashboard、addresses、parcels、waybills、products/cart/purchases | `user-web/src/routes/index.tsx` |
+| Mobile H5 routes | home/category、ship、forecast、parcels、packing、waybills、cart、me、addresses、purchases/manual | `mobile-h5/src/routes/index.tsx` |
 | CI | PR 和 main push 执行 backend check/OpenAPI/pytest、frontend lint/build | `.github/workflows/ci.yml` L3-L74 |
 | E2E | `npm run e2e` 调用 API 级 P0 pytest 流程 | `package.json` L6-L11 |
 
@@ -61,7 +61,7 @@
 
 | 缺口 | 来源要求 | 当前实现判断 | 建议任务 |
 | --- | --- | --- | --- |
-| 地址簿和用户资料 | User Web MVP 把收件地址列为 P0，后端任务列为 `BE-019`；Mobile 二阶段列为地址管理 | 运单创建仍直接输入 `recipient_address` 并保存 snapshot；没有独立 address app/API/三端地址簿 | `ADDR-001` |
+| 地址簿和用户资料 | User Web MVP 把收件地址列为 P0，后端任务列为 `BE-019`；Mobile 二阶段列为地址管理 | `ADDR-001` 已补基础 address app/API、User Web/Mobile 地址簿、运单 `address_id` 和 snapshot 防漂移断言；更复杂用户资料仍留给 `MEMBER-001` | `ADDR-001` 已完成 |
 | 会员后台管理 | Admin MVP 要求会员账号、审核/冻结、客服分配、会员等级、会员留言 | 后端有基础状态和 profile；Admin `/members` 仍为通用占位，未覆盖冻结、重置密码、等级、客服分配 | `MEMBER-001` |
 | 线下汇款和充值审核 | Admin/User Web 均要求线下汇款、汇款单管理、后台审核入账 | 当前 `RechargeRequest` 是后台直接完成充值；没有用户提交汇款、凭证、待审/通过/取消流 | `FIN-001` + `FILE-001` |
 | 文件上传 | Admin 后端任务要求图片上传、凭证上传、Excel 导入、模板下载；User Web 后端任务要求文件服务 | 当前多处只有 `file_id` 字段，没有统一上传、鉴权访问、大小/类型限制、缩略图 | `FILE-001` |
@@ -80,13 +80,12 @@
 
 后续不应一次性做超大 PR，建议按依赖顺序拆小任务：
 
-1. `ADDR-001`：地址簿后端、User Web、Mobile H5、运单创建复用地址。
-2. `FILE-001`：本地文件上传基础，供汇款凭证、留言图片、包裹/商品图复用。
-3. `FIN-001`：用户线下汇款提交、后台审核、钱包入账、流水和页面。
-4. `MSG-001`：用户留言、后台处理、消息状态。
-5. `MEMBER-001`：后台会员管理、等级、冻结、重置密码、客服分配。
-6. `PARCEL-CLAIM-001`：用户无主包裹查询/认领与后台审核。
-7. `CONTENT-001`：帮助、公告、条款、关于我们 CMS。
-8. `QA-BROWSER-001`：在不污染本机环境的前提下引入浏览器级 E2E。
+1. `FILE-001`：本地文件上传基础，供汇款凭证、留言图片、包裹/商品图复用。
+2. `FIN-001`：用户线下汇款提交、后台审核、钱包入账、流水和页面。
+3. `MSG-001`：用户留言、后台处理、消息状态。
+4. `MEMBER-001`：后台会员管理、等级、冻结、重置密码、客服分配。
+5. `PARCEL-CLAIM-001`：用户无主包裹查询/认领与后台审核。
+6. `CONTENT-001`：帮助、公告、条款、关于我们 CMS。
+7. `QA-BROWSER-001`：在不污染本机环境的前提下引入浏览器级 E2E。
 
 每个任务仍需独立分支、PR、更新 PR 信息、CI 通过后合并回 `main`。

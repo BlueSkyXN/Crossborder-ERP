@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import { MobileShell } from "../components/MobileShell";
+import { AddressBookPage } from "../pages/AddressBookPage";
 import { CartPage } from "../pages/CartPage";
 import { LoginPage } from "../pages/LoginPage";
 import { ManualPurchasePage } from "../pages/ManualPurchasePage";
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
           { path: "/ship/waybills", element: <WaybillListPage /> },
           { path: "/cart", element: <CartPage /> },
           { path: "/me", element: <MePage /> },
+          { path: "/me/addresses", element: <AddressBookPage /> },
           { path: "/me/purchases", element: <PurchaseOrdersPage /> },
           { path: "/me/purchases/manual", element: <ManualPurchasePage /> },
         ],

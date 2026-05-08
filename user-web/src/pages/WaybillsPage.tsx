@@ -3,6 +3,7 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   CreditCardOutlined,
+  HomeOutlined,
   InboxOutlined,
   LogoutOutlined,
   ReloadOutlined,
@@ -15,6 +16,8 @@ import { useNavigate } from "react-router-dom";
 
 import { fetchMe } from "../features/auth/api";
 import { useAuthStore } from "../features/auth/store";
+import { fetchAddresses } from "../features/addresses/api";
+import type { Address } from "../features/addresses/types";
 import { fetchPackableParcels } from "../features/parcels/api";
 import type { Parcel } from "../features/parcels/types";
 import {
@@ -99,7 +102,19 @@ function statusBadge(status: WaybillStatus) {
   return <span className={`${styles.statusBadge} ${styles[meta.tone]}`}>{meta.label}</span>;
 }
 
-function buildWaybillPayload(form: RecipientFormState, parcelIds: number[]): WaybillCreatePayload {
+function buildWaybillPayload(
+  form: RecipientFormState,
+  parcelIds: number[],
+  addressId: number | null,
+): WaybillCreatePayload {
+  if (addressId) {
+    return {
+      parcel_ids: parcelIds,
+      address_id: addressId,
+      remark: form.remark.trim(),
+    };
+  }
+
   return {
     parcel_ids: parcelIds,
     destination_country: form.destination_country.trim(),
@@ -108,6 +123,17 @@ function buildWaybillPayload(form: RecipientFormState, parcelIds: number[]): Way
     recipient_address: form.recipient_address.trim(),
     postal_code: form.postal_code.trim(),
     remark: form.remark.trim(),
+  };
+}
+
+function addressToRecipientForm(address: Address, remark: string): RecipientFormState {
+  return {
+    destination_country: address.country,
+    recipient_name: address.recipient_name,
+    recipient_phone: address.phone,
+    recipient_address: address.address_line,
+    postal_code: address.postal_code,
+    remark,
   };
 }
 
@@ -132,6 +158,7 @@ export function WaybillsPage() {
   const persistedUser = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const [recipientForm, setRecipientForm] = useState<RecipientFormState>(initialRecipientForm);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [selectedParcelIds, setSelectedParcelIds] = useState<number[]>(() => {
     const parcelId = Number(new URLSearchParams(window.location.search).get("parcel_id"));
     return parcelId ? [parcelId] : [];
@@ -163,9 +190,14 @@ export function WaybillsPage() {
     queryKey: ["member", "wallet-transactions"],
     queryFn: fetchWalletTransactions,
   });
+  const addressesQuery = useQuery({
+    queryKey: ["member", "addresses"],
+    queryFn: fetchAddresses,
+  });
 
   const packableParcels = useMemo(() => packableQuery.data ?? [], [packableQuery.data]);
   const waybills = useMemo(() => waybillsQuery.data ?? [], [waybillsQuery.data]);
+  const addresses = useMemo(() => addressesQuery.data ?? [], [addressesQuery.data]);
   const selectedWaybill = useMemo(
     () => waybills.find((waybill) => waybill.id === selectedWaybillId) ?? waybills[0] ?? null,
     [selectedWaybillId, waybills],
@@ -277,12 +309,14 @@ export function WaybillsPage() {
     packableQuery.error,
     waybillsQuery.error,
     walletQuery.error,
+    addressesQuery.error,
   ];
   const hasError =
     meQuery.isError ||
     packableQuery.isError ||
     waybillsQuery.isError ||
     walletQuery.isError ||
+    addressesQuery.isError ||
     createWaybillMutation.isError ||
     payMutation.isError ||
     confirmMutation.isError;
@@ -314,7 +348,7 @@ export function WaybillsPage() {
       clearNoticeLater("一次运单只能选择同一仓库的包裹。");
       return;
     }
-    createWaybillMutation.mutate(buildWaybillPayload(recipientForm, selectedParcelIds));
+    createWaybillMutation.mutate(buildWaybillPayload(recipientForm, selectedParcelIds, selectedAddressId));
   };
 
   const refreshAll = () => {
@@ -417,11 +451,40 @@ export function WaybillsPage() {
             <div className={styles.inlineWarning}>已选包裹来自多个仓库，请拆分提交。</div>
           )}
 
+          <div className={styles.addressSelector}>
+            <div className={styles.selectorTitle}>
+              <span>收件地址</span>
+              <button type="button" onClick={() => navigate("/addresses")}>
+                <HomeOutlined />
+                管理
+              </button>
+            </div>
+            <select
+              value={selectedAddressId ?? ""}
+              onChange={(event) => {
+                const nextId = Number(event.target.value) || null;
+                setSelectedAddressId(nextId);
+                const address = addresses.find((item) => item.id === nextId);
+                if (address) {
+                  setRecipientForm((current) => addressToRecipientForm(address, current.remark));
+                }
+              }}
+            >
+              <option value="">手工填写收件信息</option>
+              {addresses.map((address) => (
+                <option key={address.id} value={address.id}>
+                  {address.is_default ? "默认 · " : ""}{address.recipient_name} · {address.country} {address.region || address.city}
+                </option>
+              ))}
+            </select>
+            {addressesQuery.isLoading && <small>加载地址簿...</small>}
+          </div>
+
           <label>
             <span>目的国家</span>
             <input
               value={recipientForm.destination_country}
-              required
+              required={!selectedAddressId}
               onChange={(event) =>
                 setRecipientForm((current) => ({ ...current, destination_country: event.target.value }))
               }
@@ -431,7 +494,7 @@ export function WaybillsPage() {
             <span>收件人</span>
             <input
               value={recipientForm.recipient_name}
-              required
+              required={!selectedAddressId}
               onChange={(event) =>
                 setRecipientForm((current) => ({ ...current, recipient_name: event.target.value }))
               }
@@ -441,7 +504,7 @@ export function WaybillsPage() {
             <span>电话</span>
             <input
               value={recipientForm.recipient_phone}
-              required
+              required={!selectedAddressId}
               onChange={(event) =>
                 setRecipientForm((current) => ({ ...current, recipient_phone: event.target.value }))
               }
@@ -451,7 +514,7 @@ export function WaybillsPage() {
             <span>收件地址</span>
             <textarea
               value={recipientForm.recipient_address}
-              required
+              required={!selectedAddressId}
               rows={3}
               onChange={(event) =>
                 setRecipientForm((current) => ({ ...current, recipient_address: event.target.value }))

@@ -3,6 +3,7 @@ from decimal import Decimal
 import pytest
 from django.urls import reverse
 
+from apps.addresses.services import create_address, update_address
 from apps.finance.services import admin_recharge, pay_with_wallet
 from apps.iam.models import AdminUser
 from apps.iam.services import seed_iam_demo_data
@@ -119,6 +120,67 @@ def test_member_create_waybill_moves_parcel_to_packing_requested(client, seeded_
     )
     assert detail_response.status_code == 200
     assert detail_response.json()["data"]["id"] == data["id"]
+
+
+def test_member_create_waybill_from_address_keeps_recipient_snapshot(client, seeded_waybills):
+    user = User.objects.get(email="user@example.com")
+    address = create_address(
+        user=user,
+        recipient_name="Snapshot Receiver",
+        phone="15500001111",
+        country="US",
+        region="CA",
+        city="Los Angeles",
+        address_line="300 Snapshot Street",
+        postal_code="90003",
+        company="Snapshot Inc",
+        is_default=True,
+    )
+    parcel = create_in_stock_parcel("WBADDR10001")
+    token = member_token(client)
+
+    response = client.post(
+        reverse("waybill-list"),
+        {
+            "parcel_ids": [parcel.id],
+            "channel_id": ShippingChannel.objects.get(code="TEST_AIR").id,
+            "address_id": address.id,
+            "remark": "ADDR-001 address waybill",
+        },
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 201
+    waybill_data = response.json()["data"]
+    assert waybill_data["destination_country"] == "US"
+    assert waybill_data["recipient_snapshot"]["address_id"] == address.id
+    assert waybill_data["recipient_snapshot"]["name"] == "Snapshot Receiver"
+    assert waybill_data["recipient_snapshot"]["address"] == "300 Snapshot Street"
+    assert waybill_data["recipient_snapshot"]["region"] == "CA Los Angeles"
+    assert waybill_data["recipient_snapshot"]["company"] == "Snapshot Inc"
+
+    update_address(
+        address=address,
+        recipient_name="Changed Receiver",
+        phone="15500002222",
+        country="US",
+        region="NY",
+        city="New York",
+        address_line="900 Changed Avenue",
+        postal_code="10001",
+        company="Changed Inc",
+        is_default=True,
+    )
+
+    detail_response = client.get(
+        reverse("waybill-detail", kwargs={"waybill_id": waybill_data["id"]}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    snapshot = detail_response.json()["data"]["recipient_snapshot"]
+    assert snapshot["name"] == "Snapshot Receiver"
+    assert snapshot["address"] == "300 Snapshot Street"
+    assert snapshot["company"] == "Snapshot Inc"
 
 
 def test_non_in_stock_parcel_cannot_create_waybill(client, seeded_waybills):

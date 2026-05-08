@@ -1,0 +1,257 @@
+.page {
+  min-height: 100vh;
+  padding: 16px 14px calc(156px + env(safe-area-inset-bottom));
+  background: #f5f7f8;
+  color: #10201d;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 2px 14px;
+}
+
+.top span {
+  color: #0f766e;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.top h1 {
+  margin: 3px 0 0;
+  font-size: 28px;
+  line-height: 1.12;
+}
+
+.top button {
+  min-width: 54px;
+  height: 34px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 800;
+}
+
+.memberCard,
+.card,
+.flow {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.memberCard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+.memberCard div {
+  padding: 14px;
+  background: #ffffff;
+}
+
+.memberCard span,
+.addressHead span,
+.fields dt {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.memberCard strong {
+  display: block;
+  margin-top: 6px;
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.card {
+  padding: 12px;
+}
+
+.modeTabs {
+  --active-title-color: #0f766e;
+  --active-line-color: #0f766e;
+  --title-font-size: 15px;
+}
+
+.warehouseTabs {
+  margin-top: 8px;
+  --active-title-color: #b45309;
+  --active-line-color: #b45309;
+  --title-font-size: 13px;
+}
+
+.loading {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  color: #64748b;
+}
+
+.address {
+  padding-top: 12px;
+}
+
+.addressHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.addressHead h2 {
+  margin: 4px 0 0;
+  font-size: 22px;
+  line-height: 1.16;
+}
+
+.addressHead strong {
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: #ecfdf5;
+  color: #0f766e;
+  font-size: 12px;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.fields div {
+  min-width: 0;
+  padding: 10px;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.fields dd {
+  margin: 4px 0 0;
+  color: #0f172a;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.fullAddress {
+  padding: 12px;
+  border: 1px dashed #99f6e4;
+  border-radius: 8px;
+  background: #f0fdfa;
+  color: #134e4a;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.copyButton {
+  width: 100%;
+  height: 44px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 6px;
+  background: #0f766e;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.flow {
+  margin-top: 12px;
+  padding: 12px;
+}
+
+.flow h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.flow ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.flow li {
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.actionBar {
+  position: fixed;
+  right: 0;
+  bottom: calc(57px + env(safe-area-inset-bottom));
+  left: 0;
+  z-index: 15;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 10px 14px;
+  border-top: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.actionNotice {
+  position: absolute;
+  right: 14px;
+  bottom: 64px;
+  left: 14px;
+  padding: 8px 10px;
+  border: 1px solid #fed7aa;
+  border-radius: 6px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.actionBar button {
+  height: 44px;
+  border-radius: 6px;
+  font-weight: 900;
+}
+
+.secondary {
+  border: 1px solid #0f766e;
+  background: #ffffff;
+  color: #0f766e;
+}
+
+.primary {
+  border: 1px solid #0f766e;
+  background: #0f766e;
+  color: #ffffff;
+}
+
+@media (max-width: 360px) {
+  .page {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .fields {
+    grid-template-columns: 1fr;
+  }
+}

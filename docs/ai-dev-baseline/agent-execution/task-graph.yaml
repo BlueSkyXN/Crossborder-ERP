@@ -1,0 +1,146 @@
+version: 1
+project: crossborder-erp
+entrypoint: agent-execution/README.md
+state_file: agent-execution/current-state.yaml
+global_docs:
+  - ai-dev-baseline/00-START-HERE-AI-ONE-STOP.md
+  - ai-dev-baseline/12-source-evidence-map.md
+  - ai-dev-baseline/13-integrated-product-spec.md
+  - ai-dev-baseline/14-module-implementation-spec.md
+  - ai-dev-baseline/02-domain-model-state-machines.md
+  - ai-dev-baseline/03-technical-architecture.md
+  - ai-dev-baseline/04-api-database-contract.md
+  - ai-dev-baseline/15-frontend-style-from-screenshots-and-repro.md
+tasks:
+  - id: INIT-001
+    phase: P0_FOUNDATION
+    file: tasks/INIT-001.md
+    depends_on: []
+    next: BE-001
+  - id: BE-001
+    phase: P0_FOUNDATION
+    file: tasks/BE-001.md
+    depends_on: [INIT-001]
+    next: BE-002
+  - id: BE-002
+    phase: P1_IDENTITY_CONFIG
+    file: tasks/BE-002.md
+    depends_on: [BE-001]
+    next: BE-003
+  - id: BE-003
+    phase: P1_IDENTITY_CONFIG
+    file: tasks/BE-003.md
+    depends_on: [BE-002]
+    next: BE-004
+  - id: BE-004
+    phase: P1_IDENTITY_CONFIG
+    file: tasks/BE-004.md
+    depends_on: [BE-003]
+    next: FEA-001
+  - id: FEA-001
+    phase: P1_IDENTITY_CONFIG
+    file: tasks/FEA-001.md
+    depends_on: [BE-002]
+    next: FEA-002
+  - id: FEA-002
+    phase: P1_IDENTITY_CONFIG
+    file: tasks/FEA-002.md
+    depends_on: [BE-004, FEA-001]
+    next: FEU-001A
+  - id: FEU-001A
+    phase: P1_IDENTITY_CONFIG
+    file: tasks/FEU-001A.md
+    depends_on: [BE-003, BE-004]
+    next: FEM-001A
+  - id: FEM-001A
+    phase: P1_IDENTITY_CONFIG
+    file: tasks/FEM-001A.md
+    depends_on: [BE-003, BE-004]
+    next: BE-005
+  - id: BE-005
+    phase: P2_PARCEL_WMS
+    file: tasks/BE-005.md
+    depends_on: [BE-003, BE-004]
+    next: FEA-003
+  - id: FEA-003
+    phase: P2_PARCEL_WMS
+    file: tasks/FEA-003.md
+    depends_on: [BE-005, FEA-001]
+    next: FEU-001B
+  - id: FEU-001B
+    phase: P2_PARCEL_WMS
+    file: tasks/FEU-001B.md
+    depends_on: [BE-005, FEU-001A]
+    next: FEM-001B
+  - id: FEM-001B
+    phase: P2_PARCEL_WMS
+    file: tasks/FEM-001B.md
+    depends_on: [BE-005, FEM-001A]
+    next: BE-006
+  - id: BE-006
+    phase: P3_WAYBILL_FINANCE
+    file: tasks/BE-006.md
+    depends_on: [BE-005]
+    next: BE-007
+  - id: BE-007
+    phase: P3_WAYBILL_FINANCE
+    file: tasks/BE-007.md
+    depends_on: [BE-006]
+    next: BE-008
+  - id: BE-008
+    phase: P3_WAYBILL_FINANCE
+    file: tasks/BE-008.md
+    depends_on: [BE-006]
+    next: FEA-004
+  - id: FEA-004
+    phase: P3_WAYBILL_FINANCE
+    file: tasks/FEA-004.md
+    depends_on: [BE-006, BE-007, BE-008, FEA-001]
+    next: FEU-001C
+  - id: FEU-001C
+    phase: P3_WAYBILL_FINANCE
+    file: tasks/FEU-001C.md
+    depends_on: [BE-006, BE-007, BE-008, FEU-001B]
+    next: FEM-001C
+  - id: FEM-001C
+    phase: P3_WAYBILL_FINANCE
+    file: tasks/FEM-001C.md
+    depends_on: [BE-006, BE-007, BE-008, FEM-001B]
+    next: BE-009
+  - id: BE-009
+    phase: P4_PURCHASE
+    file: tasks/BE-009.md
+    depends_on: [BE-003, BE-005, BE-007]
+    next: FEA-005
+  - id: FEA-005
+    phase: P4_PURCHASE
+    file: tasks/FEA-005.md
+    depends_on: [BE-009, FEA-001]
+    next: FEU-002
+  - id: FEU-002
+    phase: P4_PURCHASE
+    file: tasks/FEU-002.md
+    depends_on: [BE-009, FEU-001A]
+    next: FEM-002
+  - id: FEM-002
+    phase: P4_PURCHASE
+    file: tasks/FEM-002.md
+    depends_on: [BE-009, FEM-001A]
+    next: E2E-001
+  - id: E2E-001
+    phase: P5_DELIVERY
+    file: tasks/E2E-001.md
+    depends_on:
+      - FEA-003
+      - FEA-004
+      - FEA-005
+      - FEU-001C
+      - FEU-002
+      - FEM-001C
+      - FEM-002
+    next: DOC-001
+  - id: DOC-001
+    phase: P5_DELIVERY
+    file: tasks/DOC-001.md
+    depends_on: [E2E-001]
+    next: null

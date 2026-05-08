@@ -1,0 +1,83 @@
+# OS metadata
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Python / uv / Django
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.python-version.local
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+build/
+*.egg-info/
+pip-wheel-metadata/
+db.sqlite3
+db.sqlite3-*
+*.sqlite3
+*.sqlite3-*
+local_settings.py
+media/
+staticfiles/
+celerybeat-schedule
+celerybeat-schedule.*
+backend/openapi.yaml
+
+# Node / pnpm / Vite
+node_modules/
+**/node_modules/
+.pnpm-store/
+.npm/
+.yarn/
+dist/
+**/dist/
+coverage/
+**/coverage/
+.vite/
+**/.vite/
+.eslintcache
+*.tsbuildinfo
+
+# Playwright / E2E artifacts
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+.cache/ms-playwright/
+
+# Logs and runtime files
+*.log
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local scratch
+.tmp/
+tmp/
+temp/

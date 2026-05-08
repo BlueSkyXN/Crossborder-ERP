@@ -1,0 +1,11 @@
+{
+  "name": "crossborder-erp",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.30.3",
+  "scripts": {
+    "lint": "pnpm -r --if-present lint",
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --if-present test"
+  }
+}

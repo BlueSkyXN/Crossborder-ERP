@@ -1,0 +1,15 @@
+.page {
+  min-height: 100vh;
+  padding: 16px;
+  background: #f5f7f8;
+}
+
+.header {
+  padding: 12px 0 24px;
+}
+
+.header h1 {
+  margin: 0;
+  color: #10201d;
+  font-size: 24px;
+}

@@ -1,0 +1,38 @@
+.shell {
+  min-height: 100vh;
+  background: #f5f7f8;
+}
+
+.content {
+  min-height: 100vh;
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}
+
+.tabs {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  border-top: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.96);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.glyph {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 6px;
+  background: #eef2f7;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+:global(.adm-tab-bar-item-active) .glyph {
+  background: #0f766e;
+  color: #ffffff;
+}

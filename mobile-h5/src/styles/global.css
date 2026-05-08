@@ -1,0 +1,32 @@
+:root {
+  font-family:
+    "Avenir Next",
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+  color: #10201d;
+  background: #f5f7f8;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --adm-color-primary: #0f766e;
+  --adm-radius-s: 6px;
+  --adm-radius-m: 8px;
+  --adm-radius-l: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #f5f7f8;
+}
+
+button,
+input {
+  font: inherit;
+}

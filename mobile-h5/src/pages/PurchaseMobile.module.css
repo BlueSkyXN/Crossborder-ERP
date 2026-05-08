@@ -1,0 +1,680 @@
+.page {
+  min-height: 100vh;
+  padding: 16px 14px calc(116px + env(safe-area-inset-bottom));
+  background: #f5f7f8;
+  color: #10201d;
+}
+
+.top {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) 58px;
+  gap: 10px;
+  align-items: center;
+  padding: 4px 2px 14px;
+}
+
+.top button,
+.lightButton,
+.chip,
+.quantity button,
+.lineTitle button {
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 900;
+}
+
+.top button {
+  height: 34px;
+}
+
+.top span,
+.sectionHead span,
+.detailHead span,
+.paymentModal header span {
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.top h1 {
+  margin: 3px 0 0;
+  font-size: 25px;
+  line-height: 1.1;
+}
+
+.hero,
+.summary,
+.productCard,
+.detail,
+.panel,
+.cartCard,
+.orderCard,
+.memberCard,
+.manualLine,
+.paymentModal {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.hero {
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.hero h2,
+.sectionHead h2,
+.detailHead h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.hero p,
+.sectionHead p {
+  margin: 6px 0 0;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.heroActions,
+.quickGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.primaryButton,
+.secondaryButton,
+.dangerButton {
+  min-height: 42px;
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.primaryButton {
+  border: 1px solid #0f766e;
+  background: #0f766e;
+  color: #ffffff;
+}
+
+.secondaryButton {
+  border: 1px solid #0f766e;
+  background: #ffffff;
+  color: #0f766e;
+}
+
+.dangerButton {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.dangerButton:disabled,
+.quantity button:disabled,
+.modalActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+.summary div,
+.metric {
+  min-width: 0;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.summary span,
+.metric span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.summary strong,
+.metric strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.notice,
+.error,
+.warning {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.notice {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.warning {
+  border: 1px solid #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.searchInput,
+.form input,
+.form textarea,
+.totalList input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+}
+
+.searchInput,
+.form input,
+.totalList input {
+  height: 40px;
+  padding: 0 11px;
+}
+
+.form textarea {
+  padding: 10px 11px;
+  resize: vertical;
+}
+
+.chips,
+.filters {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-bottom: 12px;
+  padding-bottom: 2px;
+}
+
+.chip,
+.filters button {
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+}
+
+.activeChip,
+.filters .activeFilter {
+  border-color: #0f766e;
+  background: #ecfdf5;
+  color: #0f766e;
+}
+
+.loading {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  color: #64748b;
+}
+
+.productList,
+.cartList,
+.orderList,
+.manualList {
+  display: grid;
+  gap: 10px;
+}
+
+.productCard,
+.cartCard,
+.orderCard {
+  width: 100%;
+  padding: 12px;
+  color: #10201d;
+  text-align: left;
+}
+
+.productCard {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.thumb {
+  min-height: 74px;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #0f766e;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.productBody strong,
+.productBody span,
+.productBody small,
+.cartCard strong,
+.cartCard span,
+.cartCard small,
+.orderCard strong,
+.orderCard span,
+.orderCard small {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.productBody span,
+.productBody small,
+.cartCard span,
+.cartCard small,
+.orderCard span,
+.orderCard small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.productBody h3 {
+  margin: 4px 0;
+  font-size: 16px;
+}
+
+.productBody p {
+  margin: 0 0 8px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.priceLine,
+.cartMeta,
+.orderMeta,
+.detailHead,
+.lineTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.priceLine strong,
+.cartTotal,
+.orderCard em {
+  color: #0f766e;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.selected {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 1px #0f766e;
+}
+
+.detail,
+.panel,
+.memberCard,
+.manualLine {
+  margin-top: 12px;
+  padding: 14px;
+}
+
+.sectionHead {
+  margin-bottom: 12px;
+}
+
+.detailHero {
+  min-height: 118px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #0f766e;
+  text-align: center;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.skuList {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.skuList button {
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #10201d;
+  text-align: left;
+}
+
+.skuList button strong,
+.skuList button span,
+.skuList button small {
+  display: block;
+}
+
+.skuList .activeSku {
+  border-color: #0f766e;
+  background: #ecfdf5;
+}
+
+.controls,
+.cartActions {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 8px;
+  align-items: end;
+}
+
+.form label,
+.controls label {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.cartCard {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.cartCard input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 4px;
+  accent-color: #0f766e;
+}
+
+.quantity {
+  display: inline-grid;
+  grid-template-columns: 34px 42px 34px;
+  align-items: center;
+  margin-top: 8px;
+  overflow: hidden;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.quantity button {
+  height: 32px;
+  border: 0;
+  border-radius: 0;
+}
+
+.quantity strong {
+  text-align: center;
+}
+
+.totalList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.totalList div,
+.detailGrid div,
+.walletHistory div {
+  min-width: 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.totalList div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.totalList dt,
+.detailGrid dt,
+.paymentSummary dt {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.totalList dd,
+.detailGrid dd,
+.paymentSummary dd {
+  margin: 0;
+  color: #0f172a;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.fixedAction {
+  position: fixed;
+  right: 0;
+  bottom: calc(57px + env(safe-area-inset-bottom));
+  left: 0;
+  z-index: 15;
+  padding: 10px 14px;
+  border-top: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.fixedAction button {
+  width: 100%;
+}
+
+.form {
+  display: grid;
+  gap: 10px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 92px;
+  gap: 8px;
+}
+
+.lineTitle button {
+  width: 34px;
+  height: 30px;
+}
+
+.orderCard {
+  display: grid;
+  gap: 8px;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 70px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.warningTone {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.successTone {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.infoTone,
+.primaryTone {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.dangerTone {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.mutedTone {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.detailGrid,
+.paymentSummary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.items {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 12px 0 0;
+  list-style: none;
+}
+
+.items li {
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.items strong,
+.items span,
+.items small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.items span,
+.items small {
+  color: #64748b;
+}
+
+.convertedParcel {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #99f6e4;
+  border-radius: 8px;
+  background: #f0fdfa;
+}
+
+.convertedParcel strong,
+.convertedParcel span {
+  display: block;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: end center;
+  padding: 16px 14px calc(76px + env(safe-area-inset-bottom));
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.paymentModal {
+  width: 100%;
+  max-width: 430px;
+  padding: 16px;
+  box-shadow: 0 18px 60px rgba(15, 23, 42, 0.2);
+}
+
+.walletHistory {
+  margin-top: 12px;
+}
+
+.walletHistory h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.walletHistory p {
+  margin: 0;
+  color: #64748b;
+}
+
+.walletHistory div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.modalActions {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.modalActions button {
+  height: 44px;
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.modalActions button:first-child {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #334155;
+}
+
+.modalActions button:last-child {
+  border: 0;
+  background: #0f766e;
+  color: #ffffff;
+}
+
+@media (max-width: 360px) {
+  .page {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .summary,
+  .detailGrid,
+  .paymentSummary,
+  .heroActions,
+  .quickGrid,
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}

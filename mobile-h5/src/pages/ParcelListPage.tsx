@@ -54,7 +54,6 @@ export function ParcelListPage() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [selectedParcelId, setSelectedParcelId] = useState<number | null>(null);
-  const [notice, setNotice] = useState("");
 
   const parcelsQuery = useQuery({
     queryKey: ["mobile", "member", "parcels"],
@@ -71,11 +70,6 @@ export function ParcelListPage() {
     () => filteredParcels.find((parcel) => parcel.id === selectedParcelId) ?? filteredParcels[0] ?? null,
     [filteredParcels, selectedParcelId],
   );
-
-  const showPackNotice = (parcelNo: string) => {
-    setNotice(`${parcelNo} 已可申请打包`);
-    window.setTimeout(() => setNotice(""), 2400);
-  };
 
   return (
     <main className={styles.page}>
@@ -106,8 +100,6 @@ export function ParcelListPage() {
           <strong>{parcels.filter((parcel) => parcel.status === "IN_STOCK").length}</strong>
         </div>
       </section>
-
-      {notice && <div className={styles.notice}>{notice}</div>}
 
       <div className={styles.filters}>
         {filters.map((filter) => (
@@ -204,7 +196,7 @@ export function ParcelListPage() {
 
           {selectedParcel.status === "IN_STOCK" && (
             <div className={styles.actionBar}>
-              <button type="button" onClick={() => showPackNotice(selectedParcel.parcel_no)}>
+              <button type="button" onClick={() => navigate(`/ship/packing?parcel_id=${selectedParcel.id}`)}>
                 申请打包
               </button>
             </div>

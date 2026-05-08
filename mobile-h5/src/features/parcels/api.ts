@@ -12,6 +12,13 @@ export function fetchParcels() {
   }).then((result) => result.items);
 }
 
+export function fetchPackableParcels() {
+  return requestData<ListResponse<Parcel>>({
+    method: "GET",
+    url: "/parcels/packable",
+  }).then((result) => result.items);
+}
+
 export function createParcelForecast(payload: ParcelForecastPayload) {
   return requestData<Parcel>({
     method: "POST",

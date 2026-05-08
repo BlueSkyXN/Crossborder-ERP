@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "apps.common",
     "apps.iam",
     "apps.members",
+    "apps.warehouses",
 ]
 
 MIDDLEWARE = [
@@ -106,6 +107,10 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Cross-border purchasing and forwarding ERP API.",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "ENUM_NAME_OVERRIDES": {
+        "ActiveDisabledStatusEnum": "apps.warehouses.models.ConfigStatus",
+        "UserStatusEnum": "apps.members.models.UserStatus",
+    },
 }
 
 CACHES = {

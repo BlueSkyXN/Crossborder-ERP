@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "apps.iam",
     "apps.members",
     "apps.warehouses",
+    "apps.parcels",
 ]
 
 MIDDLEWARE = [
@@ -110,6 +111,8 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "ActiveDisabledStatusEnum": "apps.warehouses.models.ConfigStatus",
         "UserStatusEnum": "apps.members.models.UserStatus",
+        "ParcelStatusEnum": "apps.parcels.models.ParcelStatus",
+        "UnclaimedParcelStatusEnum": "apps.parcels.models.UnclaimedParcelStatus",
     },
 }
 

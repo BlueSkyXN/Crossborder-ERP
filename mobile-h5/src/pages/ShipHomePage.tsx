@@ -195,10 +195,18 @@ export function ShipHomePage() {
           <li>发布包裹预报</li>
           <li>到仓后申请打包</li>
         </ol>
+        <div className={styles.flowLinks}>
+          <button type="button" onClick={() => navigate("/ship/parcels")}>
+            我的包裹
+          </button>
+          <button type="button" onClick={() => navigate("/ship/waybills")}>
+            我的运单
+          </button>
+        </div>
       </section>
 
       <div className={styles.actionBar}>
-        <button type="button" className={styles.secondary} onClick={() => navigate("/ship/parcels")}>
+        <button type="button" className={styles.secondary} onClick={() => navigate("/ship/packing")}>
           申请打包
         </button>
         <button type="button" className={styles.primary} onClick={() => navigate("/ship/forecast")}>

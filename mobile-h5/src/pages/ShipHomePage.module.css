@@ -197,6 +197,22 @@
   text-align: center;
 }
 
+.flowLinks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.flowLinks button {
+  height: 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f766e;
+  font-weight: 900;
+}
+
 .actionBar {
   position: fixed;
   right: 0;

@@ -7,8 +7,8 @@
 ## 当前状态
 
 - 项目阶段：`P3_WAYBILL_FINANCE`
-- 当前已完成：`FEU-001C` 用户 Web 运单申请、余额支付、轨迹和确认收货
-- 下一任务：`FEM-001C` 移动 H5 运单列表、追踪、确认收货
+- 当前已完成：`FEM-001C` 移动 H5 申请打包、运单支付、追踪和确认收货
+- 下一任务：`BE-009` 代购后端基础
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`

@@ -6,6 +6,8 @@ import { ParcelForecastPage } from "../pages/ParcelForecastPage";
 import { ParcelListPage } from "../pages/ParcelListPage";
 import { PlaceholderPage } from "../pages/PlaceholderPage";
 import { ShipHomePage } from "../pages/ShipHomePage";
+import { WaybillListPage } from "../pages/WaybillListPage";
+import { WaybillPackingPage } from "../pages/WaybillPackingPage";
 import { PublicOnly, RequireAuth } from "./guards";
 
 export const router = createBrowserRouter([
@@ -25,6 +27,8 @@ export const router = createBrowserRouter([
           { path: "/ship", element: <ShipHomePage /> },
           { path: "/ship/forecast", element: <ParcelForecastPage /> },
           { path: "/ship/parcels", element: <ParcelListPage /> },
+          { path: "/ship/packing", element: <WaybillPackingPage /> },
+          { path: "/ship/waybills", element: <WaybillListPage /> },
           { path: "/cart", element: <PlaceholderPage title="购物车" /> },
           { path: "/me", element: <PlaceholderPage title="我的" /> },
         ],

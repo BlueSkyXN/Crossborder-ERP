@@ -7,11 +7,14 @@
 ## 当前状态
 
 - 项目阶段：`P5_DELIVERY`
-- 当前已完成：`E2E-001` 全链路端到端验收
-- 下一任务：`DOC-001` 交付文档收口
+- 当前已完成：`DOC-001` 交付文档、部署说明、演示脚本
+- 下一任务：无；进入验收和下一阶段规划
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`
+- 演示脚本：`docs/demo-script.md`
+- 部署说明：`docs/deployment/README.md`
+- 已知问题和下一阶段：`docs/known-issues-and-roadmap.md`
 
 ## 隔离原则
 
@@ -40,7 +43,7 @@
 | Frontend package manager | pnpm workspace |
 | Request/data | TanStack Query + Axios |
 | State | Zustand |
-| Test | pytest、DRF APIClient、Vitest、Playwright |
+| Test | pytest、DRF APIClient、`npm run e2e`；Vitest/Playwright 后续补齐 |
 | Deploy | 暂缓，当前阶段 no-Docker local-first |
 
 ## 目录结构
@@ -68,20 +71,81 @@ infra/          后续部署、Nginx、脚本
 | Local DB | `backend/db.sqlite3` |
 | Redis/Celery | 当前阶段同步/禁用外部 Redis |
 
-## 后续启动目标
+## 本地启动
 
-当前后端、后台管理端和用户 Web 已具备基础开发入口。常用本地命令：
+当前交付口径是 no-Docker local-first。首次启动建议按下面顺序执行：
 
 ```bash
+(cd backend && uv sync --locked --dev)
+pnpm install --frozen-lockfile
 (cd backend && uv run python manage.py migrate)
 (cd backend && uv run python manage.py seed_demo)
+```
+
+启动后端和三端前端：
+
+```bash
 (cd backend && uv run python manage.py runserver)
 pnpm --filter admin-web dev
 pnpm --filter user-web dev
 pnpm --filter mobile-h5 dev
 ```
 
-实际可运行命令以每个任务完成后的 README 更新为准。PostgreSQL/MySQL/Redis/Docker 相关配置在后续明确需要时再引入；在真实环境验证前只标记为配置兼容。
+访问地址：
+
+| 端 | 地址 |
+| --- | --- |
+| Backend API | `http://localhost:8000/api/v1` |
+| OpenAPI | `http://localhost:8000/api/v1/schema/` |
+| Swagger UI | `http://localhost:8000/api/v1/docs/` |
+| Admin Web | `http://localhost:3001` |
+| User Web | `http://localhost:3002` |
+| Mobile H5 | `http://localhost:3003` |
+
+PostgreSQL/MySQL/Redis/Docker 相关配置在后续明确需要时再引入；在真实环境验证前只标记为配置兼容或 `configured_unverified`。
+
+## 环境变量
+
+复制 `.env.example` 到 `.env` 后可按需调整。当前本地默认使用 SQLite 和同步任务模式：
+
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `DJANGO_SECRET_KEY` | dev secret | 本地开发密钥，生产必须替换 |
+| `DJANGO_DEBUG` | `true` | 本地调试开关 |
+| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` | Django host allowlist |
+| `DATABASE_URL` | `sqlite:///./backend/db.sqlite3` | 当前唯一真实验证数据库 |
+| `REDIS_URL` | 空 | Redis 后续补齐，当前不真实验证 |
+| `CELERY_TASK_ALWAYS_EAGER` | `true` | 当前同步执行任务 |
+| `MEDIA_ROOT` | `./media` | 本地文件存储目录 |
+| `PUBLIC_BASE_URL` | `http://localhost:8000` | 后端公开访问基址 |
+| `ADMIN_WEB_URL` | `http://localhost:3001` | 后台管理端地址 |
+| `USER_WEB_URL` | `http://localhost:3002` | 用户 Web 地址 |
+| `MOBILE_H5_URL` | `http://localhost:3003` | 移动 H5 地址 |
+
+## 测试账号
+
+`seed_demo` 会创建以下账号：
+
+| 类型 | 邮箱 | 密码 | 用途 |
+| --- | --- | --- | --- |
+| Admin | `admin@example.com` | `password123` | 超级管理员，完整后台验收 |
+| Warehouse | `warehouse@example.com` | `password123` | 仓库人员，包裹/运单操作 |
+| Finance | `finance@example.com` | `password123` | 财务人员，充值/流水查看 |
+| Buyer | `buyer@example.com` | `password123` | 采购人员，商品/代购操作 |
+| Member | `user@example.com` | `password123` | 会员用户，三端用户侧验收 |
+
+## 测试命令
+
+```bash
+npm run e2e
+(cd backend && uv run python manage.py check)
+(cd backend && uv run python manage.py makemigrations --check --dry-run)
+(cd backend && uv run pytest)
+pnpm lint
+pnpm build
+```
+
+当前 CI 会在 PR 和 `main` push 上执行后端 check/OpenAPI/pytest，以及三端前端 lint/build。
 
 ## 端到端验收
 
@@ -101,13 +165,6 @@ npm run e2e
 - 用户查询轨迹并确认收货到 `SIGNED`。
 - 用户提交手工代购，后台审核、采购、到货并转为 `Parcel.IN_STOCK`。
 - 代购转入包裹后继续申请打包创建运单。
-
-验收账号：
-
-| 类型 | 邮箱 | 密码 |
-| --- | --- | --- |
-| Admin | `admin@example.com` | `password123` |
-| Member | `user@example.com` | `password123` |
 
 如需浏览器手工复现三端界面，先启动后端和三端前端：
 
@@ -129,3 +186,31 @@ pnpm --filter mobile-h5 dev
 | Mobile H5 | `http://localhost:3003` |
 
 当前没有引入 Playwright 项目依赖；`npm run e2e` 先覆盖 API 级完整业务闭环，三端浏览器路径按上述启动命令和既有页面入口手工复现。若命令失败，脚本会打印阻塞提示，优先查看 pytest 断言和最近一次 API response body。
+
+## 演示流程
+
+完整演示步骤见 `docs/demo-script.md`。主线包括：
+
+```text
+后台确认配置
+-> 用户复制仓库地址
+-> 用户提交包裹预报
+-> 后台扫描入库
+-> 用户申请打包
+-> 后台审核计费
+-> 后台充值
+-> 用户余额支付
+-> 后台发货并添加轨迹
+-> 用户查看轨迹并确认收货
+-> 用户提交手工代购
+-> 后台采购到货并转包裹
+-> 代购包裹继续申请打包
+```
+
+## 已知边界
+
+- 真实在线支付、支付回调、退款、汇款审核不在 P0 范围；当前使用后台人工充值和余额支付。
+- 自动采购、商品链接解析、外部电商抓取不在 P0 范围；当前支持自营商品和手工代购。
+- PostgreSQL/MySQL/Redis/Celery/Docker 均未真实验证，不能作为生产可用结论。
+- 文件上传、对象存储、图片访问控制、打印模板和硬件接入后续补齐。
+- 复杂运费公式、首发国家/渠道、验证码、找回密码、多语言等保留 `TODO_CONFIRM`。

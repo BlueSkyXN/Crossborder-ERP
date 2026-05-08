@@ -7,8 +7,8 @@
 ## 当前状态
 
 - 项目阶段：`P1_IDENTITY_CONFIG`
-- 当前已完成：`FEA-001` 后台登录和 Layout
-- 下一任务：`FEA-002` 后台基础配置页面
+- 当前已完成：`FEA-002` 后台基础配置页面
+- 下一任务：`FEU-001A` 用户 Web 登录、控制台、仓库地址
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`

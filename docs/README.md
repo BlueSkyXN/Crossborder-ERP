@@ -7,3 +7,5 @@
 - `demo-script.md`：集运主链路、最小代购链路和移动 H5 手工演示步骤。
 - `known-issues-and-roadmap.md`：已知问题、未验证边界和下一阶段计划。
 - `delivery-completion-audit.md`：P0 需求、用户约束和交付证据映射。
+- `source-report-gap-map.md`：原始 ChatGPT/Gemini 报告与当前实现的差距映射。
+- `production-readiness-backlog.md`：生产级缺口对应的后续 Agent 任务队列。

@@ -1,6 +1,7 @@
 import {
   CopyOutlined,
   InboxOutlined,
+  PlusOutlined,
   LogoutOutlined,
   ReloadOutlined,
   ShoppingCartOutlined,
@@ -114,6 +115,16 @@ export function DashboardPage() {
           <div>
             <strong>会员中心</strong>
             <span>CrossBorder ERP</span>
+          </div>
+          <div className={styles.quickActions}>
+            <button type="button" onClick={() => navigate("/parcels")}>
+              <PlusOutlined />
+              包裹预报
+            </button>
+            <button type="button" onClick={() => navigate("/parcels")}>
+              <InboxOutlined />
+              包裹列表
+            </button>
           </div>
         </div>
         <div className={styles.headerActions}>

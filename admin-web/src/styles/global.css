@@ -212,9 +212,16 @@ body {
 
 .parcel-workspace,
 .parcel-detail,
+.catalog-workspace,
+.purchase-workspace,
+.purchase-detail,
 .waybill-workspace,
 .waybill-detail,
 .scan-result {
+  width: 100%;
+}
+
+.full-width-input {
   width: 100%;
 }
 

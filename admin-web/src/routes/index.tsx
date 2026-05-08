@@ -7,6 +7,8 @@ import { LoginPage } from "../pages/LoginPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { adminRouteMeta } from "../features/auth/menu";
 import { ParcelWmsPage } from "../features/parcels/ParcelWmsPage";
+import { ProductCatalogPage } from "../features/products/ProductCatalogPage";
+import { PurchaseOpsPage } from "../features/purchases/PurchaseOpsPage";
 import { WaybillOpsPage } from "../features/waybills/WaybillOpsPage";
 import { WarehouseConfigPage } from "../features/warehouses/WarehouseConfigPage";
 import { PublicOnly, RequireAuth } from "./guards";
@@ -32,6 +34,10 @@ export const router = createBrowserRouter([
                 <ParcelWmsPage />
               ) : route.resource === "waybills" ? (
                 <WaybillOpsPage />
+              ) : route.resource === "purchases" ? (
+                <PurchaseOpsPage />
+              ) : route.resource === "products" ? (
+                <ProductCatalogPage />
               ) : (
                 <WorkspacePage route={route} />
               ),

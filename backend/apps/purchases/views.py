@@ -10,12 +10,16 @@ from apps.iam.authentication import AdminTokenAuthentication
 from apps.iam.permissions import HasAdminPermission
 from apps.members.authentication import MemberTokenAuthentication
 from apps.members.permissions import IsMemberAuthenticated
+from apps.warehouses.models import ConfigStatus, Warehouse
+from apps.warehouses.serializers import WarehouseSerializer
 
 from .models import PurchaseOrder
 from .serializers import (
     ManualPurchaseOrderCreateSerializer,
     PurchaseArrivedSerializer,
+    PurchaseCancelSerializer,
     PurchaseConvertToParcelSerializer,
+    PurchaseExceptionSerializer,
     PurchaseOrderCreateSerializer,
     PurchaseOrderSerializer,
     PurchasePaySerializer,
@@ -24,10 +28,12 @@ from .serializers import (
 )
 from .services import (
     StateConflictError,
+    cancel_purchase_order,
     convert_purchase_order_to_parcel,
     create_manual_purchase_order,
     create_purchase_order_from_cart,
     mark_purchase_order_arrived,
+    mark_purchase_order_exception,
     pay_purchase_order_with_wallet,
     procure_purchase_order,
     review_purchase_order,
@@ -133,6 +139,17 @@ class AdminPurchaseOrderListView(APIView):
         return success_response({"items": PurchaseOrderSerializer(orders, many=True).data})
 
 
+class AdminPurchaseWarehouseOptionListView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "purchases.view"
+
+    @extend_schema(tags=["admin-purchases"], responses={200: WarehouseSerializer(many=True)})
+    def get(self, request):
+        warehouses = Warehouse.objects.filter(status=ConfigStatus.ACTIVE).select_related("address")
+        return success_response({"items": WarehouseSerializer(warehouses, many=True).data})
+
+
 class AdminPurchaseOrderDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
@@ -226,3 +243,49 @@ class AdminPurchaseOrderConvertToParcelView(APIView):
         except StateConflictError as exc:
             return state_conflict_response(exc)
         return success_response(PurchaseOrderSerializer(converted).data)
+
+
+class AdminPurchaseOrderMarkExceptionView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "purchases.view"
+
+    @extend_schema(
+        tags=["admin-purchases"],
+        request=PurchaseExceptionSerializer,
+        responses={200: PurchaseOrderSerializer},
+    )
+    def post(self, request, purchase_order_id: int):
+        serializer = PurchaseExceptionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        purchase_order = get_object_or_404(PurchaseOrder, id=purchase_order_id)
+        try:
+            exception_order = mark_purchase_order_exception(
+                purchase_order=purchase_order,
+                operator=request.user,
+                **serializer.validated_data,
+            )
+        except StateConflictError as exc:
+            return state_conflict_response(exc)
+        return success_response(PurchaseOrderSerializer(exception_order).data)
+
+
+class AdminPurchaseOrderCancelView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "purchases.view"
+
+    @extend_schema(
+        tags=["admin-purchases"],
+        request=PurchaseCancelSerializer,
+        responses={200: PurchaseOrderSerializer},
+    )
+    def post(self, request, purchase_order_id: int):
+        serializer = PurchaseCancelSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        purchase_order = get_object_or_404(PurchaseOrder, id=purchase_order_id)
+        try:
+            cancelled = cancel_purchase_order(purchase_order=purchase_order, **serializer.validated_data)
+        except StateConflictError as exc:
+            return state_conflict_response(exc)
+        return success_response(PurchaseOrderSerializer(cancelled).data)

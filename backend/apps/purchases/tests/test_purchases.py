@@ -313,3 +313,47 @@ def test_admin_purchase_list_requires_permission(client, seeded_purchases):
 
     assert response.status_code == 403
     assert response.json()["code"] == "FORBIDDEN"
+
+
+def test_purchase_warehouse_options_require_purchase_permission(client, seeded_purchases):
+    allowed = client.get(
+        reverse("admin-purchase-warehouse-options"),
+        HTTP_AUTHORIZATION=f"Bearer {admin_token(client)}",
+    )
+    assert allowed.status_code == 200
+    assert allowed.json()["data"]["items"][0]["code"] == "SZ"
+
+    denied = client.get(
+        reverse("admin-purchase-warehouse-options"),
+        HTTP_AUTHORIZATION=f"Bearer {admin_token(client, email='finance@example.com')}",
+    )
+    assert denied.status_code == 403
+
+
+def test_admin_can_mark_exception_and_cancel_purchase_order(client, seeded_purchases):
+    order = create_paid_purchase_order()
+    client.post(
+        reverse("purchase-order-pay", kwargs={"purchase_order_id": order.id}),
+        {"idempotency_key": "pay-purchase-exception"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {member_token(client)}",
+    )
+    token = admin_token(client)
+
+    exception_response = client.post(
+        reverse("admin-purchase-order-mark-exception", kwargs={"purchase_order_id": order.id}),
+        {"remark": "链接失效"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert exception_response.status_code == 200
+    assert exception_response.json()["data"]["status"] == PurchaseOrderStatus.EXCEPTION
+
+    cancel_response = client.post(
+        reverse("admin-purchase-order-cancel", kwargs={"purchase_order_id": order.id}),
+        {"reason": "用户取消"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert cancel_response.status_code == 200
+    assert cancel_response.json()["data"]["status"] == PurchaseOrderStatus.CANCELLED

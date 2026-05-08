@@ -6,6 +6,7 @@ from django.db import models
 class WalletTransactionType(models.TextChoices):
     ADMIN_RECHARGE = "ADMIN_RECHARGE", "后台充值"
     ADMIN_DEDUCT = "ADMIN_DEDUCT", "后台扣减"
+    OFFLINE_REMITTANCE = "OFFLINE_REMITTANCE", "线下汇款"
     WAYBILL_PAYMENT = "WAYBILL_PAYMENT", "运费支付"
     PURCHASE_PAYMENT = "PURCHASE_PAYMENT", "代购支付"
     REFUND = "REFUND", "退款"
@@ -33,6 +34,7 @@ class PaymentBusinessType(models.TextChoices):
 
 
 class RechargeRequestStatus(models.TextChoices):
+    PENDING = "PENDING", "待审核"
     COMPLETED = "COMPLETED", "已完成"
     CANCELLED = "CANCELLED", "已取消"
 
@@ -116,15 +118,24 @@ class RechargeRequest(models.Model):
     request_no = models.CharField(max_length=30, unique=True)
     user = models.ForeignKey("members.User", on_delete=models.PROTECT, related_name="recharge_requests")
     wallet = models.ForeignKey(Wallet, on_delete=models.PROTECT, related_name="recharge_requests")
-    operator = models.ForeignKey("iam.AdminUser", on_delete=models.PROTECT, related_name="recharge_requests")
+    operator = models.ForeignKey(
+        "iam.AdminUser",
+        on_delete=models.PROTECT,
+        related_name="recharge_requests",
+        null=True,
+        blank=True,
+    )
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=10, default="CNY")
+    proof_file_id = models.CharField(max_length=40, blank=True)
     status = models.CharField(
         max_length=30,
         choices=RechargeRequestStatus.choices,
-        default=RechargeRequestStatus.COMPLETED,
+        default=RechargeRequestStatus.PENDING,
     )
     remark = models.CharField(max_length=255, blank=True)
+    review_remark = models.CharField(max_length=255, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

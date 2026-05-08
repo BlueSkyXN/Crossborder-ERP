@@ -164,6 +164,10 @@ export function DashboardPage() {
               <HomeOutlined />
               地址簿
             </button>
+            <button type="button" onClick={() => navigate("/finance")}>
+              <WalletOutlined />
+              财务中心
+            </button>
             <button type="button" onClick={() => navigate("/products")}>
               <ShoppingCartOutlined />
               商品代购

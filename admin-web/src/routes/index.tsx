@@ -6,6 +6,7 @@ import { ForbiddenPage } from "../pages/ForbiddenPage";
 import { LoginPage } from "../pages/LoginPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { adminRouteMeta } from "../features/auth/menu";
+import { FinancePage } from "../features/finance/FinancePage";
 import { ParcelWmsPage } from "../features/parcels/ParcelWmsPage";
 import { ProductCatalogPage } from "../features/products/ProductCatalogPage";
 import { PurchaseOpsPage } from "../features/purchases/PurchaseOpsPage";
@@ -34,6 +35,8 @@ export const router = createBrowserRouter([
                 <ParcelWmsPage />
               ) : route.resource === "waybills" ? (
                 <WaybillOpsPage />
+              ) : route.resource === "finance" ? (
+                <FinancePage />
               ) : route.resource === "purchases" ? (
                 <PurchaseOpsPage />
               ) : route.resource === "products" ? (

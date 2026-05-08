@@ -117,6 +117,22 @@ export function MePage() {
 
       <section className={styles.panel}>
         <div className={styles.sectionHead}>
+          <span>Support</span>
+          <h2>消息工单</h2>
+          <p>提交留言、查看客服回复和处理状态。</p>
+        </div>
+        <div className={styles.quickGrid}>
+          <button className={styles.primaryButton} type="button" onClick={() => navigate("/me/tickets")}>
+            联系客服
+          </button>
+          <button className={styles.secondaryButton} type="button" onClick={() => navigate("/me/tickets")}>
+            工单记录
+          </button>
+        </div>
+      </section>
+
+      <section className={styles.panel}>
+        <div className={styles.sectionHead}>
           <span>Purchase</span>
           <h2>我的代购</h2>
           <p>从这里进入代购订单、手工代购和商品选购。</p>

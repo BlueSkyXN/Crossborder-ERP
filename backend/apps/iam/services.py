@@ -20,6 +20,7 @@ MENU_PERMISSIONS = [
     ("finance.view", "财务管理", "finance", 60),
     ("purchases.view", "代购管理", "purchases", 70),
     ("products.view", "商品管理", "products", 80),
+    ("tickets.view", "客服工单", "tickets", 85),
     ("iam.role.view", "角色权限", "roles", 90),
 ]
 
@@ -44,6 +45,18 @@ ROLE_DEFINITIONS = {
         "description": "代购订单和商品相关操作",
         "permissions": ["dashboard.view", "purchases.view", "products.view"],
     },
+    "support": {
+        "name": "客服人员",
+        "description": "会员咨询、包裹、运单和代购问题处理",
+        "permissions": [
+            "dashboard.view",
+            "members.view",
+            "parcels.view",
+            "waybills.view",
+            "purchases.view",
+            "tickets.view",
+        ],
+    },
 }
 
 ADMIN_DEMO_USERS = [
@@ -51,6 +64,7 @@ ADMIN_DEMO_USERS = [
     ("warehouse@example.com", "仓库人员", "warehouse", False),
     ("finance@example.com", "财务人员", "finance", False),
     ("buyer@example.com", "采购人员", "buyer", False),
+    ("support@example.com", "客服人员", "support", False),
 ]
 
 

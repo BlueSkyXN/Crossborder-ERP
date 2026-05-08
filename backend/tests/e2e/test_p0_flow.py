@@ -123,6 +123,62 @@ def _upload_member_remittance_proof(member_client: APIClient, suffix: str) -> di
     )
 
 
+def _upload_member_message_attachment(member_client: APIClient, suffix: str) -> dict:
+    return _api_data(
+        member_client.post(
+            "/api/v1/files",
+            {
+                "usage": "MESSAGE_ATTACHMENT",
+                "file": SimpleUploadedFile(
+                    f"e2e-{suffix.lower()}-message.jpg",
+                    b"e2e-message-attachment",
+                    content_type="image/jpeg",
+                ),
+            },
+            format="multipart",
+        ),
+        expected_status=201,
+    )
+
+
+def _run_ticket_flow(*, admin_client: APIClient, member_client: APIClient, suffix: str) -> dict:
+    attachment = _upload_member_message_attachment(member_client, suffix)
+    ticket = _api_data(
+        member_client.post(
+            "/api/v1/tickets",
+            {
+                "type": "PARCEL",
+                "title": f"E2E {suffix} 工单",
+                "content": f"E2E {suffix} 包裹咨询",
+                "file_id": attachment["file_id"],
+            },
+            format="json",
+        ),
+        expected_status=201,
+    )
+    assert ticket["ticket_no"].startswith("TKT")
+    assert ticket["status"] == "OPEN"
+    assert ticket["messages"][0]["file_id"] == attachment["file_id"]
+
+    replied = _api_data(
+        admin_client.post(
+            f"/api/v1/admin/tickets/{ticket['id']}/messages",
+            {"content": f"E2E {suffix} 客服回复"},
+            format="json",
+        )
+    )
+    assert replied["status"] == "PROCESSING"
+
+    detail = _api_data(member_client.get(f"/api/v1/tickets/{ticket['id']}"))
+    assert detail["messages"][-1]["sender_type"] == "ADMIN"
+    assert detail["messages"][-1]["content"] == f"E2E {suffix} 客服回复"
+    return {
+        "ticket_no": ticket["ticket_no"],
+        "status": detail["status"],
+        "message_count": len(detail["messages"]),
+    }
+
+
 def _run_offline_remittance_flow(
     *,
     admin_client: APIClient,
@@ -526,8 +582,15 @@ def test_p0_forwarding_and_purchase_e2e():
         channel=channel,
         run_id=run_id,
     )
+    ticket_result = _run_ticket_flow(
+        admin_client=admin_client,
+        member_client=member_client,
+        suffix="MAIN",
+    )
 
     print("[E2E-001] 主链路完成:", main_result)
     print("[E2E-001] 代购链路完成:", purchase_result)
+    print("[MSG-001] 工单链路完成:", ticket_result)
     assert main_result["status"] == "SIGNED"
     assert purchase_result["waybill_status"] == "PENDING_REVIEW"
+    assert ticket_result["status"] == "PROCESSING"

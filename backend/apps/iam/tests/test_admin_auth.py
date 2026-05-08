@@ -67,6 +67,7 @@ def test_super_admin_can_list_roles(client, seeded_iam):
         "warehouse",
         "finance",
         "buyer",
+        "support",
     }
 
 
@@ -75,3 +76,4 @@ def test_seed_creates_required_demo_admins(seeded_iam):
     assert AdminUser.objects.filter(email="warehouse@example.com").exists()
     assert AdminUser.objects.filter(email="finance@example.com").exists()
     assert AdminUser.objects.filter(email="buyer@example.com").exists()
+    assert AdminUser.objects.filter(email="support@example.com").exists()

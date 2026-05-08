@@ -18,7 +18,7 @@
 | `ADDR-001` | P0 | 地址簿 | 后端 address app/API；User Web/Mobile 地址列表、新增、编辑、设默认；运单创建可选地址并保留 snapshot | SQLite migration、pytest、三端 build、API E2E 补地址路径 |
 | `FILE-001` | P0 | 本地文件服务 | 本地 media 上传、文件元数据、类型/大小限制、业务引用、访问控制策略 | 上传 API 测试；不接对象存储；对象存储标记后续 |
 | `FIN-001` | P0 | 线下汇款和财务中心 | 用户提交汇款单和凭证；后台审核通过/取消；钱包入账；用户财务流水页面 | 已完成：钱包事务测试、汇款状态测试、三端关键页面 |
-| `MSG-001` | P1 | 客服消息/工单 | 用户留言、图片附件、后台回复/处理、用户查看状态 | 消息状态测试、权限隔离测试 |
+| `MSG-001` | P1 | 客服消息/工单 | 用户留言、图片附件、后台回复/处理、用户查看状态 | 已完成：消息状态测试、权限隔离测试、三端入口和 API E2E |
 | `MEMBER-001` | P1 | 后台会员管理 | 会员列表、筛选、冻结/解冻、重置密码、会员等级、客服分配占位 | RBAC/权限测试、后台页面 build |
 | `PARCEL-CLAIM-001` | P1 | 无主包裹用户认领 | 用户侧无主包裹列表/搜索/认领；后台审核；认领后转包裹 | 防抢认领事务测试、脱敏展示测试 |
 | `CONTENT-001` | P1 | 内容 CMS | 帮助、公告、条款、关于我们、显示/排序；用户端展示 | CRUD 测试、前台读取测试 |
@@ -34,17 +34,18 @@
 - `ADDR-001`：本轮已补后端 address API、User Web `/addresses`、Mobile H5 `/me/addresses`、运单创建 `address_id` 和 API E2E snapshot 断言。
 - `FILE-001`：已补本地 files/media app、文件元数据、类型/大小限制、鉴权下载、包裹入库图片 file id 校验和 Admin Web 上传入口。
 - `FIN-001`：已补用户线下汇款提交、`REMITTANCE_PROOF` 凭证校验、后台财务审核通过/取消、钱包入账防重、User Web/Mobile H5 财务中心和 Admin Web 汇款审核入口。
+- `MSG-001`：已补 tickets/messages app、`MESSAGE_ATTACHMENT` 附件校验、后台 `tickets.view` 权限、用户/后台回复状态机、Admin Web/User Web/Mobile H5 工单入口和 API E2E 工单往返。
 
 ## Current Next Task
 
-`MSG-001` 是当前下一项，因为 `FILE-001` 已提供 `MESSAGE_ATTACHMENT` 文件基础，`FIN-001` 已补齐财务入口，下一步可以补用户留言、后台客服处理和消息状态闭环。
+`MEMBER-001` 是当前下一项，因为 `MSG-001` 已提供客服工单入口，后台会员管理仍停留在占位页，原始报告中的会员状态、等级、冻结和客服服务信息仍未补齐。
 
-建议 `MSG-001` 范围：
+建议 `MEMBER-001` 范围：
 
-- 后端新增 tickets/messages 模型、状态机、API 和权限隔离测试。
-- 用户可提交留言/工单并引用 `MESSAGE_ATTACHMENT` 文件。
-- 后台客服查看、回复、关闭或标记处理中。
-- User Web/Mobile H5 消息入口，Admin Web 客服处理入口。
+- 后端补会员列表、详情、状态变更和测试密码重置等基础 API。
+- 后台 RBAC 使用独立会员管理权限，非授权后台账号必须 403。
+- Admin Web `/members` 从占位页升级为真实会员管理页面。
+- 会员等级、客服分配等规则不明确处保持 `TODO_CONFIRM`。
 - 继续保持 SQLite-first，不接真实第三方客服或实时推送。
 
 ## Completion Boundary

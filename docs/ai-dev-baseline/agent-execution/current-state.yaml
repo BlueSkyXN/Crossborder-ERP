@@ -1,9 +1,9 @@
 project: crossborder-erp
 baseline_version: v0.3
 status: in_progress
-current_task: BE-001
+current_task: BE-002
 current_phase: P0_FOUNDATION
-last_completed_task: INIT-001
+last_completed_task: BE-001
 blocked_reason: null
 rules:
   - "Agent must read agent-execution/README.md before choosing tasks."
@@ -13,8 +13,8 @@ rules:
   - "Agent must mark uncertain business rules as TODO_CONFIRM."
 done_tasks:
   - INIT-001
-pending_tasks:
   - BE-001
+pending_tasks:
   - BE-002
   - BE-003
   - BE-004

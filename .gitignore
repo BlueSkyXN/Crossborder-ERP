@@ -39,6 +39,7 @@ media/
 staticfiles/
 celerybeat-schedule
 celerybeat-schedule.*
+backend/openapi.yaml
 
 # Node / pnpm / Vite
 node_modules/

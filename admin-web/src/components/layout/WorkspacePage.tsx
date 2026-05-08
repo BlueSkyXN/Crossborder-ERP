@@ -27,7 +27,7 @@ export function WorkspacePage({ route }: WorkspacePageProps) {
   }
 
   return (
-    <Space direction="vertical" size={16} className="workspace-page">
+    <Space orientation="vertical" size={16} className="workspace-page">
       <div className="page-heading">
         <div>
           <Typography.Title level={2}>{route.label}</Typography.Title>
@@ -47,12 +47,12 @@ export function WorkspacePage({ route }: WorkspacePageProps) {
         </Col>
         <Col xs={24} md={8}>
           <Card>
-            <Statistic title="待处理" value={7} suffix="项" valueStyle={{ color: "#f59e0b" }} />
+            <Statistic title="待处理" value={7} suffix="项" styles={{ content: { color: "#f59e0b" } }} />
           </Card>
         </Col>
         <Col xs={24} md={8}>
           <Card>
-            <Statistic title="异常" value={1} suffix="项" valueStyle={{ color: "#ef4444" }} />
+            <Statistic title="异常" value={1} suffix="项" styles={{ content: { color: "#ef4444" } }} />
           </Card>
         </Col>
       </Row>

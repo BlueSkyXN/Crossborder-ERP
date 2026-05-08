@@ -133,7 +133,7 @@ export function AdminLayout() {
           </div>
         }
         placement="left"
-        width={280}
+        size={280}
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
         styles={{ body: { padding: 0, background: "#111827" }, header: { background: "#111827" } }}

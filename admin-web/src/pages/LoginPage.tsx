@@ -53,7 +53,7 @@ export function LoginPage() {
           <Typography.Title level={2}>管理员登录</Typography.Title>
           <Typography.Paragraph>权限登录入口</Typography.Paragraph>
           {loginMutation.isError && (
-            <Alert className="login-error" type="error" showIcon message={errorMessage} />
+            <Alert className="login-error" type="error" showIcon title={errorMessage} />
           )}
           <Form<LoginFormValues>
             layout="vertical"

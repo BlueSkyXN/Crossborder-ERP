@@ -7,8 +7,8 @@
 ## 当前状态
 
 - 项目阶段：`P2_PARCEL_WMS`
-- 当前已完成：`BE-006` 运单/打包申请后端基础
-- 下一任务：`BE-007` 钱包和余额支付
+- 当前已完成：`BE-007` 钱包和余额支付
+- 下一任务：`BE-008` 物流轨迹
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`

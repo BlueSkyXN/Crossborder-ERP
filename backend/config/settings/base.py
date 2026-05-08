@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "apps.warehouses",
     "apps.parcels",
     "apps.waybills",
+    "apps.finance",
 ]
 
 MIDDLEWARE = [
@@ -115,6 +116,11 @@ SPECTACULAR_SETTINGS = {
         "ParcelStatusEnum": "apps.parcels.models.ParcelStatus",
         "UnclaimedParcelStatusEnum": "apps.parcels.models.UnclaimedParcelStatus",
         "WaybillStatusEnum": "apps.waybills.models.WaybillStatus",
+        "WalletTransactionTypeEnum": "apps.finance.models.WalletTransactionType",
+        "WalletTransactionDirectionEnum": "apps.finance.models.WalletTransactionDirection",
+        "PaymentOrderStatusEnum": "apps.finance.models.PaymentOrderStatus",
+        "PaymentBusinessTypeEnum": "apps.finance.models.PaymentBusinessType",
+        "RechargeRequestStatusEnum": "apps.finance.models.RechargeRequestStatus",
     },
 }
 

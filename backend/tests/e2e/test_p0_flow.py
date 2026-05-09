@@ -612,11 +612,39 @@ def _run_forwarding_flow(
     )["waybill"]
     assert paid["status"] == "PENDING_SHIPMENT"
 
+    batch = _api_data(
+        admin_client.post(
+            "/api/v1/admin/shipping-batches",
+            {
+                "name": f"E2E {suffix} 发货批次",
+                "carrier_batch_no": f"E2E-CARRIER-{suffix}-{run_id}",
+                "transfer_no": f"E2E-TRANSFER-{suffix}-{run_id}",
+                "ship_note": f"E2E {suffix} batch shipment",
+                "waybill_ids": [waybill["id"]],
+            },
+            format="json",
+        ),
+        expected_status=201,
+    )
+    assert batch["status"] == "DRAFT"
+    assert batch["waybill_count"] == 1
+    assert batch["waybills"][0]["waybill_no"] == waybill["waybill_no"]
+
+    locked_batch = _api_data(admin_client.post(f"/api/v1/admin/shipping-batches/{batch['id']}/lock"))
+    assert locked_batch["status"] == "LOCKED"
+
+    for template in ["label", "picking", "handover"]:
+        preview = _api_data(admin_client.get(f"/api/v1/admin/shipping-batches/{batch['id']}/print-data?template={template}"))
+        assert preview["template"] == template
+        assert preview["batch"]["batch_no"] == batch["batch_no"]
+        assert preview["batch"]["carrier_batch_no"] == f"E2E-CARRIER-{suffix}-{run_id}"
+        assert preview["items"][0]["waybill_no"] == waybill["waybill_no"]
+
     shipped = _api_data(
         admin_client.post(
-            f"/api/v1/admin/waybills/{waybill['id']}/ship",
+            f"/api/v1/admin/shipping-batches/{batch['id']}/ship",
             {
-                "status_text": "已发货",
+                "status_text": "批次已发货",
                 "location": "深圳仓",
                 "description": f"E2E {suffix} outbound",
             },
@@ -624,10 +652,24 @@ def _run_forwarding_flow(
         )
     )
     assert shipped["status"] == "SHIPPED"
+    assert shipped["waybills"][0]["status"] == "SHIPPED"
+
+    repeat_shipped = _api_data(
+        admin_client.post(
+            f"/api/v1/admin/shipping-batches/{batch['id']}/ship",
+            {
+                "status_text": "批次已发货",
+                "location": "深圳仓",
+                "description": f"E2E {suffix} outbound repeated",
+            },
+            format="json",
+        )
+    )
+    assert repeat_shipped["status"] == "SHIPPED"
 
     event = _api_data(
         admin_client.post(
-            f"/api/v1/admin/waybills/{waybill['id']}/tracking-events",
+            f"/api/v1/admin/shipping-batches/{batch['id']}/tracking-events",
             {
                 "status_text": "运输中",
                 "location": "香港中转",
@@ -654,6 +696,7 @@ def _run_forwarding_flow(
         "tracking_no": tracking_no,
         "parcel_no": parcel["parcel_no"],
         "waybill_no": waybill["waybill_no"],
+        "batch_no": batch["batch_no"],
         "remittance_no": remittance["request_no"],
         "status": signed["status"],
     }
@@ -845,6 +888,7 @@ def test_p0_forwarding_and_purchase_e2e():
     )
 
     print("[E2E-001] 主链路完成:", main_result)
+    print("[SHIP-BATCH-001] 发货批次链路完成:", {"batch_no": main_result["batch_no"]})
     print("[IMPORT-001] 批量导入导出链路完成:", import_result)
     print("[PARCEL-CLAIM-001] 无主包裹认领链路完成:", unclaimed_result)
     print("[E2E-001] 代购链路完成:", purchase_result)

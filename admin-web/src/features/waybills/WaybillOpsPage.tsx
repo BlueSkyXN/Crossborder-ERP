@@ -1,9 +1,14 @@
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
+  DeleteOutlined,
   DollarOutlined,
   EyeOutlined,
+  InboxOutlined,
+  LinkOutlined,
+  LockOutlined,
   PlusOutlined,
+  PrinterOutlined,
   ReloadOutlined,
   SearchOutlined,
   SendOutlined,
@@ -23,7 +28,9 @@ import {
   Input,
   InputNumber,
   Modal,
+  Popconfirm,
   Row,
+  Select,
   Space,
   Statistic,
   Table,
@@ -40,6 +47,10 @@ import { ForbiddenPage } from "../../pages/ForbiddenPage";
 import { waybillOpsApi } from "./api";
 import type {
   TrackingEvent,
+  ShippingBatch,
+  ShippingBatchPrintPreview,
+  ShippingBatchPrintTemplate,
+  ShippingBatchStatus,
   Waybill,
   WaybillStatus,
   WaybillTrackingPayload,
@@ -51,10 +62,16 @@ type WorkspaceContext = {
 
 type ActiveStatus = "ALL" | WaybillStatus;
 type ActionType = "review" | "fee" | "recharge" | "ship" | "tracking";
+type BatchActionType = "create" | "addWaybills" | "ship" | "tracking";
 
 type ActionState = {
   type: ActionType;
   waybillId: number;
+};
+
+type BatchActionState = {
+  type: BatchActionType;
+  batchId?: number;
 };
 
 type ReviewFormValues = {
@@ -81,7 +98,16 @@ type TrackingFormValues = {
   description?: string;
 };
 
+type BatchFormValues = {
+  name?: string;
+  carrier_batch_no?: string;
+  transfer_no?: string;
+  ship_note?: string;
+  waybill_ids?: number[];
+};
+
 const waybillsQueryKey = ["admin-waybills"] as const;
+const shippingBatchesQueryKey = ["admin-shipping-batches"] as const;
 const walletTransactionsQueryKey = ["admin-wallet-transactions"] as const;
 const paymentOrdersQueryKey = ["admin-payment-orders"] as const;
 
@@ -117,6 +143,13 @@ const transactionTypeMeta: Record<string, { color: string; label: string }> = {
   ADJUSTMENT: { color: "gold", label: "余额调整" },
 };
 
+const shippingBatchStatusMeta: Record<ShippingBatchStatus, { color: string; label: string }> = {
+  DRAFT: { color: "gold", label: "草稿" },
+  LOCKED: { color: "blue", label: "已锁定" },
+  SHIPPED: { color: "purple", label: "已发货" },
+  CANCELLED: { color: "default", label: "已取消" },
+};
+
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "请求失败";
 }
@@ -128,6 +161,11 @@ function statusTag(status: WaybillStatus) {
 
 function transactionTag(type: string) {
   const meta = transactionTypeMeta[type] || { color: "default", label: type };
+  return <Tag color={meta.color}>{meta.label}</Tag>;
+}
+
+function shippingBatchStatusTag(status: ShippingBatchStatus) {
+  const meta = shippingBatchStatusMeta[status];
   return <Tag color={meta.color}>{meta.label}</Tag>;
 }
 
@@ -209,6 +247,16 @@ function buildTrackingPayload(values: TrackingFormValues): WaybillTrackingPayloa
   };
 }
 
+function buildBatchPayload(values: BatchFormValues) {
+  return {
+    name: values.name?.trim() || "",
+    carrier_batch_no: values.carrier_batch_no?.trim() || "",
+    transfer_no: values.transfer_no?.trim() || "",
+    ship_note: values.ship_note?.trim() || "",
+    waybill_ids: values.waybill_ids || [],
+  };
+}
+
 function trackingSourceLabel(source: TrackingEvent["source"]) {
   if (source === "MEMBER") {
     return "会员";
@@ -247,15 +295,24 @@ export function WaybillOpsPage() {
   const [feeForm] = Form.useForm<FeeFormValues>();
   const [rechargeForm] = Form.useForm<RechargeFormValues>();
   const [trackingForm] = Form.useForm<TrackingFormValues>();
+  const [batchForm] = Form.useForm<BatchFormValues>();
   const [activeStatus, setActiveStatus] = useState<ActiveStatus>("ALL");
   const [keyword, setKeyword] = useState("");
   const [detailWaybillId, setDetailWaybillId] = useState<number | null>(null);
+  const [detailBatchId, setDetailBatchId] = useState<number | null>(null);
   const [action, setAction] = useState<ActionState | null>(null);
+  const [batchAction, setBatchAction] = useState<BatchActionState | null>(null);
+  const [printTemplate, setPrintTemplate] = useState<ShippingBatchPrintTemplate>("label");
+  const [printPreview, setPrintPreview] = useState<ShippingBatchPrintPreview | null>(null);
   const hasFinancePermission = allowedCodes.has("finance.view");
 
   const waybillsQuery = useQuery({
     queryKey: waybillsQueryKey,
     queryFn: waybillOpsApi.listWaybills,
+  });
+  const shippingBatchesQuery = useQuery({
+    queryKey: shippingBatchesQueryKey,
+    queryFn: waybillOpsApi.listShippingBatches,
   });
   const walletTransactionsQuery = useQuery({
     queryKey: walletTransactionsQueryKey,
@@ -269,6 +326,7 @@ export function WaybillOpsPage() {
   });
 
   const waybills = useMemo(() => waybillsQuery.data ?? [], [waybillsQuery.data]);
+  const shippingBatches = useMemo(() => shippingBatchesQuery.data ?? [], [shippingBatchesQuery.data]);
   const walletTransactions = useMemo(
     () => walletTransactionsQuery.data ?? [],
     [walletTransactionsQuery.data],
@@ -278,10 +336,28 @@ export function WaybillOpsPage() {
     () => waybills.find((waybill) => waybill.id === detailWaybillId) || null,
     [detailWaybillId, waybills],
   );
+  const detailBatch = useMemo(
+    () => shippingBatches.find((batch) => batch.id === detailBatchId) || null,
+    [detailBatchId, shippingBatches],
+  );
   const actionWaybill = useMemo(
     () => waybills.find((waybill) => waybill.id === action?.waybillId) || null,
     [action?.waybillId, waybills],
   );
+  const actionBatch = useMemo(
+    () => shippingBatches.find((batch) => batch.id === batchAction?.batchId) || null,
+    [batchAction?.batchId, shippingBatches],
+  );
+  const batchCandidateWaybills = useMemo(() => {
+    const currentBatchWaybillIds = new Set(actionBatch?.waybills.map((waybill) => waybill.id) || []);
+    return waybills.filter(
+      (waybill) =>
+        waybill.status === "PENDING_SHIPMENT" &&
+        (!waybill.shipping_batch || currentBatchWaybillIds.has(waybill.id)) &&
+        (!actionBatch?.warehouse || waybill.warehouse === actionBatch.warehouse) &&
+        (!actionBatch?.channel || waybill.channel === actionBatch.channel),
+    );
+  }, [actionBatch, waybills]);
 
   const statusCounts = useMemo(() => {
     const counts = Object.fromEntries(statusTabs.map((tab) => [tab.key, 0])) as Record<ActiveStatus, number>;
@@ -315,6 +391,11 @@ export function WaybillOpsPage() {
     queryClient.invalidateQueries({ queryKey: waybillsQueryKey });
   };
 
+  const invalidateShippingBatches = () => {
+    queryClient.invalidateQueries({ queryKey: shippingBatchesQueryKey });
+    invalidateWaybills();
+  };
+
   const invalidateFinance = () => {
     queryClient.invalidateQueries({ queryKey: walletTransactionsQueryKey });
     queryClient.invalidateQueries({ queryKey: paymentOrdersQueryKey });
@@ -322,6 +403,10 @@ export function WaybillOpsPage() {
 
   const closeAction = () => {
     setAction(null);
+  };
+
+  const closeBatchAction = () => {
+    setBatchAction(null);
   };
 
   const openAction = (type: ActionType, waybill: Waybill) => {
@@ -350,6 +435,21 @@ export function WaybillOpsPage() {
     }
     if (type === "tracking") {
       trackingForm.resetFields();
+      trackingForm.setFieldsValue({ status_text: "运输中", location: "", description: "" });
+    }
+  };
+
+  const openBatchAction = (type: BatchActionType, batch?: ShippingBatch) => {
+    setBatchAction({ type, batchId: batch?.id });
+    batchForm.resetFields();
+    trackingForm.resetFields();
+    if (type === "addWaybills" && batch) {
+      batchForm.setFieldsValue({ waybill_ids: [] });
+    }
+    if (type === "ship") {
+      trackingForm.setFieldsValue({ status_text: "批次已发货", location: "", description: "" });
+    }
+    if (type === "tracking") {
       trackingForm.setFieldsValue({ status_text: "运输中", location: "", description: "" });
     }
   };
@@ -416,6 +516,80 @@ export function WaybillOpsPage() {
       closeAction();
       message.success("轨迹已添加");
     },
+    onError: (error) => message.error(getErrorMessage(error)),
+  });
+
+  const createBatchMutation = useMutation({
+    mutationFn: waybillOpsApi.createShippingBatch,
+    onSuccess: (batch) => {
+      invalidateShippingBatches();
+      setDetailBatchId(batch.id);
+      closeBatchAction();
+      message.success(`${batch.batch_no} 已创建`);
+    },
+    onError: (error) => message.error(getErrorMessage(error)),
+  });
+
+  const addBatchWaybillsMutation = useMutation({
+    mutationFn: ({ batchId, waybillIds }: { batchId: number; waybillIds: number[] }) =>
+      waybillOpsApi.addWaybillsToShippingBatch(batchId, { waybill_ids: waybillIds }),
+    onSuccess: (batch) => {
+      invalidateShippingBatches();
+      setDetailBatchId(batch.id);
+      closeBatchAction();
+      message.success("运单已归批");
+    },
+    onError: (error) => message.error(getErrorMessage(error)),
+  });
+
+  const removeBatchWaybillMutation = useMutation({
+    mutationFn: ({ batchId, waybillId }: { batchId: number; waybillId: number }) =>
+      waybillOpsApi.removeWaybillFromShippingBatch(batchId, waybillId),
+    onSuccess: (batch) => {
+      invalidateShippingBatches();
+      setDetailBatchId(batch.id);
+      message.success("运单已移出批次");
+    },
+    onError: (error) => message.error(getErrorMessage(error)),
+  });
+
+  const lockBatchMutation = useMutation({
+    mutationFn: waybillOpsApi.lockShippingBatch,
+    onSuccess: (batch) => {
+      invalidateShippingBatches();
+      setDetailBatchId(batch.id);
+      message.success(`${batch.batch_no} 已锁定`);
+    },
+    onError: (error) => message.error(getErrorMessage(error)),
+  });
+
+  const shipBatchMutation = useMutation({
+    mutationFn: ({ batchId, payload }: { batchId: number; payload: WaybillTrackingPayload }) =>
+      waybillOpsApi.shipShippingBatch(batchId, payload),
+    onSuccess: (batch) => {
+      invalidateShippingBatches();
+      setDetailBatchId(batch.id);
+      closeBatchAction();
+      message.success(`${batch.batch_no} 已批量发货`);
+    },
+    onError: (error) => message.error(getErrorMessage(error)),
+  });
+
+  const batchTrackingMutation = useMutation({
+    mutationFn: ({ batchId, payload }: { batchId: number; payload: WaybillTrackingPayload }) =>
+      waybillOpsApi.addShippingBatchTrackingEvent(batchId, payload),
+    onSuccess: () => {
+      invalidateShippingBatches();
+      closeBatchAction();
+      message.success("批量轨迹已添加");
+    },
+    onError: (error) => message.error(getErrorMessage(error)),
+  });
+
+  const printPreviewMutation = useMutation({
+    mutationFn: ({ batchId, template }: { batchId: number; template: ShippingBatchPrintTemplate }) =>
+      waybillOpsApi.getShippingBatchPrintPreview(batchId, template),
+    onSuccess: (preview) => setPrintPreview(preview),
     onError: (error) => message.error(getErrorMessage(error)),
   });
 
@@ -501,6 +675,74 @@ export function WaybillOpsPage() {
     },
   ];
 
+  const batchColumns: TableColumnsType<ShippingBatch> = [
+    {
+      title: "批次号",
+      dataIndex: "batch_no",
+      width: 150,
+      render: (value: string) => <Typography.Text copyable strong>{value}</Typography.Text>,
+    },
+    { title: "名称", dataIndex: "name", width: 160, render: (value: string) => value || "-" },
+    { title: "状态", dataIndex: "status", width: 110, render: shippingBatchStatusTag },
+    { title: "仓库", dataIndex: "warehouse_name", width: 130, render: (value: string | null) => value || "-" },
+    { title: "渠道", dataIndex: "channel_name", width: 130, render: (value: string | null) => value || "-" },
+    { title: "承运商批次号", dataIndex: "carrier_batch_no", width: 150, render: (value: string) => value || "-" },
+    { title: "转单号", dataIndex: "transfer_no", width: 150, render: (value: string) => value || "-" },
+    { title: "运单数", dataIndex: "waybill_count", width: 90 },
+    { title: "创建时间", dataIndex: "created_at", width: 180, render: formatDate },
+    {
+      title: "操作",
+      width: 260,
+      fixed: "right",
+      render: (_, record) => (
+        <Space size={4} wrap>
+          <Button size="small" title="查看详情" icon={<EyeOutlined />} onClick={() => setDetailBatchId(record.id)} />
+          {record.status === "DRAFT" && (
+            <>
+              <Button
+                size="small"
+                title="归批"
+                icon={<LinkOutlined />}
+                onClick={() => openBatchAction("addWaybills", record)}
+              />
+              <Button
+                size="small"
+                type="primary"
+                title="锁定批次"
+                icon={<LockOutlined />}
+                loading={lockBatchMutation.isPending}
+                onClick={() => lockBatchMutation.mutate(record.id)}
+              />
+            </>
+          )}
+          {record.status === "LOCKED" && (
+            <Button
+              size="small"
+              type="primary"
+              title="批量发货"
+              icon={<SendOutlined />}
+              onClick={() => openBatchAction("ship", record)}
+            />
+          )}
+          {(record.status === "LOCKED" || record.status === "SHIPPED") && (
+            <Button
+              size="small"
+              title="批量轨迹"
+              icon={<PlusOutlined />}
+              onClick={() => openBatchAction("tracking", record)}
+            />
+          )}
+          <Button
+            size="small"
+            title="打印预览"
+            icon={<PrinterOutlined />}
+            onClick={() => printPreviewMutation.mutate({ batchId: record.id, template: "handover" })}
+          />
+        </Space>
+      ),
+    },
+  ];
+
   const detailWalletTransactions = detailWaybill
     ? walletTransactions.filter((transaction) => transaction.user === detailWaybill.user)
     : [];
@@ -520,13 +762,17 @@ export function WaybillOpsPage() {
       <div className="page-heading">
         <div>
           <Typography.Title level={2}>运单处理</Typography.Title>
-          <Typography.Paragraph>审核、计费、人工充值、发货和物流轨迹录入。</Typography.Paragraph>
+          <Typography.Paragraph>审核、计费、人工充值、发货批次和物流轨迹录入。</Typography.Paragraph>
         </div>
         <Space wrap>
+          <Button type="primary" icon={<InboxOutlined />} onClick={() => openBatchAction("create")}>
+            创建批次
+          </Button>
           <Button
             icon={<ReloadOutlined />}
             onClick={() => {
               waybillsQuery.refetch();
+              shippingBatchesQuery.refetch();
               if (hasFinancePermission) {
                 walletTransactionsQuery.refetch();
                 paymentOrdersQuery.refetch();
@@ -572,12 +818,15 @@ export function WaybillOpsPage() {
             }))}
           />
 
-          {(waybillsQuery.error || walletTransactionsQuery.error || paymentOrdersQuery.error) && (
+          {(waybillsQuery.error || shippingBatchesQuery.error || walletTransactionsQuery.error || paymentOrdersQuery.error) && (
             <Alert
               type="error"
               showIcon
               title={getErrorMessage(
-                waybillsQuery.error || walletTransactionsQuery.error || paymentOrdersQuery.error,
+                waybillsQuery.error ||
+                  shippingBatchesQuery.error ||
+                  walletTransactionsQuery.error ||
+                  paymentOrdersQuery.error,
               )}
             />
           )}
@@ -602,6 +851,25 @@ export function WaybillOpsPage() {
             locale={{ emptyText: <Empty description="暂无运单" /> }}
           />
         </Space>
+      </Card>
+
+      <Card
+        title="发货批次"
+        extra={
+          <Button type="primary" icon={<InboxOutlined />} onClick={() => openBatchAction("create")}>
+            创建批次
+          </Button>
+        }
+      >
+        <Table
+          rowKey="id"
+          loading={shippingBatchesQuery.isLoading}
+          dataSource={shippingBatches}
+          columns={batchColumns}
+          pagination={{ pageSize: 8, showSizeChanger: true }}
+          scroll={{ x: 1450 }}
+          locale={{ emptyText: <Empty description="暂无发货批次" /> }}
+        />
       </Card>
 
       <Drawer
@@ -760,6 +1028,146 @@ export function WaybillOpsPage() {
         )}
       </Drawer>
 
+      <Drawer
+        title={detailBatch ? `${detailBatch.batch_no} 详情` : "发货批次详情"}
+        open={Boolean(detailBatchId)}
+        size={980}
+        destroyOnHidden
+        onClose={() => setDetailBatchId(null)}
+        extra={
+          detailBatch ? (
+            <Space wrap>
+              {detailBatch.status === "DRAFT" && (
+                <>
+                  <Button icon={<LinkOutlined />} onClick={() => openBatchAction("addWaybills", detailBatch)}>
+                    归批
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<LockOutlined />}
+                    loading={lockBatchMutation.isPending}
+                    onClick={() => lockBatchMutation.mutate(detailBatch.id)}
+                  >
+                    锁定
+                  </Button>
+                </>
+              )}
+              {detailBatch.status === "LOCKED" && (
+                <Button type="primary" icon={<SendOutlined />} onClick={() => openBatchAction("ship", detailBatch)}>
+                  批量发货
+                </Button>
+              )}
+              {(detailBatch.status === "LOCKED" || detailBatch.status === "SHIPPED") && (
+                <Button icon={<PlusOutlined />} onClick={() => openBatchAction("tracking", detailBatch)}>
+                  批量轨迹
+                </Button>
+              )}
+              <Button
+                icon={<PrinterOutlined />}
+                loading={printPreviewMutation.isPending}
+                onClick={() => printPreviewMutation.mutate({ batchId: detailBatch.id, template: "handover" })}
+              >
+                交接单
+              </Button>
+            </Space>
+          ) : null
+        }
+      >
+        {detailBatch && (
+          <Space orientation="vertical" size={16} className="waybill-detail">
+            <Descriptions
+              bordered
+              column={{ xs: 1, md: 2 }}
+              size="small"
+              items={[
+                { key: "batch_no", label: "批次号", children: detailBatch.batch_no },
+                { key: "status", label: "状态", children: shippingBatchStatusTag(detailBatch.status) },
+                { key: "name", label: "名称", children: detailBatch.name || "-" },
+                { key: "warehouse", label: "仓库", children: detailBatch.warehouse_name || "-" },
+                { key: "channel", label: "渠道", children: detailBatch.channel_name || "-" },
+                { key: "carrier_batch_no", label: "承运商批次号", children: detailBatch.carrier_batch_no || "-" },
+                { key: "transfer_no", label: "转单号", children: detailBatch.transfer_no || "-" },
+                { key: "waybill_count", label: "运单数", children: detailBatch.waybill_count },
+                { key: "ship_note", label: "发货备注", children: detailBatch.ship_note || "-" },
+                { key: "locked_at", label: "锁定时间", children: formatDate(detailBatch.locked_at) },
+                { key: "shipped_at", label: "发货时间", children: formatDate(detailBatch.shipped_at) },
+              ]}
+            />
+            <Card title="批次运单" size="small">
+              <Table
+                rowKey="id"
+                size="small"
+                dataSource={detailBatch.waybills}
+                pagination={false}
+                columns={[
+                  { title: "运单号", dataIndex: "waybill_no", render: (value: string) => <Typography.Text copyable>{value}</Typography.Text> },
+                  { title: "会员", dataIndex: "user_email" },
+                  { title: "状态", dataIndex: "status", width: 110, render: statusTag },
+                  { title: "转单号", dataIndex: "transfer_no", width: 140, render: (value: string) => value || "-" },
+                  { title: "包裹数", dataIndex: "parcels", width: 90, render: (parcels) => parcels.length },
+                  {
+                    title: "操作",
+                    width: 90,
+                    render: (_, record) =>
+                      detailBatch.status === "DRAFT" ? (
+                        <Popconfirm
+                          title="移出批次"
+                          description={`确认将 ${record.waybill_no} 移出当前批次？`}
+                          onConfirm={() =>
+                            removeBatchWaybillMutation.mutate({ batchId: detailBatch.id, waybillId: record.id })
+                          }
+                        >
+                          <Button size="small" icon={<DeleteOutlined />} />
+                        </Popconfirm>
+                      ) : (
+                        "-"
+                      ),
+                  },
+                ]}
+                locale={{ emptyText: <Empty description="暂无运单" /> }}
+              />
+            </Card>
+            <Card
+              title="打印模板数据"
+              size="small"
+              extra={
+                <Space wrap>
+                  <Select
+                    value={printTemplate}
+                    style={{ width: 140 }}
+                    onChange={(value) => setPrintTemplate(value)}
+                    options={[
+                      { value: "label", label: "面单" },
+                      { value: "picking", label: "拣货单" },
+                      { value: "handover", label: "交接清单" },
+                    ]}
+                  />
+                  <Button
+                    icon={<PrinterOutlined />}
+                    loading={printPreviewMutation.isPending}
+                    onClick={() =>
+                      printPreviewMutation.mutate({ batchId: detailBatch.id, template: printTemplate })
+                    }
+                  >
+                    预览数据
+                  </Button>
+                </Space>
+              }
+            >
+              <Descriptions
+                size="small"
+                column={{ xs: 1, md: 3 }}
+                items={[
+                  { key: "carrier_batch_no", label: "承运商批次号", children: detailBatch.carrier_batch_no || "-" },
+                  { key: "transfer_no", label: "转单号", children: detailBatch.transfer_no || "-" },
+                  { key: "waybill_count", label: "运单数", children: detailBatch.waybill_count },
+                ]}
+              />
+            </Card>
+          </Space>
+        )}
+      </Drawer>
+
       <Modal
         title={actionWaybill ? `${actionWaybill.waybill_no} 审核` : "运单审核"}
         open={action?.type === "review"}
@@ -896,6 +1304,174 @@ export function WaybillOpsPage() {
             <Input.TextArea rows={3} />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title="创建发货批次"
+        open={batchAction?.type === "create"}
+        destroyOnHidden
+        okText="创建批次"
+        confirmLoading={createBatchMutation.isPending}
+        onCancel={closeBatchAction}
+        onOk={() => {
+          batchForm.validateFields().then((values) => {
+            createBatchMutation.mutate(buildBatchPayload(values));
+          });
+        }}
+      >
+        <Form form={batchForm} layout="vertical" requiredMark={false}>
+          <Form.Item name="name" label="批次名称">
+            <Input placeholder="例如：美国空运晚班" />
+          </Form.Item>
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="carrier_batch_no" label="承运商批次号">
+                <Input placeholder="承运商交接批号" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="transfer_no" label="转单号">
+                <Input placeholder="可留空" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="waybill_ids" label="待发货运单" rules={[{ required: true, message: "请选择运单" }]}>
+            <Select
+              mode="multiple"
+              showSearch
+              optionFilterProp="label"
+              placeholder="选择待发货且未归批的运单"
+              options={batchCandidateWaybills.map((waybill) => ({
+                value: waybill.id,
+                label: `${waybill.waybill_no} / ${waybill.user_email} / ${waybill.warehouse_name}`,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item name="ship_note" label="发货备注">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={actionBatch ? `${actionBatch.batch_no} 归批` : "归批"}
+        open={batchAction?.type === "addWaybills"}
+        destroyOnHidden
+        okText="加入批次"
+        confirmLoading={addBatchWaybillsMutation.isPending}
+        onCancel={closeBatchAction}
+        onOk={() => {
+          batchForm.validateFields().then((values) => {
+            if (actionBatch) {
+              addBatchWaybillsMutation.mutate({ batchId: actionBatch.id, waybillIds: values.waybill_ids || [] });
+            }
+          });
+        }}
+      >
+        <Form form={batchForm} layout="vertical" requiredMark={false}>
+          <Form.Item name="waybill_ids" label="待发货运单" rules={[{ required: true, message: "请选择运单" }]}>
+            <Select
+              mode="multiple"
+              showSearch
+              optionFilterProp="label"
+              placeholder="选择待发货且未归批的运单"
+              options={batchCandidateWaybills
+                .filter((waybill) => waybill.shipping_batch !== actionBatch?.id)
+                .map((waybill) => ({
+                  value: waybill.id,
+                  label: `${waybill.waybill_no} / ${waybill.user_email} / ${waybill.warehouse_name}`,
+                }))}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={batchAction?.type === "ship" ? "批量发货" : "批量添加轨迹"}
+        open={batchAction?.type === "ship" || batchAction?.type === "tracking"}
+        destroyOnHidden
+        okText={batchAction?.type === "ship" ? "确认发货" : "添加轨迹"}
+        confirmLoading={shipBatchMutation.isPending || batchTrackingMutation.isPending}
+        onCancel={closeBatchAction}
+        onOk={() => {
+          trackingForm.validateFields().then((values) => {
+            if (!actionBatch || !batchAction) {
+              return;
+            }
+            const payload = buildTrackingPayload(values);
+            if (batchAction.type === "ship") {
+              shipBatchMutation.mutate({ batchId: actionBatch.id, payload });
+            } else {
+              batchTrackingMutation.mutate({ batchId: actionBatch.id, payload });
+            }
+          });
+        }}
+      >
+        <Alert
+          type="info"
+          showIcon
+          className="waybill-modal-alert"
+          title={actionBatch ? `${actionBatch.batch_no} 共 ${actionBatch.waybill_count} 票运单` : ""}
+        />
+        <Form form={trackingForm} layout="vertical" requiredMark={false}>
+          <Form.Item name="status_text" label="轨迹状态" rules={[{ required: true, message: "请输入轨迹状态" }]}>
+            <Input placeholder="例如：批次已发货、已交接承运商" />
+          </Form.Item>
+          <Form.Item name="location" label="地点">
+            <Input placeholder="例如：深圳仓" />
+          </Form.Item>
+          <Form.Item name="description" label="说明">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={printPreview ? `${printPreview.batch.batch_no} 打印模板数据` : "打印模板数据"}
+        open={Boolean(printPreview)}
+        width={920}
+        destroyOnHidden
+        footer={null}
+        onCancel={() => setPrintPreview(null)}
+      >
+        {printPreview && (
+          <Space orientation="vertical" size={16} className="waybill-detail">
+            <Descriptions
+              bordered
+              size="small"
+              column={{ xs: 1, md: 3 }}
+              items={[
+                { key: "template", label: "模板", children: printPreview.template },
+                { key: "waybill_count", label: "运单数", children: printPreview.batch.waybill_count },
+                { key: "parcel_count", label: "包裹数", children: printPreview.batch.parcel_count },
+                { key: "warehouse", label: "仓库", children: printPreview.batch.warehouse_name || "-" },
+                { key: "channel", label: "渠道", children: printPreview.batch.channel_name || "-" },
+                { key: "carrier_batch_no", label: "承运商批次号", children: printPreview.batch.carrier_batch_no || "-" },
+                { key: "transfer_no", label: "转单号", children: printPreview.batch.transfer_no || "-" },
+                { key: "total_weight_kg", label: "总重量 kg", children: printPreview.batch.total_weight_kg },
+                { key: "generated_at", label: "生成时间", children: formatDate(printPreview.batch.generated_at) },
+              ]}
+            />
+            <Table
+              rowKey="waybill_no"
+              size="small"
+              dataSource={printPreview.items}
+              pagination={false}
+              columns={[
+                { title: "运单号", dataIndex: "waybill_no" },
+                { title: "转单号", dataIndex: "transfer_no", render: (value: string) => value || "-" },
+                { title: "会员", dataIndex: "user_email" },
+                { title: "目的地", dataIndex: "destination_country", width: 90 },
+                { title: "包裹数", dataIndex: "parcel_count", width: 90 },
+                {
+                  title: "收件人",
+                  dataIndex: "recipient",
+                  render: (recipient: Record<string, unknown>) => snapshotText(recipient, "name"),
+                },
+              ]}
+            />
+          </Space>
+        )}
       </Modal>
     </Space>
   );

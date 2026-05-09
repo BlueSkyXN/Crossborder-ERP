@@ -14,10 +14,76 @@ class WaybillStatus(models.TextChoices):
     PROBLEM = "PROBLEM", "问题单"
 
 
+class ShippingBatchStatus(models.TextChoices):
+    DRAFT = "DRAFT", "草稿"
+    LOCKED = "LOCKED", "已锁定"
+    SHIPPED = "SHIPPED", "已发货"
+    CANCELLED = "CANCELLED", "已取消"
+
+
 class TrackingEventSource(models.TextChoices):
     MANUAL = "MANUAL", "人工"
     MEMBER = "MEMBER", "会员"
     SYSTEM = "SYSTEM", "系统"
+
+
+class ShippingBatch(models.Model):
+    batch_no = models.CharField(max_length=30, unique=True)
+    name = models.CharField(max_length=120, blank=True)
+    status = models.CharField(
+        max_length=30,
+        choices=ShippingBatchStatus.choices,
+        default=ShippingBatchStatus.DRAFT,
+    )
+    warehouse = models.ForeignKey(
+        "warehouses.Warehouse",
+        on_delete=models.PROTECT,
+        related_name="shipping_batches",
+        null=True,
+        blank=True,
+    )
+    channel = models.ForeignKey(
+        "warehouses.ShippingChannel",
+        on_delete=models.PROTECT,
+        related_name="shipping_batches",
+        null=True,
+        blank=True,
+    )
+    carrier_batch_no = models.CharField(max_length=80, blank=True)
+    transfer_no = models.CharField(max_length=80, blank=True)
+    ship_note = models.CharField(max_length=255, blank=True)
+    created_by = models.ForeignKey(
+        "iam.AdminUser",
+        on_delete=models.PROTECT,
+        related_name="created_shipping_batches",
+        null=True,
+        blank=True,
+    )
+    locked_by = models.ForeignKey(
+        "iam.AdminUser",
+        on_delete=models.PROTECT,
+        related_name="locked_shipping_batches",
+        null=True,
+        blank=True,
+    )
+    shipped_by = models.ForeignKey(
+        "iam.AdminUser",
+        on_delete=models.PROTECT,
+        related_name="shipped_shipping_batches",
+        null=True,
+        blank=True,
+    )
+    locked_at = models.DateTimeField(null=True, blank=True)
+    shipped_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "shipping_batches"
+        ordering = ["-id"]
+
+    def __str__(self) -> str:
+        return self.batch_no
 
 
 class Waybill(models.Model):
@@ -44,6 +110,14 @@ class Waybill(models.Model):
     review_remark = models.CharField(max_length=255, blank=True)
     fee_remark = models.CharField(max_length=255, blank=True)
     cancel_reason = models.CharField(max_length=255, blank=True)
+    shipping_batch = models.ForeignKey(
+        ShippingBatch,
+        on_delete=models.SET_NULL,
+        related_name="waybills",
+        null=True,
+        blank=True,
+    )
+    transfer_no = models.CharField(max_length=80, blank=True)
     reviewed_by = models.ForeignKey(
         "iam.AdminUser",
         on_delete=models.PROTECT,

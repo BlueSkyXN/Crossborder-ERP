@@ -4,7 +4,7 @@ from apps.addresses.services import build_recipient_snapshot, get_active_address
 from apps.parcels.models import Parcel
 from apps.warehouses.models import ConfigStatus, ShippingChannel
 
-from .models import TrackingEvent, Waybill, WaybillParcel
+from .models import ShippingBatch, TrackingEvent, Waybill, WaybillParcel
 
 
 class TrackingEventSerializer(serializers.ModelSerializer):
@@ -51,6 +51,7 @@ class WaybillSerializer(serializers.ModelSerializer):
     channel_name = serializers.CharField(source="channel.name", read_only=True, allow_null=True)
     reviewed_by_name = serializers.CharField(source="reviewed_by.name", read_only=True, allow_null=True)
     fee_set_by_name = serializers.CharField(source="fee_set_by.name", read_only=True, allow_null=True)
+    shipping_batch_no = serializers.CharField(source="shipping_batch.batch_no", read_only=True, allow_null=True)
     parcels = WaybillParcelSerializer(source="parcel_links", many=True, read_only=True)
     tracking_events = TrackingEventSerializer(many=True, read_only=True)
 
@@ -74,6 +75,9 @@ class WaybillSerializer(serializers.ModelSerializer):
             "review_remark",
             "fee_remark",
             "cancel_reason",
+            "shipping_batch",
+            "shipping_batch_no",
+            "transfer_no",
             "reviewed_by_name",
             "fee_set_by_name",
             "reviewed_at",
@@ -159,6 +163,89 @@ class TrackingEventCreateSerializer(serializers.Serializer):
     location = serializers.CharField(max_length=120, required=False, allow_blank=True)
     description = serializers.CharField(required=False, allow_blank=True)
     event_time = serializers.DateTimeField(required=False, allow_null=True)
+
+
+class ShippingBatchWaybillSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source="user.email", read_only=True)
+    warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
+    channel_name = serializers.CharField(source="channel.name", read_only=True, allow_null=True)
+    parcels = WaybillParcelSerializer(source="parcel_links", many=True, read_only=True)
+
+    class Meta:
+        model = Waybill
+        fields = [
+            "id",
+            "waybill_no",
+            "user_email",
+            "warehouse_name",
+            "channel_name",
+            "status",
+            "destination_country",
+            "recipient_snapshot",
+            "fee_total",
+            "transfer_no",
+            "parcels",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+
+class ShippingBatchSerializer(serializers.ModelSerializer):
+    warehouse_name = serializers.CharField(source="warehouse.name", read_only=True, allow_null=True)
+    channel_name = serializers.CharField(source="channel.name", read_only=True, allow_null=True)
+    created_by_name = serializers.CharField(source="created_by.name", read_only=True, allow_null=True)
+    locked_by_name = serializers.CharField(source="locked_by.name", read_only=True, allow_null=True)
+    shipped_by_name = serializers.CharField(source="shipped_by.name", read_only=True, allow_null=True)
+    waybills = ShippingBatchWaybillSerializer(many=True, read_only=True)
+    waybill_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ShippingBatch
+        fields = [
+            "id",
+            "batch_no",
+            "name",
+            "status",
+            "warehouse",
+            "warehouse_name",
+            "channel",
+            "channel_name",
+            "carrier_batch_no",
+            "transfer_no",
+            "ship_note",
+            "created_by_name",
+            "locked_by_name",
+            "shipped_by_name",
+            "locked_at",
+            "shipped_at",
+            "waybills",
+            "waybill_count",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_waybill_count(self, obj: ShippingBatch) -> int:
+        if hasattr(obj, "waybill_count"):
+            return obj.waybill_count
+        return obj.waybills.count()
+
+
+class ShippingBatchCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=120, required=False, allow_blank=True)
+    carrier_batch_no = serializers.CharField(max_length=80, required=False, allow_blank=True)
+    transfer_no = serializers.CharField(max_length=80, required=False, allow_blank=True)
+    ship_note = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    waybill_ids = serializers.ListField(child=serializers.IntegerField(), required=False, allow_empty=True)
+
+
+class ShippingBatchWaybillIdsSerializer(serializers.Serializer):
+    waybill_ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=False)
+
+
+class ShippingBatchPrintPreviewSerializer(serializers.Serializer):
+    template = serializers.ChoiceField(choices=["label", "picking", "handover"], required=False, default="label")
 
 
 class ConfirmReceiptSerializer(serializers.Serializer):

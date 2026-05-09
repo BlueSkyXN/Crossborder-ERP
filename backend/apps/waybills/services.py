@@ -9,7 +9,15 @@ from apps.members.models import User
 from apps.parcels.models import Parcel, ParcelStatus
 from apps.warehouses.models import ConfigStatus, ShippingChannel
 
-from .models import TrackingEvent, TrackingEventSource, Waybill, WaybillParcel, WaybillStatus
+from .models import (
+    ShippingBatch,
+    ShippingBatchStatus,
+    TrackingEvent,
+    TrackingEventSource,
+    Waybill,
+    WaybillParcel,
+    WaybillStatus,
+)
 
 
 class StateConflictError(Exception):
@@ -18,6 +26,10 @@ class StateConflictError(Exception):
 
 def _build_waybill_no(waybill_id: int) -> str:
     return f"W{waybill_id:08d}"
+
+
+def _build_shipping_batch_no(batch_id: int) -> str:
+    return f"SB{batch_id:08d}"
 
 
 def _assert_active_channel(channel: ShippingChannel | None) -> None:
@@ -30,6 +42,67 @@ def _normalize_parcel_ids(parcel_ids: list[int]) -> list[int]:
     if not normalized:
         raise exceptions.ValidationError({"parcel_ids": ["至少选择一个包裹"]})
     return normalized
+
+
+def _normalize_waybill_ids(waybill_ids: list[int]) -> list[int]:
+    normalized = list(dict.fromkeys(waybill_ids))
+    if not normalized:
+        raise exceptions.ValidationError({"waybill_ids": ["至少选择一个运单"]})
+    return normalized
+
+
+def _shipping_batch_queryset():
+    return (
+        ShippingBatch.objects.select_related("warehouse", "channel", "created_by", "locked_by", "shipped_by")
+        .prefetch_related("waybills__user", "waybills__warehouse", "waybills__channel", "waybills__parcel_links__parcel")
+    )
+
+
+def _get_batch_for_output(batch_id: int) -> ShippingBatch:
+    return _shipping_batch_queryset().get(id=batch_id)
+
+
+def _validate_batch_mutable(batch: ShippingBatch) -> None:
+    if batch.status != ShippingBatchStatus.DRAFT:
+        raise StateConflictError("发货批次当前状态不允许调整运单")
+
+
+def _validate_waybills_can_join_batch(*, batch: ShippingBatch, waybill_ids: list[int]) -> list[Waybill]:
+    normalized_ids = _normalize_waybill_ids(waybill_ids)
+    waybills = list(
+        Waybill.objects.select_for_update()
+        .select_related("warehouse", "shipping_batch")
+        .filter(id__in=normalized_ids)
+        .order_by("id")
+    )
+    if len(waybills) != len(normalized_ids):
+        raise exceptions.ValidationError({"waybill_ids": ["运单不存在"]})
+
+    blocked_status = [waybill.waybill_no for waybill in waybills if waybill.status != WaybillStatus.PENDING_SHIPMENT]
+    if blocked_status:
+        raise StateConflictError(f"运单当前状态不允许归入发货批次: {', '.join(blocked_status)}")
+
+    blocked_batch = [
+        waybill.waybill_no
+        for waybill in waybills
+        if waybill.shipping_batch_id and waybill.shipping_batch_id != batch.id
+    ]
+    if blocked_batch:
+        raise StateConflictError(f"运单已归入其他发货批次: {', '.join(blocked_batch)}")
+
+    warehouse_ids = {waybill.warehouse_id for waybill in waybills}
+    if batch.warehouse_id:
+        warehouse_ids.add(batch.warehouse_id)
+    if len(warehouse_ids) != 1:
+        raise exceptions.ValidationError({"waybill_ids": ["同一发货批次只能包含同一仓库的运单"]})
+
+    channel_ids = {waybill.channel_id for waybill in waybills}
+    if batch.channel_id:
+        channel_ids.add(batch.channel_id)
+    if len(channel_ids) != 1:
+        raise exceptions.ValidationError({"waybill_ids": ["同一发货批次只能包含同一发货渠道的运单"]})
+
+    return waybills
 
 
 @transaction.atomic
@@ -80,6 +153,273 @@ def create_waybill(
         updated_at=timezone.now(),
     )
     return get_waybill_for_output(waybill.id)
+
+
+@transaction.atomic
+def create_shipping_batch(
+    *,
+    operator: AdminUser | None,
+    name: str = "",
+    carrier_batch_no: str = "",
+    transfer_no: str = "",
+    ship_note: str = "",
+    waybill_ids: list[int] | None = None,
+) -> ShippingBatch:
+    batch = ShippingBatch.objects.create(
+        batch_no="PENDING",
+        name=name.strip(),
+        carrier_batch_no=carrier_batch_no.strip(),
+        transfer_no=transfer_no.strip(),
+        ship_note=ship_note.strip(),
+        created_by=operator,
+    )
+    batch.batch_no = _build_shipping_batch_no(batch.id)
+    batch.save(update_fields=["batch_no", "updated_at"])
+    if waybill_ids:
+        batch = add_waybills_to_shipping_batch(batch=batch, waybill_ids=waybill_ids)
+    return _get_batch_for_output(batch.id)
+
+
+@transaction.atomic
+def update_shipping_batch(
+    *,
+    batch: ShippingBatch,
+    name: str = "",
+    carrier_batch_no: str = "",
+    transfer_no: str = "",
+    ship_note: str = "",
+) -> ShippingBatch:
+    locked = ShippingBatch.objects.select_for_update().get(id=batch.id)
+    if locked.status == ShippingBatchStatus.SHIPPED:
+        raise StateConflictError("已发货批次不允许修改基础信息")
+    locked.name = name.strip()
+    locked.carrier_batch_no = carrier_batch_no.strip()
+    locked.transfer_no = transfer_no.strip()
+    locked.ship_note = ship_note.strip()
+    locked.save(update_fields=["name", "carrier_batch_no", "transfer_no", "ship_note", "updated_at"])
+    Waybill.objects.filter(shipping_batch=locked, status=WaybillStatus.PENDING_SHIPMENT).update(
+        transfer_no=locked.transfer_no,
+        updated_at=timezone.now(),
+    )
+    return _get_batch_for_output(locked.id)
+
+
+@transaction.atomic
+def add_waybills_to_shipping_batch(*, batch: ShippingBatch, waybill_ids: list[int]) -> ShippingBatch:
+    locked = ShippingBatch.objects.select_for_update().get(id=batch.id)
+    _validate_batch_mutable(locked)
+    waybills = _validate_waybills_can_join_batch(batch=locked, waybill_ids=waybill_ids)
+    if not waybills:
+        return _get_batch_for_output(locked.id)
+
+    warehouse = waybills[0].warehouse
+    channel = waybills[0].channel
+    if not locked.warehouse_id:
+        locked.warehouse = warehouse
+        locked.channel = channel
+        locked.save(update_fields=["warehouse", "channel", "updated_at"])
+
+    Waybill.objects.filter(id__in=[waybill.id for waybill in waybills]).update(
+        shipping_batch=locked,
+        transfer_no=locked.transfer_no,
+        updated_at=timezone.now(),
+    )
+    return _get_batch_for_output(locked.id)
+
+
+@transaction.atomic
+def remove_waybill_from_shipping_batch(*, batch: ShippingBatch, waybill_id: int) -> ShippingBatch:
+    locked = ShippingBatch.objects.select_for_update().get(id=batch.id)
+    _validate_batch_mutable(locked)
+    updated = Waybill.objects.filter(id=waybill_id, shipping_batch=locked).update(
+        shipping_batch=None,
+        transfer_no="",
+        updated_at=timezone.now(),
+    )
+    if not updated:
+        raise exceptions.ValidationError({"waybill_id": ["运单不在当前发货批次中"]})
+    if not Waybill.objects.filter(shipping_batch=locked).exists():
+        locked.warehouse = None
+        locked.channel = None
+        locked.save(update_fields=["warehouse", "channel", "updated_at"])
+    return _get_batch_for_output(locked.id)
+
+
+@transaction.atomic
+def lock_shipping_batch(*, batch: ShippingBatch, operator: AdminUser | None) -> ShippingBatch:
+    locked = ShippingBatch.objects.select_for_update().get(id=batch.id)
+    if locked.status == ShippingBatchStatus.LOCKED:
+        return _get_batch_for_output(locked.id)
+    if locked.status != ShippingBatchStatus.DRAFT:
+        raise StateConflictError("发货批次当前状态不允许锁定")
+    if not Waybill.objects.filter(shipping_batch=locked).exists():
+        raise StateConflictError("空发货批次不允许锁定")
+    invalid = list(
+        Waybill.objects.filter(shipping_batch=locked)
+        .exclude(status=WaybillStatus.PENDING_SHIPMENT)
+        .values_list("waybill_no", flat=True)
+    )
+    if invalid:
+        raise StateConflictError(f"发货批次包含不可发货运单: {', '.join(invalid)}")
+
+    locked.status = ShippingBatchStatus.LOCKED
+    locked.locked_by = operator
+    locked.locked_at = timezone.now()
+    locked.save(update_fields=["status", "locked_by", "locked_at", "updated_at"])
+    return _get_batch_for_output(locked.id)
+
+
+@transaction.atomic
+def ship_shipping_batch(
+    *,
+    batch: ShippingBatch,
+    operator: AdminUser | None,
+    status_text: str = "批次已发货",
+    location: str = "",
+    description: str = "",
+    event_time=None,
+) -> ShippingBatch:
+    if not status_text.strip():
+        raise exceptions.ValidationError({"status_text": ["轨迹状态不能为空"]})
+    locked = ShippingBatch.objects.select_for_update().get(id=batch.id)
+    if locked.status == ShippingBatchStatus.SHIPPED:
+        return _get_batch_for_output(locked.id)
+    if locked.status != ShippingBatchStatus.LOCKED:
+        raise StateConflictError("发货批次需要先锁定后才能发货")
+
+    waybills = list(
+        Waybill.objects.select_for_update()
+        .prefetch_related("parcel_links__parcel")
+        .filter(shipping_batch=locked)
+        .order_by("id")
+    )
+    if not waybills:
+        raise StateConflictError("空发货批次不允许发货")
+    invalid = [waybill.waybill_no for waybill in waybills if waybill.status != WaybillStatus.PENDING_SHIPMENT]
+    if invalid:
+        raise StateConflictError(f"发货批次包含不可发货运单: {', '.join(invalid)}")
+
+    shipped_at = timezone.now()
+    event_at = event_time or shipped_at
+    waybill_ids = [waybill.id for waybill in waybills]
+    Waybill.objects.filter(id__in=waybill_ids).update(
+        status=WaybillStatus.SHIPPED,
+        shipped_at=shipped_at,
+        transfer_no=locked.transfer_no,
+        updated_at=timezone.now(),
+    )
+    parcel_ids = [link.parcel_id for waybill in waybills for link in waybill.parcel_links.all()]
+    Parcel.objects.filter(id__in=parcel_ids).update(status=ParcelStatus.OUTBOUND, updated_at=timezone.now())
+    TrackingEvent.objects.bulk_create(
+        [
+            TrackingEvent(
+                waybill=waybill,
+                event_time=event_at,
+                location=location.strip(),
+                status_text=status_text.strip(),
+                description=description.strip(),
+                source=TrackingEventSource.MANUAL,
+                operator=operator,
+            )
+            for waybill in waybills
+        ]
+    )
+    locked.status = ShippingBatchStatus.SHIPPED
+    locked.shipped_by = operator
+    locked.shipped_at = shipped_at
+    locked.save(update_fields=["status", "shipped_by", "shipped_at", "updated_at"])
+    return _get_batch_for_output(locked.id)
+
+
+@transaction.atomic
+def add_shipping_batch_tracking_event(
+    *,
+    batch: ShippingBatch,
+    operator: AdminUser | None,
+    status_text: str,
+    location: str = "",
+    description: str = "",
+    event_time=None,
+) -> list[TrackingEvent]:
+    if not status_text.strip():
+        raise exceptions.ValidationError({"status_text": ["轨迹状态不能为空"]})
+    locked = ShippingBatch.objects.select_for_update().get(id=batch.id)
+    if locked.status not in {ShippingBatchStatus.LOCKED, ShippingBatchStatus.SHIPPED}:
+        raise StateConflictError("发货批次当前状态不允许批量追加轨迹")
+    waybills = list(Waybill.objects.filter(shipping_batch=locked).order_by("id"))
+    if not waybills:
+        raise StateConflictError("空发货批次不允许追加轨迹")
+    event_at = event_time or timezone.now()
+    return TrackingEvent.objects.bulk_create(
+        [
+            TrackingEvent(
+                waybill=waybill,
+                event_time=event_at,
+                location=location.strip(),
+                status_text=status_text.strip(),
+                description=description.strip(),
+                source=TrackingEventSource.MANUAL,
+                operator=operator,
+            )
+            for waybill in waybills
+        ]
+    )
+
+
+def build_shipping_batch_print_preview(*, batch: ShippingBatch, template: str = "label") -> dict:
+    allowed_templates = {"label", "picking", "handover"}
+    if template not in allowed_templates:
+        raise exceptions.ValidationError({"template": ["template 仅支持 label、picking、handover"]})
+    loaded = _get_batch_for_output(batch.id)
+    waybills = list(loaded.waybills.all())
+    total_weight = Decimal("0.000")
+    rows = []
+    for waybill in waybills:
+        parcels = []
+        for link in waybill.parcel_links.all():
+            weight = link.parcel.weight_kg or Decimal("0.000")
+            total_weight += weight
+            parcels.append(
+                {
+                    "parcel_no": link.parcel.parcel_no,
+                    "tracking_no": link.parcel.tracking_no,
+                    "weight_kg": str(link.parcel.weight_kg) if link.parcel.weight_kg is not None else None,
+                    "status": link.parcel.status,
+                }
+            )
+        rows.append(
+            {
+                "waybill_no": waybill.waybill_no,
+                "transfer_no": waybill.transfer_no or loaded.transfer_no,
+                "status": waybill.status,
+                "user_email": waybill.user.email,
+                "warehouse_name": waybill.warehouse.name,
+                "channel_name": waybill.channel.name if waybill.channel else "",
+                "destination_country": waybill.destination_country,
+                "recipient": waybill.recipient_snapshot,
+                "parcels": parcels,
+                "parcel_count": len(parcels),
+            }
+        )
+    return {
+        "template": template,
+        "batch": {
+            "id": loaded.id,
+            "batch_no": loaded.batch_no,
+            "name": loaded.name,
+            "status": loaded.status,
+            "warehouse_name": loaded.warehouse.name if loaded.warehouse else "",
+            "channel_name": loaded.channel.name if loaded.channel else "",
+            "carrier_batch_no": loaded.carrier_batch_no,
+            "transfer_no": loaded.transfer_no,
+            "ship_note": loaded.ship_note,
+            "waybill_count": len(rows),
+            "parcel_count": sum(row["parcel_count"] for row in rows),
+            "total_weight_kg": str(total_weight),
+            "generated_at": timezone.now().isoformat(),
+        },
+        "items": rows,
+    }
 
 
 @transaction.atomic

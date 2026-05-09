@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.db.models import Count
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.views import APIView
@@ -9,9 +10,13 @@ from apps.iam.permissions import HasAdminPermission
 from apps.members.authentication import MemberTokenAuthentication
 from apps.members.permissions import IsMemberAuthenticated
 
-from .models import TrackingEvent, Waybill
+from .models import ShippingBatch, TrackingEvent, Waybill
 from .serializers import (
     ConfirmReceiptSerializer,
+    ShippingBatchCreateSerializer,
+    ShippingBatchPrintPreviewSerializer,
+    ShippingBatchSerializer,
+    ShippingBatchWaybillIdsSerializer,
     TrackingEventCreateSerializer,
     TrackingEventSerializer,
     WaybillCreateSerializer,
@@ -23,11 +28,19 @@ from .serializers import (
 from .services import (
     StateConflictError,
     add_tracking_event,
+    add_shipping_batch_tracking_event,
+    add_waybills_to_shipping_batch,
+    build_shipping_batch_print_preview,
     confirm_receipt,
     create_waybill,
+    create_shipping_batch,
+    lock_shipping_batch,
+    remove_waybill_from_shipping_batch,
     review_waybill,
     set_waybill_fee,
+    ship_shipping_batch,
     ship_waybill,
+    update_shipping_batch,
 )
 
 
@@ -196,3 +209,171 @@ class AdminWaybillTrackingEventCreateView(APIView):
         waybill = get_object_or_404(Waybill, id=waybill_id)
         event = add_tracking_event(waybill=waybill, operator=request.user, **serializer.validated_data)
         return success_response(TrackingEventSerializer(event).data, status=status.HTTP_201_CREATED)
+
+
+def shipping_batch_queryset():
+    return (
+        ShippingBatch.objects.select_related("warehouse", "channel", "created_by", "locked_by", "shipped_by")
+        .prefetch_related("waybills__user", "waybills__warehouse", "waybills__channel", "waybills__parcel_links__parcel")
+        .annotate(waybill_count=Count("waybills"))
+    )
+
+
+class AdminShippingBatchListCreateView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "waybills.view"
+
+    @extend_schema(tags=["admin-shipping-batches"], responses={200: ShippingBatchSerializer(many=True)})
+    def get(self, request):
+        batches = shipping_batch_queryset()
+        return success_response({"items": ShippingBatchSerializer(batches, many=True).data})
+
+    @extend_schema(
+        tags=["admin-shipping-batches"],
+        request=ShippingBatchCreateSerializer,
+        responses={201: ShippingBatchSerializer},
+    )
+    def post(self, request):
+        serializer = ShippingBatchCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            batch = create_shipping_batch(operator=request.user, **serializer.validated_data)
+        except StateConflictError as exc:
+            return state_conflict_response(exc)
+        return success_response(ShippingBatchSerializer(batch).data, status=status.HTTP_201_CREATED)
+
+
+class AdminShippingBatchDetailView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "waybills.view"
+
+    @extend_schema(tags=["admin-shipping-batches"], responses={200: ShippingBatchSerializer})
+    def get(self, request, batch_id: int):
+        batch = get_object_or_404(shipping_batch_queryset(), id=batch_id)
+        return success_response(ShippingBatchSerializer(batch).data)
+
+    @extend_schema(
+        tags=["admin-shipping-batches"],
+        request=ShippingBatchCreateSerializer,
+        responses={200: ShippingBatchSerializer},
+    )
+    def patch(self, request, batch_id: int):
+        serializer = ShippingBatchCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        batch = get_object_or_404(ShippingBatch, id=batch_id)
+        update_data = dict(serializer.validated_data)
+        update_data.pop("waybill_ids", None)
+        try:
+            updated = update_shipping_batch(batch=batch, **update_data)
+        except StateConflictError as exc:
+            return state_conflict_response(exc)
+        return success_response(ShippingBatchSerializer(updated).data)
+
+
+class AdminShippingBatchWaybillListView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "waybills.view"
+
+    @extend_schema(
+        tags=["admin-shipping-batches"],
+        request=ShippingBatchWaybillIdsSerializer,
+        responses={200: ShippingBatchSerializer},
+    )
+    def post(self, request, batch_id: int):
+        serializer = ShippingBatchWaybillIdsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        batch = get_object_or_404(ShippingBatch, id=batch_id)
+        try:
+            updated = add_waybills_to_shipping_batch(batch=batch, **serializer.validated_data)
+        except StateConflictError as exc:
+            return state_conflict_response(exc)
+        return success_response(ShippingBatchSerializer(updated).data)
+
+
+class AdminShippingBatchWaybillDetailView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "waybills.view"
+
+    @extend_schema(tags=["admin-shipping-batches"], responses={200: ShippingBatchSerializer})
+    def delete(self, request, batch_id: int, waybill_id: int):
+        batch = get_object_or_404(ShippingBatch, id=batch_id)
+        try:
+            updated = remove_waybill_from_shipping_batch(batch=batch, waybill_id=waybill_id)
+        except StateConflictError as exc:
+            return state_conflict_response(exc)
+        return success_response(ShippingBatchSerializer(updated).data)
+
+
+class AdminShippingBatchLockView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "waybills.view"
+
+    @extend_schema(tags=["admin-shipping-batches"], request=None, responses={200: ShippingBatchSerializer})
+    def post(self, request, batch_id: int):
+        batch = get_object_or_404(ShippingBatch, id=batch_id)
+        try:
+            locked = lock_shipping_batch(batch=batch, operator=request.user)
+        except StateConflictError as exc:
+            return state_conflict_response(exc)
+        return success_response(ShippingBatchSerializer(locked).data)
+
+
+class AdminShippingBatchShipView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "waybills.view"
+
+    @extend_schema(tags=["admin-shipping-batches"], request=WaybillShipSerializer, responses={200: ShippingBatchSerializer})
+    def post(self, request, batch_id: int):
+        serializer = WaybillShipSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        batch = get_object_or_404(ShippingBatch, id=batch_id)
+        try:
+            shipped = ship_shipping_batch(batch=batch, operator=request.user, **serializer.validated_data)
+        except StateConflictError as exc:
+            return state_conflict_response(exc)
+        return success_response(ShippingBatchSerializer(shipped).data)
+
+
+class AdminShippingBatchTrackingEventCreateView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "waybills.view"
+
+    @extend_schema(
+        tags=["admin-shipping-batches"],
+        request=TrackingEventCreateSerializer,
+        responses={201: TrackingEventSerializer(many=True)},
+    )
+    def post(self, request, batch_id: int):
+        serializer = TrackingEventCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        batch = get_object_or_404(ShippingBatch, id=batch_id)
+        try:
+            events = add_shipping_batch_tracking_event(batch=batch, operator=request.user, **serializer.validated_data)
+        except StateConflictError as exc:
+            return state_conflict_response(exc)
+        event_items = TrackingEventSerializer(events, many=True).data
+        payload = {"items": event_items}
+        if event_items:
+            payload.update(event_items[0])
+        return success_response(payload, status=status.HTTP_201_CREATED)
+
+
+class AdminShippingBatchPrintPreviewView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "waybills.view"
+
+    @extend_schema(tags=["admin-shipping-batches"], responses={200: dict})
+    def get(self, request, batch_id: int):
+        serializer = ShippingBatchPrintPreviewSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        batch = get_object_or_404(ShippingBatch, id=batch_id)
+        preview = build_shipping_batch_print_preview(batch=batch, **serializer.validated_data)
+        return success_response(preview)

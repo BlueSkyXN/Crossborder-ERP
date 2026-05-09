@@ -13,7 +13,7 @@ from apps.parcels.models import Parcel, ParcelStatus
 from apps.parcels.services import forecast_parcel, inbound_parcel
 from apps.warehouses.models import ShippingChannel, Warehouse
 from apps.warehouses.services import seed_warehouse_demo_data
-from apps.waybills.models import TrackingEvent, Waybill, WaybillStatus
+from apps.waybills.models import ShippingBatchStatus, TrackingEvent, Waybill, WaybillStatus
 from apps.waybills.services import cancel_waybill, create_waybill, review_waybill, set_waybill_fee
 
 
@@ -42,22 +42,22 @@ def admin_token(client, email="warehouse@example.com"):
     return response.json()["data"]["access_token"]
 
 
-def create_in_stock_parcel(tracking_no="WB10001"):
+def create_in_stock_parcel(tracking_no="WB10001", warehouse_code="SZ"):
     user = User.objects.get(email="user@example.com")
-    warehouse = Warehouse.objects.get(code="SZ")
+    warehouse = Warehouse.objects.get(code=warehouse_code)
     parcel = forecast_parcel(user=user, warehouse=warehouse, tracking_no=tracking_no)
     return inbound_parcel(parcel=parcel, operator=None, weight_kg=Decimal("1.250"))
 
 
-def create_paid_waybill(tracking_no="WBPAID10001"):
+def create_paid_waybill(tracking_no="WBPAID10001", warehouse_code="SZ", channel_code="TEST_AIR"):
     user = User.objects.get(email="user@example.com")
     operator = AdminUser.objects.get(email="warehouse@example.com")
     finance_operator = AdminUser.objects.get(email="finance@example.com")
-    parcel = create_in_stock_parcel(tracking_no)
+    parcel = create_in_stock_parcel(tracking_no, warehouse_code=warehouse_code)
     waybill = create_waybill(
         user=user,
         parcel_ids=[parcel.id],
-        channel=ShippingChannel.objects.get(code="TEST_AIR"),
+        channel=ShippingChannel.objects.get(code=channel_code),
         destination_country="US",
         recipient_snapshot={
             "name": "Tracking Receiver",
@@ -413,3 +413,207 @@ def test_ship_requires_pending_shipment(client, seeded_waybills):
 
     assert response.status_code == 409
     assert response.json()["code"] == "STATE_CONFLICT"
+
+
+def test_admin_create_lock_and_ship_shipping_batch(client, seeded_waybills):
+    first = create_paid_waybill("WBBATCH10001")
+    second = create_paid_waybill("WBBATCH10002")
+    token = admin_token(client)
+
+    create_response = client.post(
+        reverse("admin-shipping-batch-list"),
+        {
+            "name": "美国空运批次",
+            "carrier_batch_no": "CA-BATCH-001",
+            "transfer_no": "TR-BATCH-001",
+            "ship_note": "SHIP-BATCH-001",
+            "waybill_ids": [first.id, second.id],
+        },
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert create_response.status_code == 201
+    batch_data = create_response.json()["data"]
+    assert batch_data["batch_no"].startswith("SB")
+    assert batch_data["status"] == ShippingBatchStatus.DRAFT
+    assert batch_data["warehouse_name"] == "深圳仓"
+    assert batch_data["channel_name"] == "测试空运"
+    assert batch_data["waybill_count"] == 2
+    assert {item["waybill_no"] for item in batch_data["waybills"]} == {first.waybill_no, second.waybill_no}
+
+    first.refresh_from_db()
+    assert first.shipping_batch_id == batch_data["id"]
+    assert first.transfer_no == "TR-BATCH-001"
+
+    lock_response = client.post(
+        reverse("admin-shipping-batch-lock", kwargs={"batch_id": batch_data["id"]}),
+        {},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert lock_response.status_code == 200
+    assert lock_response.json()["data"]["status"] == ShippingBatchStatus.LOCKED
+
+    ship_response = client.post(
+        reverse("admin-shipping-batch-ship", kwargs={"batch_id": batch_data["id"]}),
+        {"status_text": "批次已从深圳仓发出", "location": "深圳仓", "description": "批量发货"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert ship_response.status_code == 200
+    shipped_data = ship_response.json()["data"]
+    assert shipped_data["status"] == ShippingBatchStatus.SHIPPED
+    assert {item["status"] for item in shipped_data["waybills"]} == {WaybillStatus.SHIPPED}
+    assert TrackingEvent.objects.filter(waybill_id__in=[first.id, second.id], status_text="批次已从深圳仓发出").count() == 2
+
+    repeat_response = client.post(
+        reverse("admin-shipping-batch-ship", kwargs={"batch_id": batch_data["id"]}),
+        {"status_text": "批次已从深圳仓发出", "location": "深圳仓"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert repeat_response.status_code == 200
+    assert TrackingEvent.objects.filter(waybill_id__in=[first.id, second.id], status_text="批次已从深圳仓发出").count() == 2
+
+    parcel_statuses = {
+        link.parcel.status
+        for waybill in Waybill.objects.filter(id__in=[first.id, second.id]).prefetch_related("parcel_links__parcel")
+        for link in waybill.parcel_links.all()
+    }
+    assert parcel_statuses == {ParcelStatus.OUTBOUND}
+
+
+def test_shipping_batch_rejects_non_pending_shipment_waybill(client, seeded_waybills):
+    parcel = create_in_stock_parcel("WBBATCHBLOCKED")
+    waybill = create_waybill(
+        user=User.objects.get(email="user@example.com"),
+        parcel_ids=[parcel.id],
+        channel=ShippingChannel.objects.get(code="TEST_AIR"),
+        destination_country="US",
+        recipient_snapshot={"name": "Blocked Receiver"},
+    )
+
+    response = client.post(
+        reverse("admin-shipping-batch-list"),
+        {"name": "非法批次", "waybill_ids": [waybill.id]},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {admin_token(client)}",
+    )
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "STATE_CONFLICT"
+
+
+def test_shipping_batch_rejects_mixed_warehouse_or_channel(client, seeded_waybills):
+    first = create_paid_waybill("WBBATCHSCOPE1")
+    other_warehouse = create_paid_waybill("WBBATCHSCOPE2", warehouse_code="BJ")
+    other_channel = create_paid_waybill("WBBATCHSCOPE3", channel_code="TEST_SEA")
+    token = admin_token(client)
+
+    warehouse_response = client.post(
+        reverse("admin-shipping-batch-list"),
+        {"name": "混仓批次", "waybill_ids": [first.id, other_warehouse.id]},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert warehouse_response.status_code == 400
+    assert warehouse_response.json()["code"] == "VALIDATION_ERROR"
+
+    channel_response = client.post(
+        reverse("admin-shipping-batch-list"),
+        {"name": "混渠道批次", "waybill_ids": [first.id, other_channel.id]},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert channel_response.status_code == 400
+    assert channel_response.json()["code"] == "VALIDATION_ERROR"
+
+
+def test_admin_shipping_batch_waybill_adjustment_and_print_preview(client, seeded_waybills):
+    first = create_paid_waybill("WBBATCHPRINT1")
+    second = create_paid_waybill("WBBATCHPRINT2")
+    token = admin_token(client)
+    create_response = client.post(
+        reverse("admin-shipping-batch-list"),
+        {"name": "打印预览批次", "carrier_batch_no": "PRINT-001", "waybill_ids": [first.id]},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    batch_id = create_response.json()["data"]["id"]
+
+    add_response = client.post(
+        reverse("admin-shipping-batch-waybill-list", kwargs={"batch_id": batch_id}),
+        {"waybill_ids": [second.id]},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert add_response.status_code == 200
+    assert add_response.json()["data"]["waybill_count"] == 2
+
+    remove_response = client.delete(
+        reverse("admin-shipping-batch-waybill-detail", kwargs={"batch_id": batch_id, "waybill_id": second.id}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert remove_response.status_code == 200
+    assert remove_response.json()["data"]["waybill_count"] == 1
+
+    preview_response = client.get(
+        f"{reverse('admin-shipping-batch-print-preview', kwargs={'batch_id': batch_id})}?template=handover",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert preview_response.status_code == 200
+    preview = preview_response.json()["data"]
+    assert preview["template"] == "handover"
+    assert preview["batch"]["batch_no"].startswith("SB")
+    assert preview["batch"]["carrier_batch_no"] == "PRINT-001"
+    assert preview["batch"]["channel_name"] == "测试空运"
+    assert preview["batch"]["generated_at"]
+    assert preview["batch"]["waybill_count"] == 1
+    assert preview["items"][0]["waybill_no"] == first.waybill_no
+    assert preview["items"][0]["recipient"]["name"] == "Tracking Receiver"
+
+
+def test_admin_shipping_batch_bulk_tracking_requires_locked_or_shipped(client, seeded_waybills):
+    waybill = create_paid_waybill("WBBATCHTRACK1")
+    token = admin_token(client)
+    create_response = client.post(
+        reverse("admin-shipping-batch-list"),
+        {"name": "批量轨迹批次", "waybill_ids": [waybill.id]},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    batch_id = create_response.json()["data"]["id"]
+
+    draft_response = client.post(
+        reverse("admin-shipping-batch-tracking-event-create", kwargs={"batch_id": batch_id}),
+        {"status_text": "批量轨迹", "location": "深圳"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert draft_response.status_code == 409
+
+    client.post(
+        reverse("admin-shipping-batch-lock", kwargs={"batch_id": batch_id}),
+        {},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    tracking_response = client.post(
+        reverse("admin-shipping-batch-tracking-event-create", kwargs={"batch_id": batch_id}),
+        {"status_text": "已交接承运商", "location": "深圳"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert tracking_response.status_code == 201
+    assert tracking_response.json()["data"]["items"][0]["status_text"] == "已交接承运商"
+
+
+def test_admin_shipping_batch_requires_waybill_permission(client, seeded_waybills):
+    response = client.get(
+        reverse("admin-shipping-batch-list"),
+        HTTP_AUTHORIZATION=f"Bearer {admin_token(client, email='finance@example.com')}",
+    )
+
+    assert response.status_code == 403
+    assert response.json()["code"] == "FORBIDDEN"

@@ -124,6 +124,7 @@ SPECTACULAR_SETTINGS = {
         "FileOwnerTypeEnum": "apps.files.models.FileOwnerType",
         "FileStatusEnum": "apps.files.models.FileStatus",
         "ParcelStatusEnum": "apps.parcels.models.ParcelStatus",
+        "ParcelImportStatusEnum": "apps.parcels.models.ParcelImportStatus",
         "UnclaimedParcelStatusEnum": "apps.parcels.models.UnclaimedParcelStatus",
         "WaybillStatusEnum": "apps.waybills.models.WaybillStatus",
         "WalletTransactionTypeEnum": "apps.finance.models.WalletTransactionType",

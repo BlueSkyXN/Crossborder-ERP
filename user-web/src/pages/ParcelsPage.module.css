@@ -56,6 +56,7 @@
 .iconButton,
 .accountButton,
 .primaryButton,
+.secondaryButton,
 .packButton,
 .pagination button {
   border: 1px solid #d1d5db;
@@ -207,9 +208,26 @@
 }
 
 .primaryButton,
+.secondaryButton,
 .packButton {
   height: 40px;
   padding: 0 14px;
+  font-weight: 900;
+}
+
+.secondaryButton {
+  width: 100%;
+  background: #ffffff;
+  color: #111827;
+}
+
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.primaryButton,
+.packButton {
   border-color: #2563eb;
   background: #2563eb;
   color: #ffffff;
@@ -224,6 +242,98 @@
 .pagination button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.importSection {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.importHeader strong,
+.importHeader span {
+  display: block;
+}
+
+.importHeader span {
+  margin-top: 3px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.importToolbar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.filePicker {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px dashed #9ca3af;
+  border-radius: 6px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  margin: 0 !important;
+  color: #374151;
+  cursor: pointer;
+  text-align: center;
+}
+
+.filePicker input {
+  display: none;
+}
+
+.filePicker span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.importSuccess,
+.importFailed {
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.importSuccess {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.importFailed {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.importSuccess ul,
+.importFailed ul {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding-left: 16px;
+}
+
+.importHistory {
+  display: grid;
+  gap: 4px;
+  padding-top: 4px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.importHistory span {
+  font-weight: 900;
+  color: #374151;
 }
 
 .searchInput {

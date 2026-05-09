@@ -1,5 +1,11 @@
-import { requestData } from "../../api/client";
-import type { Parcel, ParcelForecastPayload, PublicUnclaimedParcel, UnclaimedClaimPayload } from "./types";
+import { apiClient, requestData } from "../../api/client";
+import type {
+  Parcel,
+  ParcelForecastPayload,
+  ParcelImportJob,
+  PublicUnclaimedParcel,
+  UnclaimedClaimPayload,
+} from "./types";
 
 type ListResponse<T> = {
   items: T[];
@@ -25,6 +31,41 @@ export function createParcelForecast(payload: ParcelForecastPayload) {
     url: "/parcels/forecast",
     data: payload,
   });
+}
+
+export function downloadParcelImportTemplate() {
+  return apiClient
+    .request<Blob>({
+      method: "GET",
+      url: "/parcels/import-template",
+      responseType: "blob",
+    })
+    .then((response) => response.data);
+}
+
+export function importParcelForecasts(fileId: string) {
+  return requestData<ParcelImportJob>({
+    method: "POST",
+    url: "/parcels/imports",
+    data: { file_id: fileId },
+  });
+}
+
+export function fetchParcelImportJobs() {
+  return requestData<ListResponse<ParcelImportJob>>({
+    method: "GET",
+    url: "/parcels/imports",
+  }).then((result) => result.items);
+}
+
+export function exportParcelsCsv() {
+  return apiClient
+    .request<Blob>({
+      method: "GET",
+      url: "/parcels/export",
+      responseType: "blob",
+    })
+    .then((response) => response.data);
 }
 
 export function fetchPackableParcels() {

@@ -22,7 +22,7 @@
 | `MEMBER-001` | P1 | 后台会员管理 | 会员列表、筛选、冻结/解冻、重置密码、会员等级、客服分配占位 | 已完成：RBAC/权限测试、冻结 token 阻断、后台页面 build、API E2E |
 | `PARCEL-CLAIM-001` | P1 | 无主包裹用户认领 | 用户侧无主包裹列表/搜索/认领；后台审核；认领后转包裹 | 已完成：防抢认领事务测试、脱敏展示测试、三端入口 |
 | `CONTENT-001` | P1 | 内容 CMS | 帮助、公告、条款、关于我们、显示/排序；用户端展示 | 已完成：后台 CRUD/发布隐藏、三端入口、公开读取测试 |
-| `IMPORT-001` | P1 | 批量导入/导出基础 | 预报模板下载、Excel 导入、错误明细；通用导出策略 | 不新增系统依赖；优先使用现有 Python 库或标准 CSV fallback |
+| `IMPORT-001` | P1 | 批量导入/导出基础 | 预报模板下载、CSV 导入、错误明细；会员/后台导出策略 | 已完成：不新增依赖，使用标准 CSV fallback；Excel 解析后续 |
 | `SHIP-BATCH-001` | P2 | 发货批次/转单/打印 | 发货批次模型、运单归批、批量轨迹、转单号、打印模板占位 | 不接硬件；打印只生成模板数据 |
 | `PAYABLE-001` | P2 | 供应商/成本/应付 | 供应商、成本类型、应付款、审批/核销基础 | 与应收钱包分离，金额精度测试 |
 | `GROWTH-001` | P2 | 积分/推广/返利 | 积分流水、积分兑换占位、邀请关系、返利统计 | 规则不明确项保持 `TODO_CONFIRM` |
@@ -38,18 +38,18 @@
 - `MEMBER-001`：已补后台会员列表/筛选/详情、会员资料维护、冻结/解冻、测试密码重置、客服负责人和内部服务备注；Admin Web `/members` 已从占位页升级为真实管理面板。
 - `PARCEL-CLAIM-001`：已补用户侧无主包裹脱敏列表/搜索/认领 API，后台认领通过/驳回审核，审核通过后转为会员 `Parcel.IN_STOCK`；User Web、Mobile H5 和 Admin Web 已补入口和操作。
 - `CONTENT-001`：已补内容分类/内容条目模型、后台 CRUD、发布/隐藏、公开只读 API、Admin Web 内容管理页、User Web `/content` 和 Mobile H5 `/me/content` 展示入口；条款/隐私正式文案仍需业务/法务确认。
+- `IMPORT-001`：已补包裹预报 CSV 模板下载、`IMPORT_FILE` 上传后批量导入、行级错误明细、`ParcelImportJob` 结果记录、会员包裹导出和后台 `parcels.view` CSV 导出；`.xls/.xlsx` 解析仍为后续增强。
 
 ## Current Next Task
 
-`IMPORT-001` 是当前下一项，因为内容 CMS 已补齐，批量导入/导出仍是 ChatGPT/Gemini 后台和用户端报告中的 P1 缺口。
+`QA-BROWSER-001` 是当前下一项，因为批量导入/导出基础已补齐，浏览器级 E2E 仍是三端真实可用性的主要自动化缺口。
 
-建议 `IMPORT-001` 范围：
+建议 `QA-BROWSER-001` 范围：
 
-- 先确认仓库内是否已有 CSV/XLSX 相关依赖，优先复用或采用标准 CSV fallback。
-- 后端补模板下载、批量预报导入、错误明细和导入结果记录。
-- User Web/Admin Web 补导入/导出入口和进度/错误反馈。
-- 增加字段校验、重复单号、权限隔离和错误行测试。
-- 继续保持 SQLite-first，不接外部云表格服务或未验证异步队列。
+- 先确认仓库内是否已有 Playwright/browser 相关依赖和脚本。
+- 明确浏览器二进制、缓存、profile 和端口占用边界，避免使用用户日常浏览器 profile。
+- 补最小浏览器 smoke，覆盖 Admin Web、User Web、Mobile H5 登录和关键导航。
+- 继续保留 API 级 `npm run e2e` 作为主闭环，不用浏览器 E2E 替代它。
 
 ## Completion Boundary
 

@@ -1,6 +1,7 @@
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
+  DownloadOutlined,
   EyeOutlined,
   PlusOutlined,
   ReloadOutlined,
@@ -143,6 +144,17 @@ function formatDimensions(parcel: Pick<Parcel, "length_cm" | "width_cm" | "heigh
   return `${parcel.length_cm || "-"} x ${parcel.width_cm || "-"} x ${parcel.height_cm || "-"} cm`;
 }
 
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 function toDecimalString(value?: number) {
   if (value === undefined || value === null) {
     return undefined;
@@ -240,13 +252,13 @@ export function ParcelWmsPage() {
     if (!defaultWarehouseId) {
       return;
     }
-    if (!scanForm.getFieldValue("warehouse_id")) {
+    if (activeTab === "scan" && !scanForm.getFieldValue("warehouse_id")) {
       scanForm.setFieldValue("warehouse_id", defaultWarehouseId);
     }
-    if (!unclaimedForm.getFieldValue("warehouse_id")) {
+    if (activeTab === "unclaimed" && !unclaimedForm.getFieldValue("warehouse_id")) {
       unclaimedForm.setFieldValue("warehouse_id", defaultWarehouseId);
     }
-  }, [scanForm, unclaimedForm, warehouseOptions]);
+  }, [activeTab, scanForm, unclaimedForm, warehouseOptions]);
 
   const invalidateParcelData = () => {
     queryClient.invalidateQueries({ queryKey: parcelQueryKey });
@@ -330,6 +342,15 @@ export function ParcelWmsPage() {
       queryClient.invalidateQueries({ queryKey: unclaimedQueryKey });
       unclaimedForm.resetFields();
       message.success(`${unclaimed.tracking_no} 已登记`);
+    },
+    onError: (error) => message.error(getErrorMessage(error)),
+  });
+
+  const exportMutation = useMutation({
+    mutationFn: parcelWmsApi.exportParcels,
+    onSuccess: (blob) => {
+      downloadBlob(blob, "admin-parcels-export.csv");
+      message.success("包裹 CSV 已生成");
     },
     onError: (error) => message.error(getErrorMessage(error)),
   });
@@ -551,6 +572,13 @@ export function ParcelWmsPage() {
           <Typography.Paragraph>待入库、扫描入库、在库包裹和无主包裹。</Typography.Paragraph>
         </div>
         <Space wrap>
+          <Button
+            icon={<DownloadOutlined />}
+            loading={exportMutation.isPending}
+            onClick={() => exportMutation.mutate()}
+          >
+            导出 CSV
+          </Button>
           <Button
             icon={<ReloadOutlined />}
             onClick={() => {

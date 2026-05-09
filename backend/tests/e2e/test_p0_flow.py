@@ -230,6 +230,69 @@ def _run_member_admin_flow(*, admin_client: APIClient, member_client: APIClient,
     }
 
 
+def _run_content_flow(*, admin_client: APIClient, member_client: APIClient, run_id: str) -> dict:
+    category = _api_data(
+        admin_client.post(
+            "/api/v1/admin/content/categories",
+            {
+                "type": "HELP",
+                "slug": f"e2e-content-{run_id.lower()}",
+                "name": f"E2E {run_id} 内容分类",
+                "description": "E2E 内容分类",
+                "sort_order": 990,
+                "status": "ACTIVE",
+            },
+            format="json",
+        ),
+        expected_status=201,
+    )
+    page_slug = f"e2e-help-{run_id.lower()}"
+    page = _api_data(
+        admin_client.post(
+            "/api/v1/admin/content/pages",
+            {
+                "category_id": category["id"],
+                "type": "HELP",
+                "slug": page_slug,
+                "title": f"E2E {run_id} 帮助内容",
+                "summary": "E2E 内容发布前后可见性验证",
+                "body": f"E2E {run_id} 正文内容",
+                "status": "DRAFT",
+                "sort_order": 991,
+            },
+            format="json",
+        ),
+        expected_status=201,
+    )
+    assert page["status"] == "DRAFT"
+
+    draft_detail = member_client.get(f"/api/v1/content/pages/{page_slug}")
+    assert draft_detail.status_code == 404
+
+    published = _api_data(admin_client.post(f"/api/v1/admin/content/pages/{page['id']}/publish"))
+    assert published["status"] == "PUBLISHED"
+    assert published["published_at"]
+
+    public_detail = _api_data(member_client.get(f"/api/v1/content/pages/{page_slug}"))
+    assert public_detail["title"] == page["title"]
+    assert public_detail["body"] == f"E2E {run_id} 正文内容"
+    assert "created_by_name" not in public_detail
+    assert "status" not in public_detail
+
+    public_items = _api_data(member_client.get("/api/v1/content/pages", {"type": "HELP"}))["items"]
+    assert any(item["slug"] == page_slug for item in public_items)
+
+    hidden = _api_data(admin_client.post(f"/api/v1/admin/content/pages/{page['id']}/hide"))
+    assert hidden["status"] == "HIDDEN"
+    hidden_detail = member_client.get(f"/api/v1/content/pages/{page_slug}")
+    assert hidden_detail.status_code == 404
+    return {
+        "slug": page_slug,
+        "category": category["slug"],
+        "status": hidden["status"],
+    }
+
+
 def _run_unclaimed_claim_flow(
     *,
     admin_client: APIClient,
@@ -710,14 +773,21 @@ def test_p0_forwarding_and_purchase_e2e():
         member_client=member_client,
         member=member,
     )
+    content_result = _run_content_flow(
+        admin_client=admin_client,
+        member_client=member_client,
+        run_id=run_id,
+    )
 
     print("[E2E-001] 主链路完成:", main_result)
     print("[PARCEL-CLAIM-001] 无主包裹认领链路完成:", unclaimed_result)
     print("[E2E-001] 代购链路完成:", purchase_result)
     print("[MSG-001] 工单链路完成:", ticket_result)
     print("[MEMBER-001] 会员后台链路完成:", member_admin_result)
+    print("[CONTENT-001] 内容 CMS 链路完成:", content_result)
     assert main_result["status"] == "SIGNED"
     assert unclaimed_result["status"] == "CLAIMED"
     assert purchase_result["waybill_status"] == "PENDING_REVIEW"
     assert ticket_result["status"] == "PROCESSING"
     assert member_admin_result["status"] == "ACTIVE"
+    assert content_result["status"] == "HIDDEN"

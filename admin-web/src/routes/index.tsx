@@ -6,6 +6,7 @@ import { ForbiddenPage } from "../pages/ForbiddenPage";
 import { LoginPage } from "../pages/LoginPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { adminRouteMeta } from "../features/auth/menu";
+import { ContentCmsPage } from "../features/content/ContentCmsPage";
 import { FinancePage } from "../features/finance/FinancePage";
 import { MemberOpsPage } from "../features/members/MemberOpsPage";
 import { ParcelWmsPage } from "../features/parcels/ParcelWmsPage";
@@ -47,6 +48,8 @@ export const router = createBrowserRouter([
                 <ProductCatalogPage />
               ) : route.resource === "tickets" ? (
                 <TicketOpsPage />
+              ) : route.resource === "content" ? (
+                <ContentCmsPage />
               ) : (
                 <WorkspacePage route={route} />
               ),

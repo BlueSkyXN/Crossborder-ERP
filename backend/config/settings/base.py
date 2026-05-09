@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "apps.members",
     "apps.addresses",
     "apps.files",
+    "apps.content",
     "apps.warehouses",
     "apps.parcels",
     "apps.waybills",
@@ -135,6 +136,8 @@ SPECTACULAR_SETTINGS = {
         "ProcurementTaskStatusEnum": "apps.purchases.models.ProcurementTaskStatus",
         "TicketStatusEnum": "apps.tickets.models.TicketStatus",
         "TicketTypeEnum": "apps.tickets.models.TicketType",
+        "ContentStatusEnum": "apps.content.models.ContentStatus",
+        "ContentTypeEnum": "apps.content.models.ContentType",
     },
 }
 

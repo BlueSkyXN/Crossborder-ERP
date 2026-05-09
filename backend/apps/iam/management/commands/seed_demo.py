@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 
+from apps.content.services import seed_content_demo_data
 from apps.iam.services import seed_iam_demo_data
 from apps.members.services import seed_member_demo_data
 from apps.products.services import seed_product_demo_data
@@ -14,4 +15,5 @@ class Command(BaseCommand):
         seed_member_demo_data()
         seed_warehouse_demo_data()
         seed_product_demo_data()
+        seed_content_demo_data()
         self.stdout.write(self.style.SUCCESS("Seeded demo data."))

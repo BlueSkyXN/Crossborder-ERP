@@ -184,3 +184,8 @@ tasks:
     file: tasks/CONTENT-001.md
     depends_on: [PARCEL-CLAIM-001]
     next: IMPORT-001
+  - id: IMPORT-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/IMPORT-001.md
+    depends_on: [CONTENT-001]
+    next: QA-BROWSER-001

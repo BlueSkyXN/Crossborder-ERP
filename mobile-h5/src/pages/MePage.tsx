@@ -128,6 +128,12 @@ export function MePage() {
           <button className={styles.secondaryButton} type="button" onClick={() => navigate("/me/tickets")}>
             工单记录
           </button>
+          <button className={styles.secondaryButton} type="button" onClick={() => navigate("/me/content")}>
+            帮助公告
+          </button>
+          <button className={styles.secondaryButton} type="button" onClick={() => navigate("/me/content")}>
+            条款政策
+          </button>
         </div>
       </section>
 

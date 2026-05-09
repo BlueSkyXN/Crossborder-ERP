@@ -263,4 +263,14 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/ADMIN-PANELS-001.md
     depends_on: [ACCOUNT-SETTINGS-001]
+    next: QA-BROWSER-003
+  - id: QA-BROWSER-003
+    phase: P6_PRODUCTION_GAP
+    file: tasks/QA-BROWSER-003.md
+    depends_on: [ADMIN-PANELS-001]
+    next: CI-EVIDENCE-001
+  - id: CI-EVIDENCE-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/CI-EVIDENCE-001.md
+    depends_on: [QA-BROWSER-003]
     next: null

@@ -232,6 +232,22 @@ async function evaluate(page, expression) {
   return result.result?.value;
 }
 
+async function pageSnapshot(page) {
+  try {
+    return await evaluate(
+      page,
+      `(() => ({
+        href: window.location.href,
+        readyState: document.readyState,
+        title: document.title,
+        text: (document.body?.innerText || "").replace(/\\s+/g, " ").trim().slice(0, 800)
+      }))()`,
+    );
+  } catch (error) {
+    return { error: error.message };
+  }
+}
+
 async function waitFor(page, description, predicate, timeoutMs = 15_000) {
   const deadline = Date.now() + timeoutMs;
   let lastValue;
@@ -245,23 +261,62 @@ async function waitFor(page, description, predicate, timeoutMs = 15_000) {
   throw new Error(`Timed out waiting for ${description}. Last value: ${JSON.stringify(lastValue)}`);
 }
 
-async function navigate(page, url, text) {
-  await page.cdp.send("Page.navigate", { url });
-  await waitFor(page, `readyState complete for ${url}`, () =>
-    evaluate(page, "document.readyState === 'complete'"),
+async function waitForUrl(page, url) {
+  const expected = new URL(url).href;
+  return waitFor(page, `URL ${expected}`, () =>
+    evaluate(page, `window.location.href === ${JSON.stringify(expected)}`),
   );
-  if (text) {
-    await waitForText(page, text);
+}
+
+async function waitForDocumentReady(page, url) {
+  return waitFor(page, `document ready for ${url}`, () =>
+    evaluate(page, `document.body !== null && ["interactive", "complete"].includes(document.readyState)`),
+  );
+}
+
+async function navigate(page, url, text) {
+  let lastError;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    await page.cdp.send("Page.navigate", { url });
+    try {
+      await waitForUrl(page, url);
+      await waitForDocumentReady(page, url);
+      if (text) {
+        await waitForText(page, text);
+      }
+      return;
+    } catch (error) {
+      lastError = error;
+      const snapshot = await pageSnapshot(page);
+      if (attempt === 2) {
+        throw new Error(
+          `Navigation to ${url} failed after ${attempt} attempts: ${error.message}. Page snapshot: ${JSON.stringify(
+            snapshot,
+          )}`,
+        );
+      }
+      console.warn(
+        `[QA-BROWSER-001] retrying navigation to ${url}: ${error.message}. Snapshot: ${JSON.stringify(snapshot)}`,
+      );
+      await page.cdp.send("Page.reload", { ignoreCache: true }).catch(() => undefined);
+      await delay(1_000);
+    }
   }
+  throw lastError;
 }
 
 async function waitForText(page, text, timeoutMs = 45_000) {
-  return waitFor(
-    page,
-    `text ${text}`,
-    () => evaluate(page, `document.body?.innerText.includes(${JSON.stringify(text)})`),
-    timeoutMs,
-  );
+  try {
+    return await waitFor(
+      page,
+      `text ${text}`,
+      () => evaluate(page, `document.body?.innerText.includes(${JSON.stringify(text)})`),
+      timeoutMs,
+    );
+  } catch (error) {
+    const snapshot = await pageSnapshot(page);
+    throw new Error(`${error.message}. Page snapshot: ${JSON.stringify(snapshot)}`);
+  }
 }
 
 async function verifyRouteText(page, url, texts) {

@@ -61,9 +61,9 @@
 
 ### 浏览器测试深度仍需增强
 
-问题：当前 `npm run e2e:browser` 已覆盖三端 smoke，并补了一条会员预报、后台扫描入库、会员回看在库的真实浏览器旅程和后台关键面板导航，但还不是覆盖全部业务路径的 Playwright/组件/视觉测试体系。
+问题：当前 `npm run e2e:browser` 已覆盖三端 smoke，并补了一条会员预报、后台扫描入库、会员回看在库的真实浏览器旅程和后台关键面板导航；`QA-BROWSER-003` 已加固 CDP 导航等待、失败页面快照和服务日志输出。但它还不是覆盖全部业务路径的 Playwright/组件/视觉测试体系。
 影响：可以自动发现三端登录、关键页面加载、后台 dashboard/roles 等关键面板、关键包裹表单流、console error/warning 和网络 4xx/5xx，但还不能完整覆盖所有复杂表单、批量操作、视觉回归和跨端业务旅程。
-当前临时处理：`npm run e2e` 继续覆盖 API 级 P0 主链路；`npm run e2e:browser` 使用 `.tmp/browser-e2e/` 临时 SQLite、media、Chrome profile 和测试服务，不下载浏览器，不使用用户日常 Chrome profile。
+当前临时处理：`npm run e2e` 继续覆盖 API 级 P0 主链路；`npm run e2e:browser` 使用 `.tmp/browser-e2e/` 临时 SQLite、media、Chrome profile 和测试服务，不下载浏览器，不使用用户日常 Chrome profile；导航失败时输出页面快照，脚本失败清理前输出服务日志尾部。
 后续建议：在确认依赖和浏览器缓存策略后，再逐步引入 Playwright、视觉回归或组件级测试，覆盖更多真实业务旅程。
 是否阻塞 v0.1：否。
 

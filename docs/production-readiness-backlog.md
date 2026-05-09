@@ -26,6 +26,8 @@
 | `IMPORT-XLSX-001` | P1 | Excel 批量预报解析 | `.xlsx` 模板下载、标准工作簿解析、错误记录复用现有导入 job | 已完成：不新增依赖，使用 Python 标准库读取 `.xlsx`；旧 `.xls` 需另存 |
 | `QA-BROWSER-001` | P1 | 浏览器级 E2E | system Chrome CDP 三端 smoke，覆盖登录和关键页面 | 已完成：不下载浏览器，不使用用户 profile，CI 可重复 |
 | `QA-BROWSER-002` | P1 | 浏览器真实业务旅程 | 会员预报、后台扫描入库、会员回看在库的跨端浏览器表单流 | 已完成：沿用 system Chrome CDP，不新增依赖和浏览器下载 |
+| `QA-BROWSER-003` | P1 | Browser Smoke 稳定性 | CDP 导航等待加固、页面快照诊断、失败服务日志输出 | 已完成：不新增依赖，不下载浏览器 |
+| `CI-EVIDENCE-001` | P1 | Agent 证据门禁 | 校验任务图、current-state、Agent run 摘要和未验证边界 | 已完成：标准库 Python，无新增依赖 |
 | `SHIP-BATCH-001` | P2 | 发货批次/转单/打印 | 发货批次模型、运单归批、批量轨迹、转单号、打印模板占位 | 已完成：不接硬件；打印只生成模板数据 |
 | `PAYABLE-001` | P2 | 供应商/成本/应付 | 供应商、成本类型、应付款、审批/核销基础 | 已完成：与应收钱包分离，金额精度和状态测试 |
 | `GROWTH-001` | P2 | 积分/推广/返利 | 积分流水、积分兑换占位、邀请关系、返利统计 | 已完成基础；规则不明确项保持 `TODO_CONFIRM` |
@@ -52,6 +54,8 @@
 - `IMPORT-XLSX-001`：已补 `.xlsx` 批量预报模板下载、标准工作簿解析、行级校验复用和 all-or-none 导入事务；未新增 Python/Node 依赖。旧版二进制 `.xls` 需另存为 `.xlsx` 或 CSV。
 - `QA-BROWSER-001`：已补 system Chrome CDP 浏览器 smoke，自动启动临时 SQLite/media/profile 下的后端和三端前端，覆盖 Admin Web、User Web、Mobile H5 登录和关键页面，并纳入 CI `Browser Smoke` job；不下载浏览器，不使用用户日常 Chrome profile。
 - `QA-BROWSER-002`：已在同一 Browser Smoke 中补真实跨端业务旅程：User Web 创建包裹预报，Admin Web 扫描同一快递单号入库，User Web 搜索回看在库状态和申请打包入口；仍不引入 Playwright 或浏览器下载。
+- `QA-BROWSER-003`：已加固现有 CDP Browser Smoke 的导航等待、文本断言失败快照和失败服务日志输出；PR #49 合并后出现的 Admin Web 登录页偶发等待问题由同一 merge commit 重跑通过，本任务进一步降低后续误判并提升 CI 可诊断性。
+- `CI-EVIDENCE-001`：已补 `scripts/ci/validate_agent_evidence.py` 和 CI `Agent Evidence` job，校验任务图、current-state、任务文件、Agent run 摘要、验证结果和未验证边界说明，避免证明材料出现缺失或占位记录。
 - `SHIP-BATCH-001`：已补后台发货批次模型/API，支持创建批次、待发货运单归批/移出、锁定后批量发货、批量轨迹、转单号和承运商批次号；Admin Web 运单处理页已增加批次列表、详情、归批、批量发货和面单/拣货单/交接单打印模板数据预览入口。打印仍只生成结构化模板数据，不接真实硬件。
 - `PAYABLE-001`：已补后台供应商、成本类型和应付款模型/API，支持应付款待审核、确认、核销和取消状态流；Admin Web 财务页已增加应付款、供应商和成本类型入口，API E2E 和 Browser Smoke 已覆盖基础链路。真实银行付款、自动打款和外部财务系统同步仍未接入。
 - `GROWTH-001`：已补会员积分流水、邀请关系、返利记录和奖励积分统计；Admin Web 会员详情可审计积分/邀请/返利并可手工调整积分，User Web 和 Mobile H5 个人中心已展示积分推广入口；API E2E、后端测试和 Browser Smoke 已覆盖基础链路。真实联盟、提现、税务、多级分销和最终积分/返利规则仍未接入。
@@ -67,7 +71,7 @@
 
 ## Current Next Task
 
-任务图中的 `ADMIN-PANELS-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
+任务图中的 `CI-EVIDENCE-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
 
 - 生产化边界：补对象存储、PostgreSQL/MySQL/Redis 真实验证计划、告警和部署验证。
 - 需业务/合规确认的外部集成：真实支付、真实物流 API、真实自动采购下单和外部商品抓取。

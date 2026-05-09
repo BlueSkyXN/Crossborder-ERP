@@ -10,7 +10,7 @@
 - Admin Web、User Web、Mobile H5 已覆盖登录、仓库地址、包裹预报、扫描入库、申请打包、审核计费、余额支付、发货轨迹、确认收货、商品/购物车/手工代购最小链路。
 - `npm run e2e` 已覆盖 API 级 P0 主流程，并已把线下汇款审核入账纳入主链路资金来源。
 
-但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 模板下载和批量预报解析；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础；`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础；`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础；`GROWTH-001` 已补齐积分流水、邀请关系、返利记录统计和三端入口基础；`AUDITLOG-001` 已补齐后台关键写操作审计日志和查询面板。剩余差距集中在完整业务旅程级浏览器测试、生产化运维边界和需要业务/合规确认的外部集成。
+但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 模板下载和批量预报解析；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础；`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础；`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础；`GROWTH-001` 已补齐积分流水、邀请关系、返利记录统计和三端入口基础；`AUDITLOG-001` 已补齐后台关键写操作审计日志和查询面板。剩余差距集中在生产化运维边界、需要业务/合规确认的外部集成，以及视觉回归/组件级测试/更大范围浏览器流。
 
 ## Source Scope
 
@@ -57,7 +57,7 @@
 | User Web routes | dashboard、addresses、finance、tickets、content、parcels、unclaimed-parcels、waybills、products/cart/purchases | `user-web/src/routes/index.tsx` |
 | Mobile H5 routes | home/category、ship、forecast、parcels、unclaimed-parcels、packing、waybills、cart、me、content、addresses、finance、tickets、purchases/manual | `mobile-h5/src/routes/index.tsx` |
 | CI | PR 和 main push 执行 backend check/OpenAPI/pytest、frontend lint/build、Browser Smoke | `.github/workflows/ci.yml` |
-| E2E | `npm run e2e` 调用 API 级 P0 pytest 流程；`npm run e2e:browser` 调用 system Chrome CDP 三端 smoke | `package.json`；`scripts/e2e/` |
+| E2E | `npm run e2e` 调用 API 级 P0 pytest 流程；`npm run e2e:browser` 调用 system Chrome CDP 三端 smoke 和一条包裹预报/入库/回看业务旅程 | `package.json`；`scripts/e2e/` |
 
 ## Gap Matrix
 
@@ -76,15 +76,15 @@
 | 积分、推广、返利 | User Web 第二阶段和 Mobile 入口均要求积分/推广/好友返利 | `GROWTH-001` 已补积分流水、邀请关系、返利金额/奖励积分统计、Admin Web/User Web/Mobile H5 基础入口；提现、税务、真实联盟和最终规则仍不做 | `GROWTH-001` 已完成基础；复杂规则后续 |
 | 操作日志/审计 | ChatGPT Admin L1023、Gemini Admin L129、基线 `audit_logs` 契约要求关键后台操作可追溯 | `AUDITLOG-001` 已补 `audit_logs`、请求级审计中间件、财务高风险服务层审计、Admin Web `/audit-logs` 查询入口；长期归档/告警仍后续 | `AUDITLOG-001` 已完成基础 |
 | 外链解析/自动采购 | User Web/Mobile 要求关键词/链接搜索，Admin 二阶段提到外部平台对接 | 当前支持自营商品和手工代购；不支持稳定外部抓取/自动采购 | `PURCHASE-AUTO-001`，需业务确认和合规确认 |
-| 浏览器级 E2E | 源报告要求三端具备可实际操作产品形态；API E2E 不能发现真实浏览器运行时问题 | `QA-BROWSER-001` 已补 system Chrome CDP smoke，覆盖 Admin Web/User Web/Mobile H5 登录和关键页面，并纳入 CI；完整业务旅程、视觉回归和组件级测试仍可增强 | `QA-BROWSER-001` 已完成基础；完整浏览器旅程后续 |
+| 浏览器级 E2E | 源报告要求三端具备可实际操作产品形态；API E2E 不能发现真实浏览器运行时问题 | `QA-BROWSER-001` 已补 system Chrome CDP smoke，覆盖 Admin Web/User Web/Mobile H5 登录和关键页面，并纳入 CI；`QA-BROWSER-002` 已补会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；视觉回归、组件级测试和更多复杂浏览器流仍可增强 | `QA-BROWSER-001`/`QA-BROWSER-002` 已完成；更深测试后续 |
 | PostgreSQL/MySQL/Redis | 用户已确认先 SQLite，后续补但不真实验证 | 当前只验证 SQLite，Redis/Celery 未真实验证 | 保持 `configured_unverified`，不进入当前验证 gate |
 
 ## Immediate Next Order
 
 后续不应一次性做超大 PR，建议按依赖顺序拆小任务：
 
-1. 完整浏览器旅程增强：在现有 `npm run e2e:browser` 基础上，逐步覆盖更多真实业务流、视觉回归和组件级测试。
-2. 生产化运维边界：补 PostgreSQL/MySQL/Redis 真实验证计划、对象存储、日志归档和部署验证。
-3. 需要业务/合规确认的外部集成：真实支付、真实物流 API、自动采购和外部商品抓取。
+1. 生产化运维边界：补 PostgreSQL/MySQL/Redis 真实验证计划、对象存储、日志归档和部署验证。
+2. 需要业务/合规确认的外部集成：真实支付、真实物流 API、自动采购和外部商品抓取。
+3. 测试深度增强：在现有 `npm run e2e:browser` 基础上，逐步覆盖视觉回归、组件级测试和更多复杂浏览器流。
 
 每个任务仍需独立分支、PR、更新 PR 信息、CI 通过后合并回 `main`。

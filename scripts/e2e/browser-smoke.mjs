@@ -279,7 +279,7 @@ async function clickByText(page, text) {
       const compact = (value) => normalized(value).replace(/\\s+/g, "");
       const targetText = ${JSON.stringify(text)};
       const targetCompact = compact(targetText);
-      const candidates = Array.from(document.querySelectorAll("button,a,[role='button']"));
+      const candidates = Array.from(document.querySelectorAll("button,a,[role='button'],[role='tab']"));
       const element = candidates.find((candidate) => compact(candidate.textContent).includes(targetCompact));
       if (!element) {
         throw new Error("Clickable text not found: " + targetText);
@@ -292,19 +292,146 @@ async function clickByText(page, text) {
   return clicked;
 }
 
+async function fillByLabel(page, labelText, value) {
+  return evaluate(
+    page,
+    `(() => {
+      const normalized = (input) => (input || "").replace(/\\s+/g, " ").trim();
+      const compact = (input) => normalized(input).replace(/\\s+/g, "");
+      const targetCompact = compact(${JSON.stringify(labelText)});
+      const value = ${JSON.stringify(value)};
+      const setNativeValue = (element, nextValue) => {
+        const prototype = Object.getPrototypeOf(element);
+        const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
+        if (descriptor?.set) {
+          descriptor.set.call(element, nextValue);
+        } else {
+          element.value = nextValue;
+        }
+        element.dispatchEvent(new Event("input", { bubbles: true }));
+        element.dispatchEvent(new Event("change", { bubbles: true }));
+      };
+      const findControl = (label) => {
+        if (label.control) {
+          return label.control;
+        }
+        const htmlFor = label.getAttribute("for");
+        if (htmlFor) {
+          const byId = document.getElementById(htmlFor);
+          if (byId) {
+            return byId;
+          }
+        }
+        const nested = label.querySelector("input,textarea,select");
+        if (nested) {
+          return nested;
+        }
+        const formItem = label.closest(".ant-form-item");
+        return formItem?.querySelector("input,textarea,select") || null;
+      };
+      const label = Array.from(document.querySelectorAll("label")).find((candidate) =>
+        compact(candidate.textContent).includes(targetCompact)
+      );
+      if (!label) {
+        throw new Error("Label not found: " + ${JSON.stringify(labelText)});
+      }
+      const control = findControl(label);
+      if (!control) {
+        throw new Error("Control not found for label: " + ${JSON.stringify(labelText)});
+      }
+      control.focus();
+      setNativeValue(control, value);
+      return { label: normalized(label.textContent), value: control.value };
+    })()`,
+  );
+}
+
+async function fillByPlaceholder(page, placeholder, value) {
+  return evaluate(
+    page,
+    `(() => {
+      const normalized = (input) => (input || "").replace(/\\s+/g, " ").trim();
+      const target = ${JSON.stringify(placeholder)};
+      const value = ${JSON.stringify(value)};
+      const element = Array.from(document.querySelectorAll("input,textarea")).find(
+        (candidate) => normalized(candidate.getAttribute("placeholder")).includes(target)
+      );
+      if (!element) {
+        throw new Error("Input placeholder not found: " + target);
+      }
+      const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(element), "value");
+      if (descriptor?.set) {
+        descriptor.set.call(element, value);
+      } else {
+        element.value = value;
+      }
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+      return { placeholder: element.getAttribute("placeholder"), value: element.value };
+    })()`,
+  );
+}
+
+async function waitForPlaceholder(page, placeholder) {
+  return waitFor(page, `input placeholder ${placeholder}`, () =>
+    evaluate(
+      page,
+      `(() => {
+        const normalized = (input) => (input || "").replace(/\\s+/g, " ").trim();
+        const target = ${JSON.stringify(placeholder)};
+        return Array.from(document.querySelectorAll("input,textarea")).some((candidate) =>
+          normalized(candidate.getAttribute("placeholder")).includes(target)
+        );
+      })()`,
+    ),
+  );
+}
+
+async function waitForFormOption(page, labelText) {
+  return waitFor(page, `select option for ${labelText}`, () =>
+    evaluate(
+      page,
+      `(() => {
+        const compact = (input) => (input || "").replace(/\\s+/g, "").trim();
+        const target = compact(${JSON.stringify(labelText)});
+        const label = Array.from(document.querySelectorAll("label")).find((candidate) =>
+          compact(candidate.textContent).includes(target)
+        );
+        const control = label?.control || label?.querySelector("select");
+        if (!control || control.tagName.toLowerCase() !== "select") {
+          return false;
+        }
+        return Array.from(control.options).some((option) => option.value);
+      })()`,
+    ),
+  );
+}
+
 function assertNoIssues(pageName, issues) {
   if (issues.length > 0) {
     throw new Error(`${pageName} browser issues:\n- ${issues.join("\n- ")}`);
   }
 }
 
-async function runAdmin(debugPort) {
+async function runAdmin(debugPort, journey) {
   const page = await createPage(debugPort);
   await navigate(page, `${ADMIN_URL}/login?redirect=%2Fparcels`, "管理员登录");
   await clickByText(page, "登录");
   await waitForPath(page, "/parcels");
   await waitForText(page, "导出 CSV");
   await waitForText(page, "包裹入库");
+  await clickByText(page, "扫描入库");
+  await waitForText(page, "搜索并入库");
+  await fillByLabel(page, "快递单号", journey.trackingNo);
+  await fillByLabel(page, "重量 kg", "1.250");
+  await fillByLabel(page, "长 cm", "20");
+  await fillByLabel(page, "宽 cm", "15");
+  await fillByLabel(page, "高 cm", "10");
+  await clickByText(page, "搜索并入库");
+  await waitForText(page, journey.trackingNo);
+  await waitForText(page, "已入库");
+  await clickByText(page, "在库包裹");
+  await waitForText(page, journey.trackingNo);
   await navigate(page, `${ADMIN_URL}/waybills`, "运单处理");
   await waitForText(page, "发货批次");
   await waitForText(page, "创建批次");
@@ -322,10 +449,11 @@ async function runAdmin(debugPort) {
   await waitForText(page, "敏感字段");
   assertNoIssues("Admin Web", page.issues);
   page.cdp.close();
+  console.log("[QA-BROWSER-002] Admin Web scanned the browser-created parcel into stock");
   console.log("[QA-BROWSER-001] Admin Web login, parcels, shipping batch, finance payable, growth, and audit smoke passed");
 }
 
-async function runUser(debugPort) {
+async function runUser(debugPort, journey) {
   const page = await createPage(debugPort);
   await navigate(page, `${USER_URL}/login?redirect=%2Fparcels`, "会员登录");
   await clickByText(page, "登录");
@@ -334,12 +462,36 @@ async function runUser(debugPort) {
   await waitForText(page, "Excel 模板");
   await waitForText(page, "选择 CSV / Excel 文件");
   await waitForText(page, "导出");
+  await waitForFormOption(page, "入库仓库");
+  await fillByLabel(page, "快递单号", journey.trackingNo);
+  await fillByLabel(page, "承运商", "QA-CDP");
+  await fillByLabel(page, "商品名称", "Browser Journey Item");
+  await fillByLabel(page, "数量", "2");
+  await fillByLabel(page, "申报价值", "18.50");
+  await fillByLabel(page, "备注", "QA-BROWSER-002");
+  await clickByText(page, "提交预报");
+  await waitForText(page, journey.trackingNo);
   await navigate(page, `${USER_URL}/dashboard`, "会员中心");
   await waitForText(page, "积分推广");
   await waitForText(page, "邀请码");
   assertNoIssues("User Web", page.issues);
   page.cdp.close();
+  console.log("[QA-BROWSER-002] User Web created a parcel forecast through the browser form");
   console.log("[QA-BROWSER-001] User Web login, parcels, and growth smoke passed");
+}
+
+async function verifyUserParcelInStock(debugPort, journey) {
+  const page = await createPage(debugPort);
+  await navigate(page, `${USER_URL}/parcels`, "包裹中心");
+  await waitForPlaceholder(page, "搜索包裹号或快递单号");
+  await fillByPlaceholder(page, "搜索包裹号或快递单号", journey.trackingNo);
+  await waitForText(page, journey.trackingNo);
+  await clickByText(page, journey.trackingNo);
+  await waitForText(page, "在库");
+  await waitForText(page, "申请打包");
+  assertNoIssues("User Web stock verification", page.issues);
+  page.cdp.close();
+  console.log("[QA-BROWSER-002] User Web verified the scanned parcel is in stock and packable");
 }
 
 async function runMobile(debugPort) {
@@ -360,11 +512,14 @@ async function runMobile(debugPort) {
 let launched;
 try {
   launched = await launchChrome();
+  const journey = { trackingNo: `BRW-${Date.now()}` };
   console.log(`[QA-BROWSER-001] using Chrome: ${launched.chromePath}`);
   console.log(`[QA-BROWSER-001] using remote debugging port: ${launched.debugPort}`);
   console.log(`[QA-BROWSER-001] using temporary profile: ${USER_DATA_DIR}`);
-  await runAdmin(launched.debugPort);
-  await runUser(launched.debugPort);
+  console.log(`[QA-BROWSER-002] using browser journey tracking number: ${journey.trackingNo}`);
+  await runUser(launched.debugPort, journey);
+  await runAdmin(launched.debugPort, journey);
+  await verifyUserParcelInStock(launched.debugPort, journey);
   await runMobile(launched.debugPort);
 } finally {
   if (launched?.chrome && !launched.chrome.killed) {

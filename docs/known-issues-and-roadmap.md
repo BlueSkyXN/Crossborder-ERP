@@ -7,7 +7,7 @@
 - `docs/source-report-gap-map.md`
 - `docs/production-readiness-backlog.md`
 
-`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 批量预报解析，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础，`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础，`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础，`GROWTH-001` 已补齐积分推广返利基础，`AUDITLOG-001` 已补齐后台关键写操作审计日志。后续优先按完整浏览器旅程、生产化边界和需业务/合规确认的外部集成逐项收敛。
+`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 批量预报解析，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础，`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的一条真实浏览器旅程，`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础，`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础，`GROWTH-001` 已补齐积分推广返利基础，`AUDITLOG-001` 已补齐后台关键写操作审计日志。后续优先按生产化边界、需业务/合规确认的外部集成和测试深度增强逐项收敛。
 
 ## 已知问题
 
@@ -35,12 +35,12 @@
 后续建议：确认用户恢复 Docker 需求后再补 compose、镜像构建、Nginx 和 staging 验证。
 是否阻塞 v0.1：否，用户当前明确暂不考虑 Docker。
 
-### 完整浏览器旅程测试仍需增强
+### 浏览器测试深度仍需增强
 
-问题：当前已新增 `npm run e2e:browser`，但它是 system Chrome CDP smoke，不是覆盖全部业务旅程的 Playwright 测试体系。
-影响：可以自动发现三端登录、关键页面加载、console error/warning 和网络 4xx/5xx，但还不能完整覆盖复杂表单、批量操作、视觉回归和跨端业务旅程。
+问题：当前 `npm run e2e:browser` 已覆盖三端 smoke，并补了一条会员预报、后台扫描入库、会员回看在库的真实浏览器旅程，但还不是覆盖全部业务路径的 Playwright/组件/视觉测试体系。
+影响：可以自动发现三端登录、关键页面加载、关键包裹表单流、console error/warning 和网络 4xx/5xx，但还不能完整覆盖所有复杂表单、批量操作、视觉回归和跨端业务旅程。
 当前临时处理：`npm run e2e` 继续覆盖 API 级 P0 主链路；`npm run e2e:browser` 使用 `.tmp/browser-e2e/` 临时 SQLite、media、Chrome profile 和测试服务，不下载浏览器，不使用用户日常 Chrome profile。
-后续建议：在确认依赖和浏览器缓存策略后，再逐步引入 Playwright 或组件级测试，覆盖更多真实业务旅程。
+后续建议：在确认依赖和浏览器缓存策略后，再逐步引入 Playwright、视觉回归或组件级测试，覆盖更多真实业务旅程。
 是否阻塞 v0.1：否。
 
 ### 审计日志长期归档和细粒度覆盖仍需增强
@@ -127,7 +127,7 @@
 
 ### P1 稳定化
 
-- 在现有 system Chrome CDP smoke 基础上，补完整浏览器业务旅程或 Playwright/组件级测试。
+- 在现有 system Chrome CDP smoke 和一条真实业务旅程基础上，补更多浏览器业务旅程、Playwright/组件级测试或视觉回归。
 - 补前端组件级测试和关键表单校验测试。
 - 增加服务端分页、筛选、排序和列表性能优化。
 - 完善 RBAC 细粒度权限，拆分 view/create/update/delete 操作权限。

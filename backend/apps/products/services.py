@@ -1,11 +1,11 @@
-from django.db import transaction
+from django.db import models, transaction
 from django.db import IntegrityError
 from django.db.models import Prefetch
 from rest_framework import exceptions
 
 from apps.members.models import User
 
-from .models import CartItem, CatalogStatus, Product, ProductCategory, ProductSku
+from .models import CartItem, CatalogStatus, Product, ProductAttribute, ProductAttributeValue, ProductCategory, ProductSku, ProductTranslation
 
 
 def get_active_products():
@@ -264,3 +264,72 @@ def seed_product_demo_data() -> None:
             "status": CatalogStatus.ACTIVE,
         },
     )
+
+
+# ─── Translation Services ───────────────────────────────────
+
+
+def get_product_translations(product_id: int):
+    return ProductTranslation.objects.filter(product_id=product_id)
+
+
+def create_product_translation(data: dict) -> ProductTranslation:
+    return ProductTranslation.objects.create(**data)
+
+
+@transaction.atomic
+def update_product_translation(trans: ProductTranslation, data: dict) -> ProductTranslation:
+    for key, value in data.items():
+        setattr(trans, key, value)
+    trans.save()
+    return trans
+
+
+def delete_product_translation(trans: ProductTranslation) -> None:
+    trans.delete()
+
+
+# ─── Attribute Services ─────────────────────────────────────
+
+
+def get_product_attributes(category_id: int | None = None, is_active: bool | None = None):
+    qs = ProductAttribute.objects.select_related("category")
+    if category_id is not None:
+        qs = qs.filter(models.Q(category_id=category_id) | models.Q(category__isnull=True))
+    if is_active is not None:
+        qs = qs.filter(is_active=is_active)
+    return qs
+
+
+def create_product_attribute(data: dict) -> ProductAttribute:
+    return ProductAttribute.objects.create(**data)
+
+
+@transaction.atomic
+def update_product_attribute(attr: ProductAttribute, data: dict) -> ProductAttribute:
+    for key, value in data.items():
+        setattr(attr, key, value)
+    attr.save()
+    return attr
+
+
+def delete_product_attribute(attr: ProductAttribute) -> None:
+    if attr.values.exists():
+        raise exceptions.ValidationError({"detail": "该属性已有关联值，请先删除属性值"})
+    attr.delete()
+
+
+def get_product_attribute_values(product_id: int):
+    return ProductAttributeValue.objects.filter(product_id=product_id).select_related("attribute")
+
+
+def set_product_attribute_value(data: dict) -> ProductAttributeValue:
+    obj, _ = ProductAttributeValue.objects.update_or_create(
+        product=data["product"], attribute=data["attribute"],
+        defaults={"value": data["value"], "sort_order": data.get("sort_order", 0)},
+    )
+    return obj
+
+
+def delete_product_attribute_value(val: ProductAttributeValue) -> None:
+    val.delete()

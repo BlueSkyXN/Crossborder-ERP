@@ -7,6 +7,7 @@ import {
   createPurchaseOrder,
   deleteCartItem,
   fetchCartItems,
+  fetchProducts,
   fetchPurchaseOrders,
   fetchPurchaseWallet,
   fetchPurchaseWalletTransactions,
@@ -33,6 +34,10 @@ function sumCartItems(items: CartItem[]) {
   return items.reduce((total, item) => total + Number(item.sku_price || 0) * item.quantity, 0);
 }
 
+function groupKeyForCartItem(item: CartItem, productCategoryMap: Map<number, string>) {
+  return productCategoryMap.get(item.product) || "默认店铺";
+}
+
 export function CartPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -44,6 +49,10 @@ export function CartPage() {
   const cartQuery = useQuery({
     queryKey: ["mobile", "member", "cart-items"],
     queryFn: fetchCartItems,
+  });
+  const productsQuery = useQuery({
+    queryKey: ["mobile", "member", "products"],
+    queryFn: fetchProducts,
   });
   const ordersQuery = useQuery({
     queryKey: ["mobile", "member", "purchase-orders"],
@@ -60,6 +69,18 @@ export function CartPage() {
 
   const cartItems = useMemo(() => cartQuery.data ?? [], [cartQuery.data]);
   const orders = useMemo(() => ordersQuery.data ?? [], [ordersQuery.data]);
+  const productCategoryMap = useMemo(
+    () => new Map((productsQuery.data ?? []).map((product) => [product.id, product.category_name || "默认店铺"])),
+    [productsQuery.data],
+  );
+  const groupedCartItems = useMemo(() => {
+    const groups = new Map<string, CartItem[]>();
+    cartItems.forEach((item) => {
+      const key = groupKeyForCartItem(item, productCategoryMap);
+      groups.set(key, [...(groups.get(key) ?? []), item]);
+    });
+    return Array.from(groups.entries()).map(([title, items]) => ({ title, items }));
+  }, [cartItems, productCategoryMap]);
   const effectiveSelectedCartItemIds = useMemo(
     () => selectedCartItemIds ?? cartItems.map((item) => item.id),
     [cartItems, selectedCartItemIds],
@@ -135,6 +156,17 @@ export function CartPage() {
     });
   };
 
+  const toggleCartGroup = (items: CartItem[]) => {
+    setSelectedCartItemIds((current) => {
+      const baseSelection = current ?? cartItems.map((item) => item.id);
+      const groupIds = items.map((item) => item.id);
+      const isAllSelected = groupIds.every((id) => baseSelection.includes(id));
+      return isAllSelected
+        ? baseSelection.filter((id) => !groupIds.includes(id))
+        : Array.from(new Set([...baseSelection, ...groupIds]));
+    });
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (selectedCartItems.length === 0) {
@@ -159,7 +191,7 @@ export function CartPage() {
           商品
         </button>
         <div>
-          <span>Cart</span>
+          <span>购物车</span>
           <h1>购物车</h1>
         </div>
         <button type="button" onClick={() => navigate("/me/purchases")}>
@@ -181,19 +213,39 @@ export function CartPage() {
 
       {!cartQuery.isLoading && !cartQuery.isError && cartItems.length > 0 && (
         <section className={styles.cartList}>
-          {cartItems.map((item) => (
-            <article key={item.id} className={`${styles.cartCard} ${effectiveSelectedCartItemIds.includes(item.id) ? styles.selected : ""}`}>
-              <input
-                type="checkbox"
-                checked={effectiveSelectedCartItemIds.includes(item.id)}
-                onChange={() => toggleCartItem(item)}
-                aria-label={`选择 ${item.product_title}`}
-              />
-              <div>
-                <strong>{item.product_title}</strong>
-                <span>{item.sku_code} / {formatSpec(item.sku_spec_json)}</span>
-                <div className={styles.cartMeta}>
-                  <div className={styles.quantity}>
+          {groupedCartItems.map((group) => {
+            const groupSelectedCount = group.items.filter((item) => effectiveSelectedCartItemIds.includes(item.id)).length;
+            const isGroupSelected = groupSelectedCount === group.items.length;
+            return (
+              <section key={group.title} className={styles.cartGroup}>
+                <label className={styles.cartGroupHead}>
+                  <input
+                    type="checkbox"
+                    checked={isGroupSelected}
+                    onChange={() => toggleCartGroup(group.items)}
+                    aria-label={`选择 ${group.title} 全部商品`}
+                  />
+                  <strong>{group.title}</strong>
+                  <span>
+                    已选 {groupSelectedCount}/{group.items.length} 件
+                  </span>
+                </label>
+                {group.items.map((item) => (
+                  <article
+                    key={item.id}
+                    className={`${styles.cartCard} ${effectiveSelectedCartItemIds.includes(item.id) ? styles.selected : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={effectiveSelectedCartItemIds.includes(item.id)}
+                      onChange={() => toggleCartItem(item)}
+                      aria-label={`选择 ${item.product_title}`}
+                    />
+                    <div>
+                      <strong>{item.product_title}</strong>
+                      <span>{item.sku_code} / {formatSpec(item.sku_spec_json)}</span>
+                      <div className={styles.cartMeta}>
+                        <div className={styles.quantity}>
                     <button
                       type="button"
                       disabled={item.quantity <= 1 || updateMutation.isPending}
@@ -209,26 +261,29 @@ export function CartPage() {
                     >
                       +
                     </button>
-                  </div>
-                  <strong className={styles.cartTotal}>{formatMoney(item.line_amount)}</strong>
-                </div>
-                <button
-                  className={styles.dangerButton}
-                  type="button"
-                  disabled={deleteMutation.isPending}
-                  onClick={() => deleteMutation.mutate(item.id)}
-                >
-                  删除
-                </button>
-              </div>
-            </article>
-          ))}
+                        </div>
+                        <strong className={styles.cartTotal}>{formatMoney(item.line_amount)}</strong>
+                      </div>
+                      <button
+                        className={styles.dangerButton}
+                        type="button"
+                        disabled={deleteMutation.isPending}
+                        onClick={() => deleteMutation.mutate(item.id)}
+                      >
+                        删除
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </section>
+            );
+          })}
         </section>
       )}
 
       <form className={styles.panel} onSubmit={handleSubmit}>
         <div className={styles.sectionHead}>
-          <span>Confirm</span>
+          <span>确认订单</span>
           <h2>确认订单</h2>
           <p>勾选商品后提交代购单，付款后进入后台审核采购。</p>
         </div>

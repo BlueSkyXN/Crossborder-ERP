@@ -12,3 +12,6 @@ DATABASES = {
         "NAME": ":memory:",
     }
 }
+
+REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = []  # noqa: F405
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {"login": "1000/minute"}  # noqa: F405

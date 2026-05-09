@@ -765,9 +765,9 @@ def test_dashboard_respects_role_visibility(client, seeded_iam):
 
     assert response.status_code == 200
     data = response.json()["data"]
-    assert {card["key"] for card in data["summary_cards"]} == {"parcel_wms", "waybills"}
-    assert {module["key"] for module in data["modules"]} == {"parcel_wms", "waybills"}
-    assert all(item["path"] in {"/parcels", "/waybills"} for item in data["work_queue"])
+    assert {card["key"] for card in data["summary_cards"]} == {"warehouse_config", "parcel_wms", "waybills"}
+    assert {module["key"] for module in data["modules"]} == {"warehouse_config", "parcel_wms", "waybills"}
+    assert all(item["path"] in {"/parcels", "/waybills", "/warehouses"} for item in data["work_queue"])
 
 
 def test_seed_creates_required_demo_admins(seeded_iam):

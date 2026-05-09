@@ -76,3 +76,69 @@ class CartItem(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user_id}:{self.sku_id}"
+
+
+class ProductTranslation(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="translations")
+    language_code = models.CharField(max_length=10, help_text="例如 zh-CN, en, ja")
+    title = models.CharField(max_length=160)
+    description_rich = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "product_translations"
+        ordering = ["language_code"]
+        constraints = [
+            models.UniqueConstraint(fields=["product", "language_code"], name="uq_product_lang"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.product_id}:{self.language_code}"
+
+
+class AttributeType(models.TextChoices):
+    TEXT = "TEXT", "文本"
+    NUMBER = "NUMBER", "数字"
+    ENUM = "ENUM", "枚举"
+    BOOLEAN = "BOOLEAN", "布尔"
+
+
+class ProductAttribute(models.Model):
+    category = models.ForeignKey(
+        ProductCategory, on_delete=models.SET_NULL,
+        related_name="attributes", null=True, blank=True,
+        help_text="绑定分类（为空则全局属性）",
+    )
+    name = models.CharField(max_length=120)
+    attr_type = models.CharField(max_length=20, choices=AttributeType.choices, default=AttributeType.TEXT)
+    is_filterable = models.BooleanField(default=False)
+    sort_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "product_attributes"
+        ordering = ["sort_order", "id"]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class ProductAttributeValue(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="attribute_values")
+    attribute = models.ForeignKey(ProductAttribute, on_delete=models.CASCADE, related_name="values")
+    value = models.CharField(max_length=500)
+    sort_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "product_attribute_values"
+        ordering = ["sort_order", "id"]
+        constraints = [
+            models.UniqueConstraint(fields=["product", "attribute"], name="uq_product_attr"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.attribute.name}: {self.value}"

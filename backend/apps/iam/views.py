@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 
 from apps.common.responses import success_response
+from apps.common.throttles import LoginRateThrottle
 
 from .authentication import AdminTokenAuthentication
 from .dashboard import build_admin_dashboard_snapshot
@@ -26,6 +27,7 @@ from .services import get_admin_menus, has_any_permission, login_admin
 class AdminLoginView(APIView):
     authentication_classes = []
     permission_classes = []
+    throttle_classes = [LoginRateThrottle]
 
     @extend_schema(
         tags=["admin-auth"],

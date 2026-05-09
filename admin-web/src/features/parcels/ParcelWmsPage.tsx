@@ -38,6 +38,7 @@ import { useOutletContext } from "react-router-dom";
 import { ForbiddenPage } from "../../pages/ForbiddenPage";
 import { adminFilesApi } from "../files/api";
 import { warehouseConfigApi } from "../warehouses/api";
+import { ParcelLabelButton } from "./ParcelLabelButton";
 import { parcelWmsApi } from "./api";
 import type {
   InboundPayload,
@@ -847,6 +848,7 @@ export function ParcelWmsPage() {
                 { key: "remark", label: "备注", children: detailParcel.remark || "-" },
               ]}
             />
+            <ParcelLabelButton parcel={detailParcel} />
             <Card title="商品明细" size="small">
               <Table
                 rowKey="id"

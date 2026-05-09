@@ -7,6 +7,7 @@ from .views import (
     AdminShippingChannelViewSet,
     AdminValueAddedServiceViewSet,
     AdminWarehouseViewSet,
+    FreightEstimateView,
     WarehouseAddressView,
     WarehouseListView,
 )
@@ -21,5 +22,6 @@ router.register("admin/rate-plans", AdminRatePlanViewSet, basename="admin-rate-p
 urlpatterns = [
     path("warehouses", WarehouseListView.as_view(), name="warehouse-list"),
     path("warehouses/<int:warehouse_id>/address", WarehouseAddressView.as_view(), name="warehouse-address"),
+    path("freight/estimate", FreightEstimateView.as_view(), name="freight-estimate"),
 ]
 urlpatterns += router.urls

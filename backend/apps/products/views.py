@@ -10,35 +10,52 @@ from apps.iam.permissions import HasAdminPermission
 from apps.members.authentication import MemberTokenAuthentication
 from apps.members.permissions import IsMemberAuthenticated
 
-from .models import CartItem, CatalogStatus, Product, ProductCategory, ProductSku
+from .models import CartItem, CatalogStatus, Product, ProductAttribute, ProductAttributeValue, ProductCategory, ProductSku, ProductTranslation
 from .serializers import (
     CartItemCreateSerializer,
     CartItemSerializer,
     CartItemUpdateSerializer,
+    ProductAttributeInputSerializer,
+    ProductAttributeSerializer,
+    ProductAttributeValueInputSerializer,
+    ProductAttributeValueSerializer,
     ProductCategoryInputSerializer,
     ProductCategorySerializer,
     ProductInputSerializer,
     ProductSerializer,
     ProductSkuInputSerializer,
     ProductSkuSerializer,
+    ProductTranslationInputSerializer,
+    ProductTranslationSerializer,
 )
 from .services import (
     add_cart_item,
     create_product,
+    create_product_attribute,
     create_product_category,
     create_product_sku,
+    create_product_translation,
     delete_cart_item,
+    delete_product_attribute,
+    delete_product_attribute_value,
+    delete_product_translation,
     disable_product,
     disable_product_category,
     disable_product_sku,
     get_admin_categories,
     get_admin_products,
     get_admin_skus,
+    get_product_attribute_values,
+    get_product_attributes,
+    get_product_translations,
     get_user_cart_items,
+    set_product_attribute_value,
     update_cart_item,
     update_product,
+    update_product_attribute,
     update_product_category,
     update_product_sku,
+    update_product_translation,
 )
 
 
@@ -143,7 +160,7 @@ class AdminProductListCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "products.view"
-    write_permission = "products.manage"
+    method_permissions = {"POST": "products.create"}
 
     @extend_schema(tags=["admin-products"], responses={200: ProductSerializer(many=True)})
     def get(self, request):
@@ -161,7 +178,7 @@ class AdminProductDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "products.view"
-    write_permission = "products.manage"
+    method_permissions = {"PATCH": "products.update", "DELETE": "products.delete"}
 
     @extend_schema(tags=["admin-products"], request=ProductInputSerializer, responses={200: ProductSerializer})
     def patch(self, request, product_id: int):
@@ -215,3 +232,134 @@ class AdminProductSkuDetailView(APIView):
         sku = get_object_or_404(ProductSku, id=sku_id)
         disabled = disable_product_sku(sku=sku)
         return success_response(ProductSkuSerializer(disabled).data)
+
+
+# ─── Translation Views ──────────────────────────────────────
+
+
+class AdminProductTranslationListCreateView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "products.view"
+    write_permission = "products.manage"
+
+    @extend_schema(tags=["admin-products"], responses={200: ProductTranslationSerializer(many=True)})
+    def get(self, request, product_id: int):
+        get_object_or_404(Product, id=product_id)
+        translations = get_product_translations(product_id)
+        return success_response({"items": ProductTranslationSerializer(translations, many=True).data})
+
+    @extend_schema(tags=["admin-products"], request=ProductTranslationInputSerializer, responses={201: ProductTranslationSerializer})
+    def post(self, request, product_id: int):
+        get_object_or_404(Product, id=product_id)
+        data = {**request.data, "product_id": product_id}
+        ser = ProductTranslationInputSerializer(data=data)
+        ser.is_valid(raise_exception=True)
+        trans = create_product_translation(ser.validated_data)
+        return success_response(ProductTranslationSerializer(trans).data, status=status.HTTP_201_CREATED)
+
+
+class AdminProductTranslationDetailView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "products.view"
+    write_permission = "products.manage"
+
+    @extend_schema(tags=["admin-products"], request=ProductTranslationInputSerializer, responses={200: ProductTranslationSerializer})
+    def put(self, request, product_id: int, translation_id: int):
+        trans = get_object_or_404(ProductTranslation, pk=translation_id, product_id=product_id)
+        data = {**request.data, "product_id": product_id}
+        ser = ProductTranslationInputSerializer(data=data, context={"instance": trans})
+        ser.is_valid(raise_exception=True)
+        updated = update_product_translation(trans, ser.validated_data)
+        return success_response(ProductTranslationSerializer(updated).data)
+
+    @extend_schema(tags=["admin-products"], responses={200: dict})
+    def delete(self, request, product_id: int, translation_id: int):
+        trans = get_object_or_404(ProductTranslation, pk=translation_id, product_id=product_id)
+        delete_product_translation(trans)
+        return success_response({"detail": "已删除"})
+
+
+# ─── Attribute Views ────────────────────────────────────────
+
+
+class AdminProductAttributeListCreateView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "products.view"
+    write_permission = "products.manage"
+
+    @extend_schema(tags=["admin-products"], responses={200: ProductAttributeSerializer(many=True)})
+    def get(self, request):
+        category_id = request.query_params.get("category_id")
+        attrs = get_product_attributes(
+            category_id=int(category_id) if category_id else None,
+        )
+        return success_response({"items": ProductAttributeSerializer(attrs, many=True).data})
+
+    @extend_schema(tags=["admin-products"], request=ProductAttributeInputSerializer, responses={201: ProductAttributeSerializer})
+    def post(self, request):
+        ser = ProductAttributeInputSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        attr = create_product_attribute(ser.validated_data)
+        return success_response(ProductAttributeSerializer(attr).data, status=status.HTTP_201_CREATED)
+
+
+class AdminProductAttributeDetailView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "products.view"
+    write_permission = "products.manage"
+
+    @extend_schema(tags=["admin-products"], request=ProductAttributeInputSerializer, responses={200: ProductAttributeSerializer})
+    def put(self, request, attr_id: int):
+        attr = get_object_or_404(ProductAttribute, pk=attr_id)
+        ser = ProductAttributeInputSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        updated = update_product_attribute(attr, ser.validated_data)
+        return success_response(ProductAttributeSerializer(updated).data)
+
+    @extend_schema(tags=["admin-products"], responses={200: dict})
+    def delete(self, request, attr_id: int):
+        attr = get_object_or_404(ProductAttribute, pk=attr_id)
+        delete_product_attribute(attr)
+        return success_response({"detail": "已删除"})
+
+
+# ─── Attribute Value Views ──────────────────────────────────
+
+
+class AdminProductAttrValueListCreateView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "products.view"
+    write_permission = "products.manage"
+
+    @extend_schema(tags=["admin-products"], responses={200: ProductAttributeValueSerializer(many=True)})
+    def get(self, request, product_id: int):
+        get_object_or_404(Product, id=product_id)
+        vals = get_product_attribute_values(product_id)
+        return success_response({"items": ProductAttributeValueSerializer(vals, many=True).data})
+
+    @extend_schema(tags=["admin-products"], request=ProductAttributeValueInputSerializer, responses={201: ProductAttributeValueSerializer})
+    def post(self, request, product_id: int):
+        get_object_or_404(Product, id=product_id)
+        data = {**request.data, "product_id": product_id}
+        ser = ProductAttributeValueInputSerializer(data=data)
+        ser.is_valid(raise_exception=True)
+        val = set_product_attribute_value(ser.validated_data)
+        return success_response(ProductAttributeValueSerializer(val).data, status=status.HTTP_201_CREATED)
+
+
+class AdminProductAttrValueDetailView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "products.view"
+    write_permission = "products.manage"
+
+    @extend_schema(tags=["admin-products"], responses={200: dict})
+    def delete(self, request, product_id: int, value_id: int):
+        val = get_object_or_404(ProductAttributeValue, pk=value_id, product_id=product_id)
+        delete_product_attribute_value(val)
+        return success_response({"detail": "已删除"})

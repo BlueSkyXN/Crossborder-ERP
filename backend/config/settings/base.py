@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "apps.products",
     "apps.purchases",
     "apps.tickets",
+    "apps.regions",
 ]
 
 MIDDLEWARE = [
@@ -129,6 +130,15 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
     "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardPagination",
     "PAGE_SIZE": 20,
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "60/minute",
+        "user": "120/minute",
+        "login": "10/minute",
+    },
 }
 
 SPECTACULAR_SETTINGS = {

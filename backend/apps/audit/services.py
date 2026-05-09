@@ -11,6 +11,7 @@ from django.utils import timezone
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import AccessToken
 
+from apps.common.csv_exports import safe_csv_row
 from apps.iam.models import AdminUser
 from apps.iam.services import ADMIN_TOKEN_SCOPE
 
@@ -268,22 +269,24 @@ def export_audit_logs_csv(params) -> str:
     writer.writeheader()
     for log in list_audit_logs(params).order_by("-id")[:AUDIT_LOG_EXPORT_MAX_ROWS]:
         writer.writerow(
-            {
-                "id": log.id,
-                "created_at": timezone.localtime(log.created_at).isoformat(),
-                "operator_type": log.operator_type,
-                "operator_id": log.operator_id or "",
-                "operator_label": log.operator_label,
-                "action": log.action,
-                "target_type": log.target_type,
-                "target_id": log.target_id,
-                "request_method": log.request_method,
-                "request_path": log.request_path,
-                "status_code": log.status_code,
-                "ip_address": log.ip_address,
-                "user_agent": log.user_agent,
-                "request_data_json": json.dumps(log.request_data or {}, ensure_ascii=False, sort_keys=True),
-                "response_data_json": json.dumps(log.response_data or {}, ensure_ascii=False, sort_keys=True),
-            }
+            safe_csv_row(
+                {
+                    "id": log.id,
+                    "created_at": timezone.localtime(log.created_at).isoformat(),
+                    "operator_type": log.operator_type,
+                    "operator_id": log.operator_id or "",
+                    "operator_label": log.operator_label,
+                    "action": log.action,
+                    "target_type": log.target_type,
+                    "target_id": log.target_id,
+                    "request_method": log.request_method,
+                    "request_path": log.request_path,
+                    "status_code": log.status_code,
+                    "ip_address": log.ip_address,
+                    "user_agent": log.user_agent,
+                    "request_data_json": json.dumps(log.request_data or {}, ensure_ascii=False, sort_keys=True),
+                    "response_data_json": json.dumps(log.response_data or {}, ensure_ascii=False, sort_keys=True),
+                }
+            )
         )
     return output.getvalue()

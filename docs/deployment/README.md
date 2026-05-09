@@ -187,7 +187,7 @@ uv run python manage.py backup_sqlite --database default --force
 - 消息工单附件使用 `MESSAGE_ATTACHMENT` 文件用途；用户只能引用自己的有效附件，后台客服可查看工单附件并回复。
 - 无主包裹认领只向用户返回脱敏快递单号；后台审核通过后才创建会员在库包裹，认领凭证和通知外呼仍是后续业务规则。
 - 内容 CMS 当前使用数据库文本内容，不接外部富文本上传；公开接口只返回已发布内容，正式条款/隐私/帮助文案仍需业务或法务确认。
-- 批量导入使用 `IMPORT_FILE` 文件用途，支持 CSV 和标准 `.xlsx` parser；导入模板/导出 CSV 是即时响应，不持久化到 git 或 media，上传的源 CSV/Excel 按本地 `MEDIA_ROOT` 文件策略保存。
+- 批量导入使用 `IMPORT_FILE` 文件用途，支持 CSV 和标准 `.xlsx` parser；导入模板/导出 CSV 是即时响应，不持久化到 git 或 media，上传的源 CSV/Excel 按本地 `MEDIA_ROOT` 文件策略保存，导出 CSV 会转义公式样式字段。
 - 外部商品链接解析只识别 host、商品 ID 和规范化 URL，结果进入手工代购商品行；当前不抓取真实第三方页面、不自动下单、不保存平台账号或凭证。
 - 会员注册、账户资料设置和登录态内改密码已完成；短信/邮件验证码、找回密码和微信登录仍需真实通道确认后单独接入。
 - 后台 `/dashboard` 使用 `GET /api/v1/admin/dashboard` 返回当前管理员可见模块的真实聚合数据；`/roles` 和 `/admin-users` 读取真实 IAM 数据。业务写操作按模块级 `*.manage` / `*.export` 权限控制，角色/管理员安全删除已完成，create/update/delete 子权限后续单独增强。
@@ -239,7 +239,7 @@ DJANGO_SECURE_SSL_REDIRECT=true
 
 ## 审计日志留存
 
-当前审计日志存储在 `audit_logs` 表。后台 `/audit-logs` 支持导出脱敏 CSV；本地或运维脚本可以用显式命令预演和清理旧日志：
+当前审计日志存储在 `audit_logs` 表。后台 `/audit-logs` 支持导出脱敏 CSV，导出字段会转义公式样式内容；本地或运维脚本可以用显式命令预演和清理旧日志：
 
 ```bash
 cd backend

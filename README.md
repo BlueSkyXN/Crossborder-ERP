@@ -7,7 +7,7 @@
 ## 当前状态
 
 - 项目阶段：`P6_PRODUCTION_GAP`
-- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`IMPORT-XLSX-001` Excel `.xlsx` 批量预报解析、`QA-BROWSER-001` 三端浏览器 smoke、`QA-BROWSER-002` 浏览器真实包裹预报/入库旅程、`QA-BROWSER-003` Browser Smoke 稳定性加固、`CI-EVIDENCE-001` Agent 证据 CI 门禁、`SHIP-BATCH-001` 发货批次/转单/打印模板数据、`PAYABLE-001` 供应商/成本/应付基础、`GROWTH-001` 积分/推广/返利基础、`AUDITLOG-001` 后台操作审计日志、`AUDIT-RETENTION-001` 审计日志导出与本地留存命令、`SECURITY-HEADERS-001` 基础安全响应头、`OPS-READINESS-001` 运维 readiness 检查、`OPS-SQLITE-BACKUP-001` SQLite 本地备份命令、`STORAGE-CLEANUP-001` 本地软删除文件清理命令、`PURCHASE-AUTO-001` 外部商品链接解析入口、`ACCOUNT-SETTINGS-001` 会员注册与账户设置闭环、`ADMIN-PANELS-001` 后台 dashboard/roles 真实面板、`RBAC-ROLES-001` 角色创建/编辑/权限分配闭环、`RBAC-ADMIN-USERS-001` 管理员账号与角色分配闭环、`RBAC-BUSINESS-ACTIONS-001` 后台业务写操作权限拆分、`CONFIG-EXTERNAL-SERVICES-001` 外部服务 DSN 边界检查、`RBAC-DELETE-001` 角色与管理员安全删除闭环、`FILE-SNIFF-001` 文件上传内容签名校验
+- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`IMPORT-XLSX-001` Excel `.xlsx` 批量预报解析、`QA-BROWSER-001` 三端浏览器 smoke、`QA-BROWSER-002` 浏览器真实包裹预报/入库旅程、`QA-BROWSER-003` Browser Smoke 稳定性加固、`CI-EVIDENCE-001` Agent 证据 CI 门禁、`SHIP-BATCH-001` 发货批次/转单/打印模板数据、`PAYABLE-001` 供应商/成本/应付基础、`GROWTH-001` 积分/推广/返利基础、`AUDITLOG-001` 后台操作审计日志、`AUDIT-RETENTION-001` 审计日志导出与本地留存命令、`SECURITY-HEADERS-001` 基础安全响应头、`OPS-READINESS-001` 运维 readiness 检查、`OPS-SQLITE-BACKUP-001` SQLite 本地备份命令、`STORAGE-CLEANUP-001` 本地软删除文件清理命令、`PURCHASE-AUTO-001` 外部商品链接解析入口、`ACCOUNT-SETTINGS-001` 会员注册与账户设置闭环、`ADMIN-PANELS-001` 后台 dashboard/roles 真实面板、`RBAC-ROLES-001` 角色创建/编辑/权限分配闭环、`RBAC-ADMIN-USERS-001` 管理员账号与角色分配闭环、`RBAC-BUSINESS-ACTIONS-001` 后台业务写操作权限拆分、`CONFIG-EXTERNAL-SERVICES-001` 外部服务 DSN 边界检查、`RBAC-DELETE-001` 角色与管理员安全删除闭环、`FILE-SNIFF-001` 文件上传内容签名校验、`CSV-EXPORT-SAFE-001` CSV 导出公式注入防护
 - 下一任务：任务图暂无自动下一项；后续建议按对象存储/病毒扫描等生产化边界、需要业务确认的外部集成，以及更深浏览器/视觉/组件测试单独开任务
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
@@ -198,7 +198,7 @@ npm run e2e
 - 后台会员管理可筛选会员、维护等级/客服备注、冻结/解冻并重置测试密码。
 - 后台可登记邀请关系、返利记录和积分调整；用户端可读取积分、邀请码、邀请数和返利统计。
 - 后台关键写操作会进入审计日志，后台可查询操作人、动作、对象、请求、状态和脱敏后的请求/响应数据。
-- 后台可导出脱敏后的审计日志 CSV，并可用 `purge_audit_logs --older-than-days N --dry-run` 预演本地留存清理。
+- 后台可导出脱敏后的审计日志 CSV，并可用 `purge_audit_logs --older-than-days N --dry-run` 预演本地留存清理；CSV 导出会转义公式样式字段，降低 Excel 打开时的公式解释风险。
 - 后端响应会输出基础安全 header：`nosniff`、`Referrer-Policy`、`Cross-Origin-Opener-Policy`、`X-Frame-Options` 和 `Permissions-Policy`；HSTS/TLS 仍需真实 HTTPS 环境确认后启用。
 - 后端提供 `/api/v1/health/ready` readiness endpoint，当前检查默认数据库连接；失败时返回 503 且不暴露 DSN、异常堆栈或本地路径。
 - 后端提供 `backup_sqlite` 显式本地备份命令，可用 `--dry-run` 预演并默认输出到 ignored 的 `backend/backups/`；它不替代 PostgreSQL/MySQL 生产备份策略。
@@ -207,7 +207,7 @@ npm run e2e
 - 用户端提供 `purchase-links/parse` 外部商品链接解析入口，可识别常见平台并转手工代购人工确认；不抓取真实第三方页面，也不声明自动下单完成。
 - 后台扫描未知单号生成无主包裹，用户端只看到脱敏单号并提交认领，后台审核通过后转为会员在库包裹。
 - 后台创建内容草稿，发布后用户端可读取帮助/公告/条款，隐藏后公开接口不可再读取。
-- 用户上传 CSV 或 `.xlsx` 批量导入包裹预报，并验证用户/后台 CSV 导出。
+- 用户上传 CSV 或 `.xlsx` 批量导入包裹预报，并验证用户/后台 CSV 导出；导出内容会转义公式样式字段。
 - 主链路发货阶段会覆盖发货批次、转单号、承运商批次号、打印模板数据和批量发货幂等性。
 - 后台创建供应商、成本类型和应付款，完成待审核、确认、核销状态流，并验证重复核销返回状态冲突。
 
@@ -287,3 +287,4 @@ npm run e2e:browser
 - 后台 `/dashboard`、`/roles` 和 `/admin-users` 已使用真实接口与真实数据；角色创建、编辑、权限分配、安全删除、管理员创建、启停、密码重置、角色分配和安全删除已完成，业务写操作已按模块级 `*.manage` / `*.export` 权限拆分，create/update/delete 子权限继续后续增强。
 - 后台关键写操作审计日志已完成基础覆盖，并支持 CSV 导出和显式本地留存清理命令；外部 SIEM、自动告警、审计导出审批和更细导出审批流仍属后续生产化增强。
 - 浏览器级 smoke 已覆盖三端登录、关键页面基础可用性和一条包裹预报/入库/回看旅程；视觉回归、组件级测试和更大范围业务旅程仍需后续增强。
+- CSV 导出已做基础公式注入防护；导出审批、DLP、水印和外部归档仍属后续生产化增强。

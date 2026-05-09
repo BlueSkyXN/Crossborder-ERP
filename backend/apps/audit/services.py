@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import csv
 import json
 from decimal import Decimal
+from io import StringIO
 from typing import Any
 
 from django.db.models import QuerySet
+from django.utils import timezone
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -27,6 +30,24 @@ MAX_STRING_LENGTH = 512
 MAX_LIST_ITEMS = 40
 MAX_DICT_ITEMS = 80
 ADMIN_MUTATION_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+AUDIT_LOG_EXPORT_MAX_ROWS = 5000
+AUDIT_LOG_CSV_FIELDS = [
+    "id",
+    "created_at",
+    "operator_type",
+    "operator_id",
+    "operator_label",
+    "action",
+    "target_type",
+    "target_id",
+    "request_method",
+    "request_path",
+    "status_code",
+    "ip_address",
+    "user_agent",
+    "request_data_json",
+    "response_data_json",
+]
 
 
 def should_audit_request(request) -> bool:
@@ -239,3 +260,30 @@ def list_audit_logs(params) -> QuerySet[AuditLog]:
     if keyword:
         logs = logs.filter(request_path__icontains=keyword) | logs.filter(operator_label__icontains=keyword)
     return logs
+
+
+def export_audit_logs_csv(params) -> str:
+    output = StringIO()
+    writer = csv.DictWriter(output, fieldnames=AUDIT_LOG_CSV_FIELDS)
+    writer.writeheader()
+    for log in list_audit_logs(params).order_by("-id")[:AUDIT_LOG_EXPORT_MAX_ROWS]:
+        writer.writerow(
+            {
+                "id": log.id,
+                "created_at": timezone.localtime(log.created_at).isoformat(),
+                "operator_type": log.operator_type,
+                "operator_id": log.operator_id or "",
+                "operator_label": log.operator_label,
+                "action": log.action,
+                "target_type": log.target_type,
+                "target_id": log.target_id,
+                "request_method": log.request_method,
+                "request_path": log.request_path,
+                "status_code": log.status_code,
+                "ip_address": log.ip_address,
+                "user_agent": log.user_agent,
+                "request_data_json": json.dumps(log.request_data or {}, ensure_ascii=False, sort_keys=True),
+                "response_data_json": json.dumps(log.response_data or {}, ensure_ascii=False, sort_keys=True),
+            }
+        )
+    return output.getvalue()

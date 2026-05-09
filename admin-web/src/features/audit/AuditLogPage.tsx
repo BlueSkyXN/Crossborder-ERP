@@ -1,5 +1,5 @@
-import { FileSearchOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
-import { useQuery } from "@tanstack/react-query";
+import { DownloadOutlined, FileSearchOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Alert, Button, Card, Descriptions, Drawer, Empty, Input, Select, Space, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { useMemo, useState } from "react";
@@ -41,6 +41,17 @@ function stringifyJson(value: unknown) {
   return JSON.stringify(value || {}, null, 2);
 }
 
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function AuditLogPage() {
   const { allowedCodes } = useOutletContext<WorkspaceContext>();
   const hasPermission = allowedCodes.has("audit.logs.view");
@@ -65,6 +76,10 @@ export function AuditLogPage() {
     queryKey: ["admin-audit-logs", query],
     queryFn: () => auditLogsApi.listLogs(query),
     enabled: hasPermission,
+  });
+  const exportMutation = useMutation({
+    mutationFn: () => auditLogsApi.exportLogs({ keyword: query.keyword, method: query.method, target_type: query.target_type }),
+    onSuccess: (blob) => downloadBlob(blob, "audit-logs-export.csv"),
   });
 
   const logs = useMemo(() => logsQuery.data?.items ?? [], [logsQuery.data]);
@@ -173,6 +188,13 @@ export function AuditLogPage() {
             />
             <Button icon={<ReloadOutlined />} onClick={() => logsQuery.refetch()}>
               刷新
+            </Button>
+            <Button
+              icon={<DownloadOutlined />}
+              loading={exportMutation.isPending}
+              onClick={() => exportMutation.mutate()}
+            >
+              导出 CSV
             </Button>
           </Space>
           <Alert

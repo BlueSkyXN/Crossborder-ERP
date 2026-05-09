@@ -2,7 +2,7 @@
 
 后端使用 Python 3.12+、Django、Django REST Framework、drf-spectacular、pytest 和 uv。
 
-当前后端以 SQLite-first 验证；已包含会员、后台、仓库、包裹、无主包裹认领审核、包裹 CSV / `.xlsx` 批量预报导入/导出、运单、钱包、线下汇款审核、商品、代购、地址簿、本地文件服务、客服工单、后台会员管理、内容 CMS 和操作审计。不启动 PostgreSQL/MySQL/Redis/Docker。
+当前后端以 SQLite-first 验证；已包含会员、后台、仓库、包裹、无主包裹认领审核、包裹 CSV / `.xlsx` 批量预报导入/导出、运单、钱包、线下汇款审核、商品、代购、地址簿、本地文件服务、客服工单、后台会员管理、内容 CMS、操作审计、审计 CSV 导出和显式本地留存清理命令。不启动 PostgreSQL/MySQL/Redis/Docker。
 
 ## 批量导入/导出
 
@@ -21,6 +21,7 @@
 uv run python manage.py check
 uv run python manage.py spectacular --file openapi.yaml
 uv run pytest
+uv run python manage.py purge_audit_logs --older-than-days 180 --dry-run
 ```
 
 `openapi.yaml` 是本地生成产物，不需要提交。

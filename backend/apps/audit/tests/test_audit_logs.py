@@ -1,5 +1,10 @@
+from datetime import timedelta
+from io import StringIO
+
 import pytest
+from django.core.management import call_command
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.audit.models import AuditLog, AuditOperatorType
@@ -80,3 +85,63 @@ def test_audit_log_list_requires_audit_permission(api_client, seeded_audit_data)
     assert denied.status_code == 403
     assert allowed.status_code == 200
     assert "items" in allowed.json()["data"]
+
+
+def test_audit_log_export_csv_requires_permission_and_keeps_redaction(api_client, seeded_audit_data):
+    super_token = admin_token(api_client)
+    warehouse_token = admin_token(api_client, email="warehouse@example.com")
+    response = api_client.post(
+        reverse("admin-wallet-recharge", kwargs={"user_id": 1}),
+        {"amount": "10.00", "remark": "导出测试", "password": "should-not-leak"},
+        HTTP_AUTHORIZATION=f"Bearer {super_token}",
+        format="json",
+    )
+    assert response.status_code == 201
+
+    denied = api_client.get(
+        f"{reverse('admin-audit-log-export')}?action=admin-wallet-recharge",
+        HTTP_AUTHORIZATION=f"Bearer {warehouse_token}",
+    )
+    allowed = api_client.get(
+        f"{reverse('admin-audit-log-export')}?action=admin-wallet-recharge",
+        HTTP_AUTHORIZATION=f"Bearer {super_token}",
+    )
+
+    assert denied.status_code == 403
+    assert allowed.status_code == 200
+    assert allowed["Content-Type"].startswith("text/csv")
+    assert "audit-logs-export.csv" in allowed["Content-Disposition"]
+    body = allowed.content.decode("utf-8")
+    assert "admin-wallet-recharge" in body
+    assert "***REDACTED***" in body
+    assert "should-not-leak" not in body
+    assert "access_token" not in body
+
+
+def test_purge_audit_logs_management_command_dry_run_and_delete(db):
+    old_log = AuditLog.objects.create(
+        operator_type=AuditOperatorType.SYSTEM,
+        operator_label="system",
+        action="old-action",
+        request_method="SERVICE",
+        request_path="service://audit/old",
+    )
+    fresh_log = AuditLog.objects.create(
+        operator_type=AuditOperatorType.SYSTEM,
+        operator_label="system",
+        action="fresh-action",
+        request_method="SERVICE",
+        request_path="service://audit/fresh",
+    )
+    AuditLog.objects.filter(id=old_log.id).update(created_at=timezone.now() - timedelta(days=40))
+
+    output = StringIO()
+    call_command("purge_audit_logs", "--older-than-days", "30", "--dry-run", stdout=output)
+    assert "Matched 1 audit logs" in output.getvalue()
+    assert AuditLog.objects.filter(id=old_log.id).exists()
+
+    output = StringIO()
+    call_command("purge_audit_logs", "--older-than-days", "30", stdout=output)
+    assert "Deleted 1 audit logs" in output.getvalue()
+    assert not AuditLog.objects.filter(id=old_log.id).exists()
+    assert AuditLog.objects.filter(id=fresh_log.id).exists()

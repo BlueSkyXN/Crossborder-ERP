@@ -16,8 +16,10 @@ from .models import Parcel, ParcelStatus, UnclaimedParcel, UnclaimedParcelStatus
 from .import_export import (
     build_parcel_export_csv,
     build_parcel_import_template_csv,
+    build_parcel_import_template_xlsx,
     import_parcel_forecasts,
     list_member_import_jobs,
+    XLSX_CONTENT_TYPE,
 )
 from .serializers import (
     AdminUnclaimedParcelCreateSerializer,
@@ -57,6 +59,12 @@ def csv_response(content: str, filename: str) -> HttpResponse:
     return response
 
 
+def xlsx_response(content: bytes, filename: str) -> HttpResponse:
+    response = HttpResponse(content, content_type=XLSX_CONTENT_TYPE)
+    response["Content-Disposition"] = f"attachment; filename*=UTF-8''{escape_uri_path(filename)}"
+    return response
+
+
 class ParcelImportTemplateView(APIView):
     authentication_classes = [MemberTokenAuthentication]
     permission_classes = [IsMemberAuthenticated]
@@ -64,6 +72,15 @@ class ParcelImportTemplateView(APIView):
     @extend_schema(tags=["parcels"], responses={200: OpenApiTypes.BINARY})
     def get(self, request):
         return csv_response(build_parcel_import_template_csv(), "parcel-import-template.csv")
+
+
+class ParcelImportTemplateXlsxView(APIView):
+    authentication_classes = [MemberTokenAuthentication]
+    permission_classes = [IsMemberAuthenticated]
+
+    @extend_schema(tags=["parcels"], responses={200: OpenApiTypes.BINARY})
+    def get(self, request):
+        return xlsx_response(build_parcel_import_template_xlsx(), "parcel-import-template.xlsx")
 
 
 class ParcelImportListCreateView(APIView):

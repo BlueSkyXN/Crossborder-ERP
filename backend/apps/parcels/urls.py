@@ -14,6 +14,7 @@ from .views import (
     ParcelForecastView,
     ParcelImportListCreateView,
     ParcelImportTemplateView,
+    ParcelImportTemplateXlsxView,
     ParcelListView,
     UnclaimedParcelClaimView,
     UnclaimedParcelListView,
@@ -21,6 +22,11 @@ from .views import (
 
 urlpatterns = [
     path("parcels/import-template", ParcelImportTemplateView.as_view(), name="parcel-import-template"),
+    path(
+        "parcels/import-template.xlsx",
+        ParcelImportTemplateXlsxView.as_view(),
+        name="parcel-import-template-xlsx",
+    ),
     path("parcels/imports", ParcelImportListCreateView.as_view(), name="parcel-import-list"),
     path("parcels/export", ParcelExportView.as_view(), name="parcel-export"),
     path("parcels/forecast", ParcelForecastView.as_view(), name="parcel-forecast"),

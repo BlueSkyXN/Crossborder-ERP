@@ -189,7 +189,7 @@ export function ParcelsPage() {
 
   const templateMutation = useMutation({
     mutationFn: downloadParcelImportTemplate,
-    onSuccess: (blob) => downloadBlob(blob, "parcel-import-template.csv"),
+    onSuccess: (blob, format) => downloadBlob(blob, `parcel-import-template.${format}`),
   });
 
   const exportMutation = useMutation({
@@ -412,7 +412,7 @@ export function ParcelsPage() {
             <div className={styles.importHeader}>
               <div>
                 <strong>批量预报</strong>
-                <span>CSV 模板导入，失败时不会创建部分包裹。</span>
+                <span>支持 CSV / Excel 模板导入，失败时不会创建部分包裹。</span>
               </div>
             </div>
             <div className={styles.importToolbar}>
@@ -420,10 +420,19 @@ export function ParcelsPage() {
                 className={styles.secondaryButton}
                 type="button"
                 disabled={templateMutation.isPending}
-                onClick={() => templateMutation.mutate()}
+                onClick={() => templateMutation.mutate("csv")}
               >
                 <DownloadOutlined />
-                模板
+                CSV 模板
+              </button>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                disabled={templateMutation.isPending}
+                onClick={() => templateMutation.mutate("xlsx")}
+              >
+                <DownloadOutlined />
+                Excel 模板
               </button>
               <button
                 className={styles.secondaryButton}
@@ -436,8 +445,12 @@ export function ParcelsPage() {
               </button>
             </div>
             <label className={styles.filePicker}>
-              <span>{importFile?.name || "选择 CSV 文件"}</span>
-              <input type="file" accept=".csv,text/csv" onChange={handleImportFileChange} />
+              <span>{importFile?.name || "选择 CSV / Excel 文件"}</span>
+              <input
+                type="file"
+                accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                onChange={handleImportFileChange}
+              />
             </label>
             <button
               className={styles.secondaryButton}
@@ -446,7 +459,7 @@ export function ParcelsPage() {
               onClick={handleImportSubmit}
             >
               <UploadOutlined />
-              {importMutation.isPending ? "导入中" : "导入 CSV"}
+              {importMutation.isPending ? "导入中" : "导入文件"}
             </button>
             {importResult && (
               <div className={importResult.status === "COMPLETED" ? styles.importSuccess : styles.importFailed}>

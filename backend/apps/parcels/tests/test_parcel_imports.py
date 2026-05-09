@@ -1,3 +1,6 @@
+from io import BytesIO
+from zipfile import ZipFile
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
@@ -6,6 +9,7 @@ from django.urls import reverse
 from apps.files.models import FileUsage
 from apps.iam.services import seed_iam_demo_data
 from apps.members.services import issue_member_access_token, register_user, seed_member_demo_data
+from apps.parcels.import_export import XLSX_CONTENT_TYPE, build_parcel_import_template_xlsx
 from apps.parcels.models import Parcel, ParcelImportJob, ParcelImportStatus
 from apps.parcels.services import forecast_parcel
 from apps.warehouses.models import Warehouse
@@ -103,6 +107,34 @@ def test_member_imports_parcel_forecast_csv_and_exports_own_rows(client, seeded_
 
 
 @override_settings(MEDIA_ROOT="/tmp/crossborder-erp-test-media")
+def test_member_imports_parcel_forecast_xlsx(client, seeded_imports):
+    token = member_token(client)
+    file_data = upload_member_import_file(
+        client,
+        token,
+        "forecast.xlsx",
+        build_parcel_import_template_xlsx(),
+        XLSX_CONTENT_TYPE,
+    )
+
+    response = client.post(
+        reverse("parcel-import-list"),
+        {"file_id": file_data["file_id"]},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 201
+    job = response.json()["data"]
+    assert job["status"] == ParcelImportStatus.COMPLETED
+    assert job["total_rows"] == 1
+    assert job["success_count"] == 1
+    parcel = Parcel.objects.get(tracking_no="SF1234567890")
+    assert parcel.warehouse.code == "SZ"
+    assert parcel.items.get().name == "T-shirt"
+
+
+@override_settings(MEDIA_ROOT="/tmp/crossborder-erp-test-media")
 def test_import_validation_records_row_errors_and_keeps_all_or_none(client, seeded_imports):
     token = member_token(client)
     warehouse = Warehouse.objects.get(code="SZ")
@@ -174,7 +206,7 @@ def test_member_cannot_import_another_members_file(client, seeded_imports):
 
 
 @override_settings(MEDIA_ROOT="/tmp/crossborder-erp-test-media")
-def test_xlsx_import_file_returns_recorded_csv_only_failure(client, seeded_imports):
+def test_invalid_xlsx_import_file_returns_recorded_failure(client, seeded_imports):
     token = member_token(client)
     file_data = upload_member_import_file(
         client,
@@ -196,7 +228,7 @@ def test_xlsx_import_file_returns_recorded_csv_only_failure(client, seeded_impor
     assert job["status"] == ParcelImportStatus.FAILED
     assert job["success_count"] == 0
     assert job["errors_json"][0]["field"] == "file"
-    assert "CSV" in job["errors_json"][0]["message"]
+    assert "XLSX" in job["errors_json"][0]["message"]
 
 
 def test_import_template_download_requires_member_and_has_expected_headers(client, seeded_imports):
@@ -208,6 +240,19 @@ def test_import_template_download_requires_member_and_has_expected_headers(clien
     assert response.status_code == 200
     assert response["Content-Type"] == "text/csv; charset=utf-8"
     assert body.startswith("warehouse_code,tracking_no,carrier,item_name,quantity,declared_value,product_url,remark")
+
+
+def test_import_xlsx_template_download_requires_member_and_is_workbook(client, seeded_imports):
+    anonymous = client.get(reverse("parcel-import-template-xlsx"))
+    assert anonymous.status_code == 401
+
+    response = client.get(reverse("parcel-import-template-xlsx"), HTTP_AUTHORIZATION=f"Bearer {member_token(client)}")
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == XLSX_CONTENT_TYPE
+    with ZipFile(BytesIO(response.content)) as workbook:
+        assert "xl/workbook.xml" in workbook.namelist()
+        assert "xl/worksheets/sheet1.xml" in workbook.namelist()
 
 
 def test_admin_parcel_export_requires_parcel_permission(client, seeded_imports):

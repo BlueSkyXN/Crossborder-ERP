@@ -213,4 +213,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/AUDITLOG-001.md
     depends_on: [GROWTH-001]
+    next: IMPORT-XLSX-001
+  - id: IMPORT-XLSX-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/IMPORT-XLSX-001.md
+    depends_on: [AUDITLOG-001]
     next: null

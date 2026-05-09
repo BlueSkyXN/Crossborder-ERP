@@ -12,6 +12,7 @@
 - 后台关键写操作审计日志和 Admin Web 查询面板。
 - `npm run e2e` 自动验收主链路和最小代购链路。
 - `npm run e2e:browser` 自动验收 Admin Web、User Web、Mobile H5 登录和关键页面 smoke。
+- CSV 和标准 `.xlsx` 批量预报导入。
 - README、部署说明、演示脚本、已知问题和下一阶段计划。
 
 ## 用户约束映射
@@ -33,7 +34,7 @@
 | --- | --- | --- |
 | 后台配置仓库/渠道/包装/增值服务 | 已实现后台配置 API 和页面，seed demo 可复现 | `docs/agent-runs/2026-05-08-BE-004.md`、`2026-05-08-FEA-002.md` |
 | 用户登录并复制仓库地址 | User Web 和 Mobile H5 均有入口 | `docs/agent-runs/2026-05-08-FEU-001A.md`、`2026-05-08-FEM-001A.md` |
-| 用户提交包裹预报 | 后端、User Web、Mobile H5 已覆盖 | `docs/agent-runs/2026-05-08-BE-005.md`、`2026-05-08-FEU-001B.md`、`2026-05-08-FEM-001B.md` |
+| 用户提交包裹预报 | 后端、User Web、Mobile H5 已覆盖；批量预报支持 CSV 和 `.xlsx` | `docs/agent-runs/2026-05-08-BE-005.md`、`2026-05-08-FEU-001B.md`、`2026-05-08-FEM-001B.md`、`2026-05-09-IMPORT-XLSX-001.md` |
 | 后台扫描入库 | 后端和 Admin Web 已覆盖 | `docs/agent-runs/2026-05-08-FEA-003.md` |
 | 用户申请打包 | 后端、User Web、Mobile H5 已覆盖 | `docs/agent-runs/2026-05-08-BE-006.md`、`2026-05-09-FEU-001C.md`、`2026-05-09-FEM-001C.md` |
 | 后台审核运单并设置费用 | Admin Web 已覆盖 | `docs/agent-runs/2026-05-08-FEA-004.md` |
@@ -68,5 +69,5 @@ git diff --check
 - Docker Compose 未验证。
 - PostgreSQL/MySQL/Redis/Celery 未真实验证。
 - `npm run e2e:browser` 已纳入仓库，但完整业务旅程级 Playwright/组件测试仍需后续增强。
-- 真实支付、自动采购、对象存储、打印、物流 API 后续补齐。
+- 真实支付、自动采购、对象存储、真实打印硬件、物流 API 后续补齐。
 - 复杂业务规则保持 `TODO_CONFIRM`。

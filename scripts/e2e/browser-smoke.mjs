@@ -331,7 +331,8 @@ async function runUser(debugPort) {
   await clickByText(page, "登录");
   await waitForPath(page, "/parcels");
   await waitForText(page, "批量预报");
-  await waitForText(page, "选择 CSV 文件");
+  await waitForText(page, "Excel 模板");
+  await waitForText(page, "选择 CSV / Excel 文件");
   await waitForText(page, "导出");
   await navigate(page, `${USER_URL}/dashboard`, "会员中心");
   await waitForText(page, "积分推广");

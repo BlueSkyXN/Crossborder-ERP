@@ -33,11 +33,11 @@ export function createParcelForecast(payload: ParcelForecastPayload) {
   });
 }
 
-export function downloadParcelImportTemplate() {
+export function downloadParcelImportTemplate(format: "csv" | "xlsx") {
   return apiClient
     .request<Blob>({
       method: "GET",
-      url: "/parcels/import-template",
+      url: format === "xlsx" ? "/parcels/import-template.xlsx" : "/parcels/import-template",
       responseType: "blob",
     })
     .then((response) => response.data);

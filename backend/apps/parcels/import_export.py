@@ -3,8 +3,11 @@ from __future__ import annotations
 import csv
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
-from io import StringIO
+from io import BytesIO, StringIO
 import uuid
+from zipfile import BadZipFile, ZIP_DEFLATED, ZipFile
+from xml.etree import ElementTree
+from xml.sax.saxutils import escape
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import URLValidator
@@ -32,6 +35,8 @@ PARCEL_IMPORT_HEADERS = [
     "remark",
 ]
 PARCEL_IMPORT_MAX_ROWS = 500
+XLSX_MAX_XML_PART_BYTES = 20 * 1024 * 1024
+XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 PARCEL_TEMPLATE_SAMPLE = {
     "warehouse_code": "SZ",
     "tracking_no": "SF1234567890",
@@ -90,6 +95,90 @@ def _csv_with_bom(headers: list[str], rows: list[dict[str, object]]) -> str:
 
 def build_parcel_import_template_csv() -> str:
     return _csv_with_bom(PARCEL_IMPORT_HEADERS, [PARCEL_TEMPLATE_SAMPLE])
+
+
+def _excel_column_name(index: int) -> str:
+    name = ""
+    current = index
+    while current > 0:
+        current, remainder = divmod(current - 1, 26)
+        name = f"{chr(65 + remainder)}{name}"
+    return name
+
+
+def _excel_column_index(cell_ref: str) -> int | None:
+    letters = "".join(char for char in cell_ref if char.isalpha())
+    if not letters:
+        return None
+    index = 0
+    for char in letters.upper():
+        index = index * 26 + (ord(char) - 64)
+    return index
+
+
+def _xlsx_sheet_xml(rows: list[list[object]]) -> str:
+    row_xml = []
+    for row_index, row in enumerate(rows, start=1):
+        cells = []
+        for column_index, value in enumerate(row, start=1):
+            ref = f"{_excel_column_name(column_index)}{row_index}"
+            text = escape(str(value))
+            cells.append(f'<c r="{ref}" t="inlineStr"><is><t>{text}</t></is></c>')
+        row_xml.append(f'<row r="{row_index}">{"".join(cells)}</row>')
+
+    return (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        f"<sheetData>{''.join(row_xml)}</sheetData>"
+        "</worksheet>"
+    )
+
+
+def build_parcel_import_template_xlsx() -> bytes:
+    rows = [PARCEL_IMPORT_HEADERS, [PARCEL_TEMPLATE_SAMPLE[header] for header in PARCEL_IMPORT_HEADERS]]
+    buffer = BytesIO()
+    with ZipFile(buffer, "w", compression=ZIP_DEFLATED) as workbook:
+        workbook.writestr(
+            "[Content_Types].xml",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Default Extension="xml" ContentType="application/xml"/>'
+            '<Override PartName="/xl/workbook.xml" '
+            'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+            '<Override PartName="/xl/worksheets/sheet1.xml" '
+            'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+            "</Types>",
+        )
+        workbook.writestr(
+            "_rels/.rels",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" '
+            'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" '
+            'Target="xl/workbook.xml"/>'
+            "</Relationships>",
+        )
+        workbook.writestr(
+            "xl/workbook.xml",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+            'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            '<sheets><sheet name="parcel-import" sheetId="1" r:id="rId1"/></sheets>'
+            "</workbook>",
+        )
+        workbook.writestr(
+            "xl/_rels/workbook.xml.rels",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" '
+            'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" '
+            'Target="worksheets/sheet1.xml"/>'
+            "</Relationships>",
+        )
+        workbook.writestr("xl/worksheets/sheet1.xml", _xlsx_sheet_xml(rows))
+    return buffer.getvalue()
 
 
 def _create_job(
@@ -163,9 +252,9 @@ def _quantity(value: str, *, row_number: int, errors: list[ImportErrorItem]) -> 
     return quantity
 
 
-def _validate_csv_headers(fieldnames: list[str] | None) -> list[ImportErrorItem]:
+def _validate_import_headers(fieldnames: list[str] | None) -> list[ImportErrorItem]:
     if not fieldnames:
-        return [ImportErrorItem(1, "file", "CSV 文件缺少表头")]
+        return [ImportErrorItem(1, "file", "导入文件缺少表头")]
     normalized = [field.strip().lstrip("\ufeff") for field in fieldnames]
     missing = [header for header in PARCEL_IMPORT_HEADERS if header not in normalized]
     if not missing:
@@ -180,7 +269,7 @@ def _read_csv_rows(stored_file: StoredFile) -> tuple[list[dict[str, str]], list[
         return [], [ImportErrorItem(1, "file", "CSV 必须使用 UTF-8 编码")]
 
     reader = csv.DictReader(StringIO(content))
-    header_errors = _validate_csv_headers(reader.fieldnames)
+    header_errors = _validate_import_headers(reader.fieldnames)
     if header_errors:
         return [], header_errors
 
@@ -194,6 +283,122 @@ def _read_csv_rows(stored_file: StoredFile) -> tuple[list[dict[str, str]], list[
 
     if not rows:
         return [], [ImportErrorItem(1, "file", "CSV 文件没有可导入数据")]
+    if len(rows) > PARCEL_IMPORT_MAX_ROWS:
+        return [], [ImportErrorItem(1, "file", f"单次最多导入 {PARCEL_IMPORT_MAX_ROWS} 行")]
+    return rows, []
+
+
+def _xlsx_read_xml_part(workbook: ZipFile, path: str) -> bytes:
+    info = workbook.getinfo(path)
+    if info.file_size > XLSX_MAX_XML_PART_BYTES:
+        raise ValueError("xlsx XML part is too large")
+    return workbook.read(path)
+
+
+def _xlsx_shared_strings(workbook: ZipFile) -> list[str]:
+    if "xl/sharedStrings.xml" not in workbook.namelist():
+        return []
+    root = ElementTree.fromstring(_xlsx_read_xml_part(workbook, "xl/sharedStrings.xml"))
+    strings = []
+    for item in root.findall(".//{*}si"):
+        parts = [node.text or "" for node in item.findall(".//{*}t")]
+        strings.append("".join(parts))
+    return strings
+
+
+def _xlsx_first_sheet_path(workbook: ZipFile) -> str:
+    if "xl/workbook.xml" not in workbook.namelist() or "xl/_rels/workbook.xml.rels" not in workbook.namelist():
+        return "xl/worksheets/sheet1.xml"
+
+    workbook_root = ElementTree.fromstring(_xlsx_read_xml_part(workbook, "xl/workbook.xml"))
+    first_sheet = workbook_root.find(".//{*}sheet")
+    relation_id = (
+        first_sheet.attrib.get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id")
+        if first_sheet is not None
+        else ""
+    )
+    if not relation_id:
+        return "xl/worksheets/sheet1.xml"
+
+    rels_root = ElementTree.fromstring(_xlsx_read_xml_part(workbook, "xl/_rels/workbook.xml.rels"))
+    for relation in rels_root.findall(".//{*}Relationship"):
+        if relation.attrib.get("Id") == relation_id:
+            target = relation.attrib.get("Target", "")
+            if target.startswith("/"):
+                return target.lstrip("/")
+            if target.startswith("xl/"):
+                return target
+            return f"xl/{target}"
+    return "xl/worksheets/sheet1.xml"
+
+
+def _xlsx_cell_value(cell: ElementTree.Element, shared_strings: list[str]) -> str:
+    cell_type = cell.attrib.get("t", "")
+    if cell_type == "inlineStr":
+        return "".join(node.text or "" for node in cell.findall(".//{*}t")).strip()
+
+    value_node = cell.find("{*}v")
+    raw_value = (value_node.text or "").strip() if value_node is not None else ""
+    if cell_type == "s":
+        try:
+            return shared_strings[int(raw_value)].strip()
+        except (IndexError, TypeError, ValueError):
+            return ""
+    if cell_type == "b":
+        return "TRUE" if raw_value == "1" else "FALSE" if raw_value == "0" else raw_value
+    return raw_value
+
+
+def _read_xlsx_rows(stored_file: StoredFile) -> tuple[list[dict[str, str]], list[ImportErrorItem]]:
+    try:
+        with ZipFile(get_storage_path(stored_file)) as workbook:
+            shared_strings = _xlsx_shared_strings(workbook)
+            sheet_path = _xlsx_first_sheet_path(workbook)
+            if sheet_path not in workbook.namelist():
+                return [], [ImportErrorItem(1, "file", "XLSX 文件缺少工作表", stored_file.original_name)]
+            sheet_root = ElementTree.fromstring(_xlsx_read_xml_part(workbook, sheet_path))
+            raw_rows: list[tuple[int, dict[int, str]]] = []
+            for fallback_index, row_element in enumerate(sheet_root.findall(".//{*}row"), start=1):
+                try:
+                    row_number = int(row_element.attrib.get("r", str(fallback_index)))
+                except ValueError:
+                    row_number = fallback_index
+                cells: dict[int, str] = {}
+                for fallback_column, cell in enumerate(row_element.findall("{*}c"), start=1):
+                    column_index = _excel_column_index(cell.attrib.get("r", "")) or fallback_column
+                    cells[column_index] = _xlsx_cell_value(cell, shared_strings)
+                if any(value.strip() for value in cells.values()):
+                    raw_rows.append((row_number, cells))
+    except (BadZipFile, ElementTree.ParseError, KeyError, OSError, ValueError):
+        return [], [ImportErrorItem(1, "file", "XLSX 文件无法读取，请确认使用标准 .xlsx 工作簿", stored_file.original_name)]
+
+    if not raw_rows:
+        return [], [ImportErrorItem(1, "file", "XLSX 文件没有可导入数据")]
+
+    header_row_number, header_cells = raw_rows[0]
+    max_column = max(header_cells)
+    headers = [header_cells.get(column, "").strip().lstrip("\ufeff") for column in range(1, max_column + 1)]
+    header_errors = _validate_import_headers(headers)
+    if header_errors:
+        return [], [
+            ImportErrorItem(header_row_number, error.field, error.message, error.value)
+            for error in header_errors
+        ]
+
+    rows = []
+    for row_number, cells in raw_rows[1:]:
+        normalized = {
+            header: cells.get(column, "")
+            for column, header in enumerate(headers, start=1)
+            if header
+        }
+        if _blank_row(normalized):
+            continue
+        normalized["_row_number"] = str(row_number)
+        rows.append(normalized)
+
+    if not rows:
+        return [], [ImportErrorItem(1, "file", "XLSX 文件没有可导入数据")]
     if len(rows) > PARCEL_IMPORT_MAX_ROWS:
         return [], [ImportErrorItem(1, "file", f"单次最多导入 {PARCEL_IMPORT_MAX_ROWS} 行")]
     return rows, []
@@ -238,7 +443,7 @@ def _parse_rows(rows: list[dict[str, str]]) -> tuple[list[ParsedImportRow], list
                 ImportErrorItem(
                     row_number,
                     "tracking_no",
-                    f"CSV 内重复，首次出现在第 {tracking_by_row[tracking_no]} 行",
+                    f"导入文件内重复，首次出现在第 {tracking_by_row[tracking_no]} 行",
                     tracking_no,
                 )
             )
@@ -307,8 +512,19 @@ def import_parcel_forecasts(*, user: User, file_id: str) -> ParcelImportJob:
     stored_file = get_member_file(member=user, file_id=file_id)
     _assert_member_import_file(user=user, stored_file=stored_file)
 
-    if stored_file.extension != ".csv":
-        errors = [ImportErrorItem(1, "file", "当前批量预报仅支持 CSV 文件", stored_file.original_name).as_dict()]
+    if stored_file.extension == ".csv":
+        raw_rows, read_errors = _read_csv_rows(stored_file)
+    elif stored_file.extension == ".xlsx":
+        raw_rows, read_errors = _read_xlsx_rows(stored_file)
+    else:
+        errors = [
+            ImportErrorItem(
+                1,
+                "file",
+                "当前批量预报支持 CSV 和 XLSX 文件，旧版 .xls 请另存为 .xlsx 或 CSV",
+                stored_file.original_name,
+            ).as_dict()
+        ]
         return _create_job(
             user=user,
             stored_file=stored_file,
@@ -318,7 +534,6 @@ def import_parcel_forecasts(*, user: User, file_id: str) -> ParcelImportJob:
             errors=errors,
         )
 
-    raw_rows, read_errors = _read_csv_rows(stored_file)
     if read_errors:
         return _create_job(
             user=user,

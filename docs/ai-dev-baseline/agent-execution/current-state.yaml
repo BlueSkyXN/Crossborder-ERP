@@ -3,7 +3,7 @@ baseline_version: v0.3
 status: task_graph_complete_needs_scope_review
 current_task: null
 current_phase: P6_PRODUCTION_GAP
-last_completed_task: AUDITLOG-001
+last_completed_task: IMPORT-XLSX-001
 blocked_reason: null
 rules:
   - "Agent must read agent-execution/README.md before choosing tasks."
@@ -51,4 +51,5 @@ done_tasks:
   - PAYABLE-001
   - GROWTH-001
   - AUDITLOG-001
+  - IMPORT-XLSX-001
 pending_tasks: []

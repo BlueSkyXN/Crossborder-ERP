@@ -22,7 +22,8 @@
 | `MEMBER-001` | P1 | 后台会员管理 | 会员列表、筛选、冻结/解冻、重置密码、会员等级、客服分配占位 | 已完成：RBAC/权限测试、冻结 token 阻断、后台页面 build、API E2E |
 | `PARCEL-CLAIM-001` | P1 | 无主包裹用户认领 | 用户侧无主包裹列表/搜索/认领；后台审核；认领后转包裹 | 已完成：防抢认领事务测试、脱敏展示测试、三端入口 |
 | `CONTENT-001` | P1 | 内容 CMS | 帮助、公告、条款、关于我们、显示/排序；用户端展示 | 已完成：后台 CRUD/发布隐藏、三端入口、公开读取测试 |
-| `IMPORT-001` | P1 | 批量导入/导出基础 | 预报模板下载、CSV 导入、错误明细；会员/后台导出策略 | 已完成：不新增依赖，使用标准 CSV fallback；Excel 解析后续 |
+| `IMPORT-001` | P1 | 批量导入/导出基础 | 预报模板下载、CSV 导入、错误明细；会员/后台导出策略 | 已完成：不新增依赖，使用标准 CSV parser |
+| `IMPORT-XLSX-001` | P1 | Excel 批量预报解析 | `.xlsx` 模板下载、标准工作簿解析、错误记录复用现有导入 job | 已完成：不新增依赖，使用 Python 标准库读取 `.xlsx`；旧 `.xls` 需另存 |
 | `QA-BROWSER-001` | P1 | 浏览器级 E2E | system Chrome CDP 三端 smoke，覆盖登录和关键页面 | 已完成：不下载浏览器，不使用用户 profile，CI 可重复 |
 | `SHIP-BATCH-001` | P2 | 发货批次/转单/打印 | 发货批次模型、运单归批、批量轨迹、转单号、打印模板占位 | 已完成：不接硬件；打印只生成模板数据 |
 | `PAYABLE-001` | P2 | 供应商/成本/应付 | 供应商、成本类型、应付款、审批/核销基础 | 已完成：与应收钱包分离，金额精度和状态测试 |
@@ -39,7 +40,8 @@
 - `MEMBER-001`：已补后台会员列表/筛选/详情、会员资料维护、冻结/解冻、测试密码重置、客服负责人和内部服务备注；Admin Web `/members` 已从占位页升级为真实管理面板。
 - `PARCEL-CLAIM-001`：已补用户侧无主包裹脱敏列表/搜索/认领 API，后台认领通过/驳回审核，审核通过后转为会员 `Parcel.IN_STOCK`；User Web、Mobile H5 和 Admin Web 已补入口和操作。
 - `CONTENT-001`：已补内容分类/内容条目模型、后台 CRUD、发布/隐藏、公开只读 API、Admin Web 内容管理页、User Web `/content` 和 Mobile H5 `/me/content` 展示入口；条款/隐私正式文案仍需业务/法务确认。
-- `IMPORT-001`：已补包裹预报 CSV 模板下载、`IMPORT_FILE` 上传后批量导入、行级错误明细、`ParcelImportJob` 结果记录、会员包裹导出和后台 `parcels.view` CSV 导出；`.xls/.xlsx` 解析仍为后续增强。
+- `IMPORT-001`：已补包裹预报 CSV 模板下载、`IMPORT_FILE` 上传后批量导入、行级错误明细、`ParcelImportJob` 结果记录、会员包裹导出和后台 `parcels.view` CSV 导出。
+- `IMPORT-XLSX-001`：已补 `.xlsx` 批量预报模板下载、标准工作簿解析、行级校验复用和 all-or-none 导入事务；未新增 Python/Node 依赖。旧版二进制 `.xls` 需另存为 `.xlsx` 或 CSV。
 - `QA-BROWSER-001`：已补 system Chrome CDP 浏览器 smoke，自动启动临时 SQLite/media/profile 下的后端和三端前端，覆盖 Admin Web、User Web、Mobile H5 登录和关键页面，并纳入 CI `Browser Smoke` job；不下载浏览器，不使用用户日常 Chrome profile。
 - `SHIP-BATCH-001`：已补后台发货批次模型/API，支持创建批次、待发货运单归批/移出、锁定后批量发货、批量轨迹、转单号和承运商批次号；Admin Web 运单处理页已增加批次列表、详情、归批、批量发货和面单/拣货单/交接单打印模板数据预览入口。打印仍只生成结构化模板数据，不接真实硬件。
 - `PAYABLE-001`：已补后台供应商、成本类型和应付款模型/API，支持应付款待审核、确认、核销和取消状态流；Admin Web 财务页已增加应付款、供应商和成本类型入口，API E2E 和 Browser Smoke 已覆盖基础链路。真实银行付款、自动打款和外部财务系统同步仍未接入。
@@ -48,11 +50,11 @@
 
 ## Current Next Task
 
-任务图中的 `AUDITLOG-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
+任务图中的 `IMPORT-XLSX-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
 
-- Excel 原生解析增强：确认 `.xlsx` 是硬需求后，再引入受控依赖、模板和回归测试。
 - 完整浏览器旅程增强：在 system Chrome CDP smoke 之外补更完整业务流、视觉回归或组件级测试。
 - 生产化边界：补对象存储、PostgreSQL/MySQL/Redis 真实验证计划、日志归档、告警和部署验证。
+- 需业务/合规确认的外部集成：真实支付、真实物流 API、自动采购和外部商品抓取。
 
 ## Completion Boundary
 

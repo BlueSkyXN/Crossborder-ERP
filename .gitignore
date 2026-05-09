@@ -37,6 +37,7 @@ db.sqlite3-*
 local_settings.py
 media/
 staticfiles/
+backend/backups/
 celerybeat-schedule
 celerybeat-schedule.*
 backend/openapi.yaml

@@ -7,7 +7,7 @@
 - `docs/source-report-gap-map.md`
 - `docs/production-readiness-backlog.md`
 
-`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 批量预报解析，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础，`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的一条真实浏览器旅程，`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础，`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础，`GROWTH-001` 已补齐积分推广返利基础，`AUDITLOG-001` 已补齐后台关键写操作审计日志，`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令，`SECURITY-HEADERS-001` 已补齐基础应用安全响应头，`OPS-READINESS-001` 已补齐运维 readiness 检查。后续优先按生产化边界、需业务/合规确认的外部集成和测试深度增强逐项收敛。
+`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 批量预报解析，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础，`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的一条真实浏览器旅程，`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础，`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础，`GROWTH-001` 已补齐积分推广返利基础，`AUDITLOG-001` 已补齐后台关键写操作审计日志，`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令，`SECURITY-HEADERS-001` 已补齐基础应用安全响应头，`OPS-READINESS-001` 已补齐运维 readiness 检查，`OPS-SQLITE-BACKUP-001` 已补齐 SQLite 本地备份命令。后续优先按生产化边界、需业务/合规确认的外部集成和测试深度增强逐项收敛。
 
 ## 已知问题
 
@@ -49,6 +49,14 @@
 影响：当前可以本地验证应用是否能检查默认数据库连接，但不能声明已完成生产监控或告警体系。
 当前临时处理：readiness 只返回有限状态，数据库不可用时返回 HTTP 503 和脱敏 `checks.database: unavailable`。
 后续建议：staging 部署后接入外部监控、错误追踪、日志聚合和告警阈值，再扩展 Redis/Celery/对象存储等真实依赖检查。
+是否阻塞 v0.1：否。
+
+### 生产数据库备份、远程备份和恢复演练未验证
+
+问题：`OPS-SQLITE-BACKUP-001` 已补 SQLite 本地显式备份命令，但 PostgreSQL/MySQL 生产备份、远程备份、加密、轮转、恢复演练和告警尚未验证。
+影响：当前可以保护 SQLite-first 本地验收数据，但不能声明具备完整生产级灾备体系。
+当前临时处理：`backup_sqlite` 默认输出到 ignored 的 `backend/backups/`，支持 dry-run、覆盖保护和 file-backed SQLite 边界校验；命令不会自动运行。
+后续建议：真实数据库验证后补 `pg_dump`/MySQL 备份策略、对象存储或离线介质、加密、定期恢复演练和告警。
 是否阻塞 v0.1：否。
 
 ### 浏览器测试深度仍需增强
@@ -155,7 +163,7 @@
 - Redis/Celery 验证和异步任务基线。
 - 对象存储、缩略图、文件安全扫描和图片处理。
 - Staging 部署脚本、Nginx 反代、TLS/HSTS 验证和静态资源发布。
-- 日志、备份、错误监控、外部告警和更完整安全 header/监控策略。
+- 日志、远程备份、恢复演练、错误监控、外部告警和更完整安全 header/监控策略。
 
 ### P2 业务增强
 

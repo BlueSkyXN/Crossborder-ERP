@@ -7,7 +7,7 @@
 ## 当前状态
 
 - 项目阶段：`P6_PRODUCTION_GAP`
-- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`IMPORT-XLSX-001` Excel `.xlsx` 批量预报解析、`QA-BROWSER-001` 三端浏览器 smoke、`QA-BROWSER-002` 浏览器真实包裹预报/入库旅程、`SHIP-BATCH-001` 发货批次/转单/打印模板数据、`PAYABLE-001` 供应商/成本/应付基础、`GROWTH-001` 积分/推广/返利基础、`AUDITLOG-001` 后台操作审计日志、`AUDIT-RETENTION-001` 审计日志导出与本地留存命令、`SECURITY-HEADERS-001` 基础安全响应头、`OPS-READINESS-001` 运维 readiness 检查
+- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`IMPORT-XLSX-001` Excel `.xlsx` 批量预报解析、`QA-BROWSER-001` 三端浏览器 smoke、`QA-BROWSER-002` 浏览器真实包裹预报/入库旅程、`SHIP-BATCH-001` 发货批次/转单/打印模板数据、`PAYABLE-001` 供应商/成本/应付基础、`GROWTH-001` 积分/推广/返利基础、`AUDITLOG-001` 后台操作审计日志、`AUDIT-RETENTION-001` 审计日志导出与本地留存命令、`SECURITY-HEADERS-001` 基础安全响应头、`OPS-READINESS-001` 运维 readiness 检查、`OPS-SQLITE-BACKUP-001` SQLite 本地备份命令
 - 下一任务：任务图暂无自动下一项；后续建议按生产化边界、需要业务确认的外部集成，以及更深浏览器/视觉/组件测试单独开任务
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
@@ -69,6 +69,7 @@ infra/          后续部署、Nginx、脚本
 | User Web | `http://localhost:3002` |
 | Mobile H5 | `http://localhost:3003` |
 | Local DB | `backend/db.sqlite3` |
+| Local DB backups | `backend/backups/`，默认 ignored |
 | Redis/Celery | 当前阶段同步/禁用外部 Redis |
 
 ## 本地启动
@@ -156,6 +157,7 @@ npm run e2e:browser
 (cd backend && uv run pytest)
 pnpm lint
 pnpm build
+(cd backend && uv run python manage.py backup_sqlite --dry-run)
 ```
 
 当前 CI 会在 PR 和 `main` push 上执行后端 check/OpenAPI/pytest、三端前端 lint/build，以及 `Browser Smoke` 三端登录、关键页面 smoke 和一条浏览器真实包裹预报/入库旅程。
@@ -185,6 +187,7 @@ npm run e2e
 - 后台可导出脱敏后的审计日志 CSV，并可用 `purge_audit_logs --older-than-days N --dry-run` 预演本地留存清理。
 - 后端响应会输出基础安全 header：`nosniff`、`Referrer-Policy`、`Cross-Origin-Opener-Policy`、`X-Frame-Options` 和 `Permissions-Policy`；HSTS/TLS 仍需真实 HTTPS 环境确认后启用。
 - 后端提供 `/api/v1/health/ready` readiness endpoint，当前检查默认数据库连接；失败时返回 503 且不暴露 DSN、异常堆栈或本地路径。
+- 后端提供 `backup_sqlite` 显式本地备份命令，可用 `--dry-run` 预演并默认输出到 ignored 的 `backend/backups/`；它不替代 PostgreSQL/MySQL 生产备份策略。
 - 后台扫描未知单号生成无主包裹，用户端只看到脱敏单号并提交认领，后台审核通过后转为会员在库包裹。
 - 后台创建内容草稿，发布后用户端可读取帮助/公告/条款，隐藏后公开接口不可再读取。
 - 用户上传 CSV 或 `.xlsx` 批量导入包裹预报，并验证用户/后台 CSV 导出。

@@ -37,6 +37,14 @@ class MemberProfile(models.Model):
     display_name = models.CharField(max_length=100, blank=True)
     level = models.CharField(max_length=30, default="basic")
     warehouse_code = models.CharField(max_length=30, unique=True)
+    assigned_service_admin = models.ForeignKey(
+        "iam.AdminUser",
+        on_delete=models.SET_NULL,
+        related_name="assigned_member_profiles",
+        null=True,
+        blank=True,
+    )
+    service_note = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

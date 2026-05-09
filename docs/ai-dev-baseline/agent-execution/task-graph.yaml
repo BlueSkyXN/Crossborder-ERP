@@ -174,3 +174,8 @@ tasks:
     file: tasks/MEMBER-001.md
     depends_on: [MSG-001]
     next: PARCEL-CLAIM-001
+  - id: PARCEL-CLAIM-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/PARCEL-CLAIM-001.md
+    depends_on: [MEMBER-001]
+    next: CONTENT-001

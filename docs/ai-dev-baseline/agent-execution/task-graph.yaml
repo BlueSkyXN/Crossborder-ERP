@@ -313,4 +313,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/ACCOUNT-RESET-001.md
     depends_on: [ACCOUNT-SETTINGS-001, SECURITY-HEADERS-001]
+    next: QA-BROWSER-004
+  - id: QA-BROWSER-004
+    phase: P6_PRODUCTION_GAP
+    file: tasks/QA-BROWSER-004.md
+    depends_on: [QA-BROWSER-001, QA-BROWSER-002, QA-BROWSER-003, FIN-001, MSG-001]
     next: null

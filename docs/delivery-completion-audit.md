@@ -27,7 +27,7 @@
 - 角色与管理员账号安全删除，覆盖内置/自删/已分配保护。
 - PostgreSQL/MySQL/Redis/Celery 无连接 DSN 边界检查。
 - `npm run e2e` 自动验收主链路和最小代购链路。
-- `npm run e2e:browser` 自动验收 Admin Web、User Web、Mobile H5 登录、关键页面 smoke 和一条真实包裹预报/入库/回看浏览器旅程。
+- `npm run e2e:browser` 自动验收 Admin Web、User Web、Mobile H5 登录、关键页面 smoke、包裹预报/入库/回看浏览器旅程，以及财务汇款审核和客服工单回复跨面板旅程。
 - Browser Smoke 导航等待、失败页面快照和服务日志输出已加固，降低 CI 偶发误判并提升失败可诊断性。
 - Agent 证据 CI 门禁已纳入 PR/main，自动校验任务图、current-state 和 Agent run 摘要一致性。
 - CSV 和标准 `.xlsx` 批量预报导入。
@@ -54,6 +54,7 @@
 | 会员找回密码 | 本地已验证 reset token 只保存 hash、过期/一次性消费和新密码登录；User Web/Mobile H5 登录页已整合入口；真实短信/邮件通知不声明完成 | `docs/agent-runs/2026-05-09-ACCOUNT-RESET-001.md`、`backend/apps/members/tests/test_members.py` |
 | 后台占位面板真实化 | Admin Web `/dashboard`、`/roles` 和 `/admin-users` 已改为真实接口面板；角色创建、编辑、权限分配、管理员角色分配和业务模块级 action 权限已补齐 | `docs/agent-runs/2026-05-09-ADMIN-PANELS-001.md`、`docs/agent-runs/2026-05-09-RBAC-ROLES-001.md`、`docs/agent-runs/2026-05-09-RBAC-ADMIN-USERS-001.md`、`docs/agent-runs/2026-05-09-RBAC-BUSINESS-ACTIONS-001.md`、`backend/apps/iam/tests/test_admin_auth.py` |
 | Browser Smoke 稳定性 | CDP 导航等待、页面快照诊断和失败服务日志输出已加固；不新增依赖或下载浏览器 | `docs/agent-runs/2026-05-09-QA-BROWSER-003.md`、`scripts/e2e/browser-smoke.mjs` |
+| 浏览器跨面板业务旅程 | Browser Smoke 已覆盖 User Web 创建线下汇款和客服工单、Admin Web 审核汇款入账和回复工单、User Web 回看客服回复，并修复工单回复前后端 URL 契约问题 | `docs/agent-runs/2026-05-09-QA-BROWSER-004.md`、`scripts/e2e/browser-smoke.mjs`、`admin-web/src/features/tickets/api.ts` |
 | Agent 证据门禁 | CI 校验任务图、current-state、任务文件、Agent run 摘要、验证结果和未验证边界说明 | `docs/agent-runs/2026-05-09-CI-EVIDENCE-001.md`、`scripts/ci/validate_agent_evidence.py` |
 | 证明纯 AI 驱动全栈 ERP | 每个正式任务留摘要证据，不记录过细过程 | `docs/ai-development-proof.md`、`docs/agent-runs/` |
 | 每轮任务 PR、更新 PR 信息并合并 main | 已按任务分支和 PR 合并推进；最后任务以 PR 合并收口 | GitHub PR 记录、`docs/agent-runs/` |
@@ -112,7 +113,7 @@ git diff --check
 - Prometheus/Sentry/外部告警和真实 staging 探针未验证；当前只完成本地 readiness endpoint。
 - PostgreSQL/MySQL 生产备份、远程备份、加密、轮转和恢复演练未验证；当前只完成 SQLite 本地显式备份命令。
 - 对象存储生命周期、CDN、缩略图、病毒扫描、EXIF 清理和远程文件归档未验证；当前只完成本地软删除文件清理命令和基础内容签名校验。
-- `npm run e2e:browser` 已纳入仓库，并覆盖一条真实包裹预报/入库/回看旅程；Playwright、组件级测试、视觉回归和更多业务旅程仍需后续增强。
+- `npm run e2e:browser` 已纳入仓库，并覆盖包裹预报/入库/回看、财务汇款审核和客服工单回复等真实浏览器旅程；Playwright、组件级测试、视觉回归和所有复杂业务路径仍需后续增强。
 - `npm run inspect:services` 已纳入仓库，但只做无连接 DSN 检查；PostgreSQL/MySQL/Redis/Celery 真实运行仍需后续验证。
 - 真实支付、真实自动采购下单、对象存储、外部 SIEM/审计告警、真实打印硬件、物流 API 和业务 create/update/delete 子权限后续补齐。
 - 短信/邮件验证码、真实通知送达、微信登录、多语言和复杂业务规则保持 `TODO_CONFIRM`。

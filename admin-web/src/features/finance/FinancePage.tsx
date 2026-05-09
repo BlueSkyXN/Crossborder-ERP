@@ -964,7 +964,7 @@ export function FinancePage() {
               type={reviewAction.type === "approve" ? "info" : "warning"}
               showIcon
               icon={<FileSearchOutlined />}
-              message={`${reviewAction.remittance.request_no} / ${reviewAction.remittance.user_email}`}
+              title={`${reviewAction.remittance.request_no} / ${reviewAction.remittance.user_email}`}
               description={`金额 ${formatMoney(reviewAction.remittance.amount, reviewAction.remittance.currency)}，凭证 ${reviewAction.remittance.proof_file_name || reviewAction.remittance.proof_file_id}`}
             />
             <Form form={reviewForm} layout="vertical">

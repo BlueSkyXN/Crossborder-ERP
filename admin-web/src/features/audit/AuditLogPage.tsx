@@ -11,6 +11,7 @@ import type { AuditLog, AuditLogQuery } from "./types";
 
 type WorkspaceContext = {
   allowedCodes: Set<string>;
+  permissionCodes: Set<string>;
 };
 
 const pageSize = 20;
@@ -53,8 +54,9 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 export function AuditLogPage() {
-  const { allowedCodes } = useOutletContext<WorkspaceContext>();
+  const { allowedCodes, permissionCodes } = useOutletContext<WorkspaceContext>();
   const hasPermission = allowedCodes.has("audit.logs.view");
+  const canExport = permissionCodes.has("audit.logs.export");
   const [keyword, setKeyword] = useState("");
   const [method, setMethod] = useState<string | undefined>();
   const [targetType, setTargetType] = useState<string | undefined>();
@@ -191,6 +193,7 @@ export function AuditLogPage() {
             </Button>
             <Button
               icon={<DownloadOutlined />}
+              disabled={!canExport}
               loading={exportMutation.isPending}
               onClick={() => exportMutation.mutate()}
             >
@@ -200,7 +203,11 @@ export function AuditLogPage() {
           <Alert
             type="info"
             showIcon
-            title="后台关键写操作会自动进入审计日志，敏感字段会做脱敏处理。"
+            title={
+              canExport
+                ? "后台关键写操作会自动进入审计日志，敏感字段会做脱敏处理。"
+                : "当前账号只读审计日志，缺少 audit.logs.export。"
+            }
           />
         </Space>
       </Card>

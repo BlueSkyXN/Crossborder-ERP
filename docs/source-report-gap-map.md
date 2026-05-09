@@ -10,7 +10,7 @@
 - Admin Web、User Web、Mobile H5 已覆盖登录、仓库地址、包裹预报、扫描入库、申请打包、审核计费、余额支付、发货轨迹、确认收货、商品/购物车/手工代购最小链路。
 - `npm run e2e` 已覆盖 API 级 P0 主流程，并已把线下汇款审核入账纳入主链路资金来源。
 
-但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 模板下载和批量预报解析；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础；`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`QA-BROWSER-003` 已加固 Browser Smoke 导航等待和失败诊断；`CI-EVIDENCE-001` 已补齐 Agent 证据 CI 门禁；`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础；`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础；`GROWTH-001` 已补齐积分流水、邀请关系、返利记录统计和三端入口基础；`AUDITLOG-001` 已补齐后台关键写操作审计日志和查询面板；`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令；`SECURITY-HEADERS-001` 已补齐基础应用安全响应头配置和测试；`OPS-READINESS-001` 已补齐默认数据库 readiness 检查；`OPS-SQLITE-BACKUP-001` 已补齐 SQLite-first 本地备份命令；`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令；`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口；`ACCOUNT-SETTINGS-001` 已补齐前台注册、账户设置和会员自助改密码基础；`ADMIN-PANELS-001` 已把后台 dashboard/roles 从固定假数据占位面板替换为真实接口面板；`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环；`RBAC-ADMIN-USERS-001` 已补齐管理员账号创建、启停、密码重置和角色分配闭环。剩余差距集中在真实生产部署/TLS/HSTS/监控/告警/远程备份/对象存储等运维边界、需要业务/合规确认的真实外部下单/支付/物流集成、角色/管理员删除和业务按钮级更细分权，以及视觉回归/组件级测试/更大范围浏览器流。
+但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 模板下载和批量预报解析；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础；`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`QA-BROWSER-003` 已加固 Browser Smoke 导航等待和失败诊断；`CI-EVIDENCE-001` 已补齐 Agent 证据 CI 门禁；`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础；`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础；`GROWTH-001` 已补齐积分流水、邀请关系、返利记录统计和三端入口基础；`AUDITLOG-001` 已补齐后台关键写操作审计日志和查询面板；`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令；`SECURITY-HEADERS-001` 已补齐基础应用安全响应头配置和测试；`OPS-READINESS-001` 已补齐默认数据库 readiness 检查；`OPS-SQLITE-BACKUP-001` 已补齐 SQLite-first 本地备份命令；`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令；`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口；`ACCOUNT-SETTINGS-001` 已补齐前台注册、账户设置和会员自助改密码基础；`ADMIN-PANELS-001` 已把后台 dashboard/roles 从固定假数据占位面板替换为真实接口面板；`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环；`RBAC-ADMIN-USERS-001` 已补齐管理员账号创建、启停、密码重置和角色分配闭环；`RBAC-BUSINESS-ACTIONS-001` 已补齐后台业务写操作的模块级 action 权限拆分。剩余差距集中在真实生产部署/TLS/HSTS/监控/告警/远程备份/对象存储等运维边界、需要业务/合规确认的真实外部下单/支付/物流集成、角色/管理员删除和业务 create/update/delete 子权限/审批流，以及视觉回归/组件级测试/更大范围浏览器流。
 
 ## Source Scope
 
@@ -30,7 +30,7 @@
 | 领域 | 关键来源证据 | 当前状态 |
 | --- | --- | --- |
 | 后台 MVP 范围 | ChatGPT Admin L924-L936 要求后台基础框架、通用列表、基础配置、会员、商品、代购、包裹仓储、运单、批次发货、财务核心、内容基础 | 部分完成；会员后台、线下汇款、内容基础和发货批次已补 |
-| 后台后端服务 | ChatGPT Admin L1005-L1023 要求 RBAC、文件、会员、消息、包裹、运单、批次、转单、财务应收/应付、内容、打印、操作日志 | 部分完成；文件、消息、内容、批次、转单、打印模板数据、应付基础和审计日志基础已补 |
+| 后台后端服务 | ChatGPT Admin L1005-L1023 要求 RBAC、文件、会员、消息、包裹、运单、批次、转单、财务应收/应付、内容、打印、操作日志 | 部分完成；文件、消息、内容、批次、转单、打印模板数据、应付基础、审计日志基础和模块级业务写权限已补 |
 | 用户 Web MVP | ChatGPT User Web L773-L789 要求用户账户、控制台、仓库地址、商品、购物车、订单、代购、包裹、运单、支付、财务、地址、消息 | 部分完成；地址簿、文件上传、独立财务页、消息工单、注册入口和账户设置已补，真实在线充值未完成 |
 | 用户 Web 第二阶段 | ChatGPT User Web L795-L803 要求批量导入、直邮、无主包裹、线下汇款、推广返利、积分、物流对接、帮助中心 | 线下汇款、无主包裹认领、帮助中心、CSV / `.xlsx` 批量预报导入、积分/推广/返利基础已补；物流对接仍后续 |
 | 用户 Web 后端任务 | ChatGPT User Web L879-L902 要求账户、仓库、商品、购物车、订单、代购、包裹、运单、支付、财务、汇款、积分、推广、地址、消息、无主、文件、审计 | P0 主链路、地址、文件、汇款、消息工单、无主用户认领、积分/推广基础和后台审计日志已完成 |
@@ -53,7 +53,7 @@
 | Finance | 钱包、支付单、余额流水、后台充值记录、线下汇款凭证和审核字段、供应商、成本类型、应付款状态流和人工核销字段 | `backend/apps/finance/models.py` |
 | Audit | 后台写操作请求级审计、财务高风险服务层审计、脱敏请求/响应数据、后台审计日志查询 API | `backend/apps/audit/models.py`；`backend/apps/audit/middleware.py` |
 | Products/Purchases | 商品分类、商品、SKU、购物车、代购订单、采购任务 | `backend/apps/products/models.py` L6-L78；`backend/apps/purchases/models.py` L6-L120 |
-| Admin Web routes | 控制台、会员、仓库、包裹、运单、财务、代购、商品、内容管理、角色权限、管理员账号入口；控制台、角色权限和管理员账号均已接真实接口，角色页支持创建/编辑/权限分配，管理员账号页支持创建/启停/重置密码/角色分配 | `admin-web/src/features/auth/menu.tsx`；`admin-web/src/features/dashboard/AdminDashboardPage.tsx`；`admin-web/src/features/auth/RolePermissionPage.tsx`；`admin-web/src/features/auth/AdminUserManagementPage.tsx` |
+| Admin Web routes | 控制台、会员、仓库、包裹、运单、财务、代购、商品、内容管理、角色权限、管理员账号入口；控制台、角色权限和管理员账号均已接真实接口，角色页支持创建/编辑/权限分配，管理员账号页支持创建/启停/重置密码/角色分配，业务页写入口按模块级 action 权限隐藏或禁用 | `admin-web/src/features/auth/menu.tsx`；`admin-web/src/features/dashboard/AdminDashboardPage.tsx`；`admin-web/src/features/auth/RolePermissionPage.tsx`；`admin-web/src/features/auth/AdminUserManagementPage.tsx` |
 | User Web routes | dashboard、addresses、finance、tickets、content、settings、parcels、unclaimed-parcels、waybills、products/cart/purchases | `user-web/src/routes/index.tsx` |
 | Mobile H5 routes | home/category、ship、forecast、parcels、unclaimed-parcels、packing、waybills、cart、me、settings、content、addresses、finance、tickets、purchases/manual | `mobile-h5/src/routes/index.tsx` |
 | CI | PR 和 main push 执行 Agent Evidence、backend check/OpenAPI/pytest、frontend lint/build、Browser Smoke | `.github/workflows/ci.yml` |
@@ -78,14 +78,14 @@
 | 发货批次/转单/打印 | Admin MVP 要求批次发货，二阶段要求转单、打印体系 | `SHIP-BATCH-001` 已补 `ShippingBatch`、运单归批/移出、锁定后批量发货、批量轨迹、转单号、承运商批次号和面单/拣货单/交接单结构化预览；不接真实打印硬件 | `SHIP-BATCH-001` 已完成基础 |
 | 应付、供应商、成本 | Gemini Admin L124-L126、L172 和 ChatGPT Admin L942 要求应付管理 | `PAYABLE-001` 已补供应商、成本类型、应付款、待审核/确认/核销/取消状态流和重复核销防护；真实银行付款和外部财务系统未接 | `PAYABLE-001` 已完成基础 |
 | 积分、推广、返利 | User Web 第二阶段和 Mobile 入口均要求积分/推广/好友返利 | `GROWTH-001` 已补积分流水、邀请关系、返利金额/奖励积分统计、Admin Web/User Web/Mobile H5 基础入口；提现、税务、真实联盟和最终规则仍不做 | `GROWTH-001` 已完成基础；复杂规则后续 |
-| 操作日志/审计 | ChatGPT Admin L1023、Gemini Admin L129、基线 `audit_logs` 契约要求关键后台操作可追溯 | `AUDITLOG-001` 已补 `audit_logs`、请求级审计中间件、财务高风险服务层审计、Admin Web `/audit-logs` 查询入口；`AUDIT-RETENTION-001` 已补脱敏 CSV 导出和显式本地留存清理命令；外部 SIEM、自动归档、告警和细粒度权限仍后续 | `AUDITLOG-001`/`AUDIT-RETENTION-001` 已完成基础 |
+| 操作日志/审计 | ChatGPT Admin L1023、Gemini Admin L129、基线 `audit_logs` 契约要求关键后台操作可追溯 | `AUDITLOG-001` 已补 `audit_logs`、请求级审计中间件、财务高风险服务层审计、Admin Web `/audit-logs` 查询入口；`AUDIT-RETENTION-001` 已补脱敏 CSV 导出和显式本地留存清理命令；`RBAC-BUSINESS-ACTIONS-001` 已把审计导出拆到 `audit.logs.export`；外部 SIEM、自动归档、告警和导出审批仍后续 | `AUDITLOG-001`/`AUDIT-RETENTION-001`/`RBAC-BUSINESS-ACTIONS-001` 已完成基础 |
 | 基础应用安全响应头 | 生产化 ERP 需要明确最小 HTTP 安全边界，避免把部署安全完全留空 | `SECURITY-HEADERS-001` 已补后端基础响应头和 health 回归测试；真实 HTTPS、HSTS、反向代理和 staging 域名未验证 | `SECURITY-HEADERS-001` 已完成基础 |
 | 运维 readiness | 生产化 ERP 需要可供反向代理/监控判断依赖可用的轻量 endpoint | `OPS-READINESS-001` 已补 `/api/v1/health/ready` 默认数据库检查和 503 脱敏失败响应；外部监控/告警和真实 staging 未验证 | `OPS-READINESS-001` 已完成基础 |
 | SQLite 本地备份 | 当前 SQLite-first 验收需要显式数据备份手段，避免只靠手工复制 `db.sqlite3` | `OPS-SQLITE-BACKUP-001` 已补 `backup_sqlite` 命令、dry-run、覆盖保护和边界测试；生产数据库/远程备份未验证 | `OPS-SQLITE-BACKUP-001` 已完成基础 |
 | 本地文件生命周期 | 本地 `MEDIA_ROOT` 需要显式清理软删除文件，避免只增不减 | `STORAGE-CLEANUP-001` 已补 `purge_deleted_files` 命令、dry-run、保留期、missing/unsafe 统计和路径保护；对象存储生命周期仍后续 | `STORAGE-CLEANUP-001` 已完成基础 |
 | 外链解析/自动采购 | User Web/Mobile 要求关键词/链接搜索，Admin 二阶段提到外部平台对接 | `PURCHASE-AUTO-001` 已补外部链接解析 provider、URL 规范化、商品 ID 提取和三端人工代购入口；真实第三方抓取、自动下单和外部订单同步仍未接 | `PURCHASE-AUTO-001` 已完成基础；真实自动采购需业务/合规确认 |
 | 账户注册和设置 | User Web/Mobile 均要求登录/注册、我的和账户设置 | `ACCOUNT-SETTINGS-001` 已补前台注册并自动登录、会员资料设置和自助改密码；短信/邮件验证码、找回密码和微信登录不接 | `ACCOUNT-SETTINGS-001` 已完成基础；外部通道需业务确认 |
-| 后台 dashboard/RBAC 占位 | 源报告要求后台基础框架、RBAC、操作管理和运营面板具备真实产品形态 | `ADMIN-PANELS-001` 已补 `GET /api/v1/admin/dashboard`、Admin Web `/dashboard` 真实聚合面板和 `/roles` 真实角色权限矩阵；`RBAC-ROLES-001` 已补角色创建、编辑和权限分配；`RBAC-ADMIN-USERS-001` 已补管理员账号创建、启停、密码重置和角色分配；角色/管理员删除和业务按钮级更细分权后续 | `ADMIN-PANELS-001`/`RBAC-ROLES-001`/`RBAC-ADMIN-USERS-001` 已完成基础 |
+| 后台 dashboard/RBAC 占位 | 源报告要求后台基础框架、RBAC、操作管理和运营面板具备真实产品形态 | `ADMIN-PANELS-001` 已补 `GET /api/v1/admin/dashboard`、Admin Web `/dashboard` 真实聚合面板和 `/roles` 真实角色权限矩阵；`RBAC-ROLES-001` 已补角色创建、编辑和权限分配；`RBAC-ADMIN-USERS-001` 已补管理员账号创建、启停、密码重置和角色分配；`RBAC-BUSINESS-ACTIONS-001` 已补业务写操作模块级 `*.manage` / `*.export` 权限；角色/管理员删除和 create/update/delete 子权限后续 | `ADMIN-PANELS-001`/`RBAC-ROLES-001`/`RBAC-ADMIN-USERS-001`/`RBAC-BUSINESS-ACTIONS-001` 已完成基础 |
 | 浏览器级 E2E | 源报告要求三端具备可实际操作产品形态；API E2E 不能发现真实浏览器运行时问题 | `QA-BROWSER-001` 已补 system Chrome CDP smoke，覆盖 Admin Web/User Web/Mobile H5 登录和关键页面，并纳入 CI；`QA-BROWSER-002` 已补会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`QA-BROWSER-003` 已补导航等待重试、页面快照和失败服务日志，降低 main CI 偶发等待误判；视觉回归、组件级测试和更多复杂浏览器流仍可增强 | `QA-BROWSER-001`/`QA-BROWSER-002`/`QA-BROWSER-003` 已完成；更深测试后续 |
 | PostgreSQL/MySQL/Redis | 用户已确认先 SQLite，后续补但不真实验证 | 当前只验证 SQLite，Redis/Celery 未真实验证 | 保持 `configured_unverified`，不进入当前验证 gate |
 
@@ -96,5 +96,6 @@
 1. 生产化运维边界：补 PostgreSQL/MySQL/Redis 真实验证计划、对象存储、告警和部署验证。
 2. 需要业务/合规确认的外部集成：真实支付、真实物流 API、真实自动采购下单和外部商品抓取。
 3. 测试深度增强：在现有 `npm run e2e:browser` 基础上，逐步覆盖视觉回归、组件级测试和更多复杂浏览器流。
+4. 权限深度增强：在现有模块级业务 action 权限基础上，按业务需要继续拆 create/update/delete 子权限和审批流。
 
 每个任务仍需独立分支、PR、更新 PR 信息、CI 通过后合并回 `main`。

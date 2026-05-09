@@ -1,8 +1,10 @@
 import pytest
+from django.contrib.auth.hashers import make_password
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from apps.files.models import FileUsage
+from apps.iam.models import AdminUser, Permission, Role
 from apps.iam.services import seed_iam_demo_data
 from apps.members.services import issue_member_access_token, register_user, seed_member_demo_data
 from apps.tickets.models import Ticket, TicketStatus
@@ -30,6 +32,18 @@ def admin_token(client, email="support@example.com", password="password123"):
         content_type="application/json",
     )
     return response.json()["data"]["access_token"]
+
+
+def create_admin_with_permissions(email: str, permission_codes: list[str]) -> AdminUser:
+    role = Role.objects.create(code=email.split("@", maxsplit=1)[0].replace(".", "_"), name=email)
+    role.permissions.set(Permission.objects.filter(code__in=permission_codes))
+    admin = AdminUser.objects.create(
+        email=email,
+        name=email,
+        password_hash=make_password("password123"),
+    )
+    admin.roles.set([role])
+    return admin
 
 
 def image_upload(name="message.jpg", content=b"message-file", content_type="image/jpeg"):
@@ -190,3 +204,27 @@ def test_admin_ticket_api_requires_ticket_permission(client, seeded_tickets):
 
     assert response.status_code == 403
     assert response.json()["code"] == "FORBIDDEN"
+
+
+def test_ticket_viewer_without_manage_cannot_process_or_reply(client, seeded_tickets):
+    member = member_token(client)
+    ticket = create_ticket(client, member).json()["data"]
+    create_admin_with_permissions("ticket-viewer@example.com", ["dashboard.view", "tickets.view"])
+    token = admin_token(client, email="ticket-viewer@example.com")
+
+    list_response = client.get(reverse("admin-ticket-list"), HTTP_AUTHORIZATION=f"Bearer {token}")
+    process_response = client.post(
+        reverse("admin-ticket-mark-processing", kwargs={"ticket_id": ticket["id"]}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    reply_response = client.post(
+        reverse("admin-ticket-reply", kwargs={"ticket_id": ticket["id"]}),
+        {"content": "只读不能回复"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert list_response.status_code == 200
+    assert process_response.status_code == 403
+    assert reply_response.status_code == 403
+    assert Ticket.objects.get(id=ticket["id"]).status == TicketStatus.OPEN

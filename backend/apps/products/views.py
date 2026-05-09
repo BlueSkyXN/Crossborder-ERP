@@ -104,6 +104,7 @@ class AdminProductCategoryListCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "products.view"
+    write_permission = "products.manage"
 
     @extend_schema(tags=["admin-products"], responses={200: ProductCategorySerializer(many=True)})
     def get(self, request):
@@ -121,6 +122,7 @@ class AdminProductCategoryDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "products.view"
+    write_permission = "products.manage"
 
     @extend_schema(tags=["admin-products"], request=ProductCategoryInputSerializer, responses={200: ProductCategorySerializer})
     def patch(self, request, category_id: int):
@@ -141,6 +143,7 @@ class AdminProductListCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "products.view"
+    write_permission = "products.manage"
 
     @extend_schema(tags=["admin-products"], responses={200: ProductSerializer(many=True)})
     def get(self, request):
@@ -158,6 +161,7 @@ class AdminProductDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "products.view"
+    write_permission = "products.manage"
 
     @extend_schema(tags=["admin-products"], request=ProductInputSerializer, responses={200: ProductSerializer})
     def patch(self, request, product_id: int):
@@ -178,6 +182,7 @@ class AdminProductSkuListCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "products.view"
+    write_permission = "products.manage"
 
     @extend_schema(tags=["admin-products"], responses={200: ProductSkuSerializer(many=True)})
     def get(self, request):
@@ -195,6 +200,7 @@ class AdminProductSkuDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "products.view"
+    write_permission = "products.manage"
 
     @extend_schema(tags=["admin-products"], request=ProductSkuInputSerializer, responses={200: ProductSkuSerializer})
     def patch(self, request, sku_id: int):

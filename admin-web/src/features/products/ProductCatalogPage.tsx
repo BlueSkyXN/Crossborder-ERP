@@ -44,6 +44,7 @@ import type {
 
 type WorkspaceContext = {
   allowedCodes: Set<string>;
+  permissionCodes: Set<string>;
 };
 
 type ActiveTab = "categories" | "products" | "skus";
@@ -137,7 +138,8 @@ function parseSpecText(value?: string) {
 }
 
 export function ProductCatalogPage() {
-  const { allowedCodes } = useOutletContext<WorkspaceContext>();
+  const { allowedCodes, permissionCodes } = useOutletContext<WorkspaceContext>();
+  const canManage = permissionCodes.has("products.manage");
   const queryClient = useQueryClient();
   const { message } = AntdApp.useApp();
   const [categoryForm] = Form.useForm<CategoryFormValues>();
@@ -351,13 +353,13 @@ export function ProductCatalogPage() {
       fixed: "right",
       render: (_, record) => (
         <Space size={4}>
-          <Button size="small" title="编辑" icon={<EditOutlined />} onClick={() => openEdit({ type: "category", mode: "edit", record })} />
+          <Button size="small" title="编辑" icon={<EditOutlined />} disabled={!canManage} onClick={() => openEdit({ type: "category", mode: "edit", record })} />
           <Button
             size="small"
             danger
             title="停用"
             icon={<DeleteOutlined />}
-            disabled={record.status === "DISABLED"}
+            disabled={!canManage || record.status === "DISABLED"}
             onClick={() => disableCategoryMutation.mutate(record.id)}
           />
         </Space>
@@ -377,13 +379,13 @@ export function ProductCatalogPage() {
       fixed: "right",
       render: (_, record) => (
         <Space size={4}>
-          <Button size="small" title="编辑" icon={<EditOutlined />} onClick={() => openEdit({ type: "product", mode: "edit", record })} />
+          <Button size="small" title="编辑" icon={<EditOutlined />} disabled={!canManage} onClick={() => openEdit({ type: "product", mode: "edit", record })} />
           <Button
             size="small"
             danger
             title="停用"
             icon={<DeleteOutlined />}
-            disabled={record.status === "DISABLED"}
+            disabled={!canManage || record.status === "DISABLED"}
             onClick={() => disableProductMutation.mutate(record.id)}
           />
         </Space>
@@ -409,13 +411,13 @@ export function ProductCatalogPage() {
       fixed: "right",
       render: (_, record) => (
         <Space size={4}>
-          <Button size="small" title="编辑" icon={<EditOutlined />} onClick={() => openEdit({ type: "sku", mode: "edit", record })} />
+          <Button size="small" title="编辑" icon={<EditOutlined />} disabled={!canManage} onClick={() => openEdit({ type: "sku", mode: "edit", record })} />
           <Button
             size="small"
             danger
             title="停用"
             icon={<DeleteOutlined />}
-            disabled={record.status === "DISABLED"}
+            disabled={!canManage || record.status === "DISABLED"}
             onClick={() => disableSkuMutation.mutate(record.id)}
           />
         </Space>
@@ -436,11 +438,14 @@ export function ProductCatalogPage() {
         </div>
         <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={refreshCatalog}>刷新</Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreate(activeTab)}>
-            新增
-          </Button>
+          {canManage && (
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreate(activeTab)}>
+              新增
+            </Button>
+          )}
         </Space>
       </div>
+      {!canManage && <Alert type="info" showIcon message="当前账号只读商品，缺少 products.manage。" />}
 
       <Row gutter={[16, 16]}>
         <Col xs={24} md={6}>

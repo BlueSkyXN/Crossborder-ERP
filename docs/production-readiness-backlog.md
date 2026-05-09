@@ -40,8 +40,9 @@
 | `PURCHASE-AUTO-001` | P3 | 外链解析/自动采购 | 外部链接解析 provider 接口、人工 fallback、合规边界 | 已完成基础；不抓取真实第三方前不声明自动采购完成 |
 | `ACCOUNT-SETTINGS-001` | P3 | 会员注册与账户设置 | 前台注册入口、会员自助资料设置、会员自助改密码 | 已完成基础；不接短信/邮件/验证码/找回密码 |
 | `ADMIN-PANELS-001` | P3 | 后台占位面板真实化 | Admin dashboard 真实聚合接口、角色权限真实面板、browser smoke 覆盖 | 已完成基础；角色写操作由 `RBAC-ROLES-001` 承接 |
-| `RBAC-ROLES-001` | P3 | 角色权限管理闭环 | 角色创建、编辑、权限分配、独立 manage 权限、`super_admin` 保护 | 已完成基础；角色删除、后台用户分配角色和 create/update/delete 更细分权后续 |
-| `RBAC-ADMIN-USERS-001` | P3 | 管理员账号与角色分配 | 管理员账号列表、新增、启停、密码重置、角色分配、独立 manage 权限 | 已完成基础；账号删除、外部 IAM 和业务按钮级更细分权后续 |
+| `RBAC-ROLES-001` | P3 | 角色权限管理闭环 | 角色创建、编辑、权限分配、独立 manage 权限、`super_admin` 保护 | 已完成基础；角色删除和后台用户分配角色由后续任务处理 |
+| `RBAC-ADMIN-USERS-001` | P3 | 管理员账号与角色分配 | 管理员账号列表、新增、启停、密码重置、角色分配、独立 manage 权限 | 已完成基础；账号删除和外部 IAM 由后续任务处理 |
+| `RBAC-BUSINESS-ACTIONS-001` | P3 | 业务写操作权限拆分 | 后台业务写接口、Admin Web 写按钮和导出入口按 `*.manage` / `*.export` 权限控制 | 已完成模块级拆分；create/update/delete 子权限和审批流后续 |
 
 ## Completed Production Gap Tasks
 
@@ -62,7 +63,7 @@
 - `PAYABLE-001`：已补后台供应商、成本类型和应付款模型/API，支持应付款待审核、确认、核销和取消状态流；Admin Web 财务页已增加应付款、供应商和成本类型入口，API E2E 和 Browser Smoke 已覆盖基础链路。真实银行付款、自动打款和外部财务系统同步仍未接入。
 - `GROWTH-001`：已补会员积分流水、邀请关系、返利记录和奖励积分统计；Admin Web 会员详情可审计积分/邀请/返利并可手工调整积分，User Web 和 Mobile H5 个人中心已展示积分推广入口；API E2E、后端测试和 Browser Smoke 已覆盖基础链路。真实联盟、提现、税务、多级分销和最终积分/返利规则仍未接入。
 - `AUDITLOG-001`：已补 `apps.audit`、`audit_logs` 数据表、后台 `/api/v1/admin/**` 写操作请求级审计、财务应付/汇款/钱包人工调整服务层审计、敏感字段脱敏和 Admin Web `/audit-logs` 查询入口；API E2E 和 Browser Smoke 已覆盖审计日志入口。长期归档、外部 SIEM、审计告警和细粒度权限后续补齐。
-- `AUDIT-RETENTION-001`：已补 `/api/v1/admin/audit-logs/export.csv` 脱敏 CSV 导出、Admin Web 导出入口和 `purge_audit_logs --older-than-days` 显式本地留存清理命令；外部 SIEM、自动归档、告警和更细粒度权限后续补齐。
+- `AUDIT-RETENTION-001`：已补 `/api/v1/admin/audit-logs/export.csv` 脱敏 CSV 导出、Admin Web 导出入口和 `purge_audit_logs --older-than-days` 显式本地留存清理命令；外部 SIEM、自动归档、告警和导出审批后续补齐。
 - `SECURITY-HEADERS-001`：已补后端基础安全响应头配置和 `/api/v1/health` 回归测试，覆盖 `X-Content-Type-Options`、`Referrer-Policy`、`Cross-Origin-Opener-Policy`、`X-Frame-Options` 和 `Permissions-Policy`；真实 TLS、HSTS、反向代理和 staging 域名仍后续验证。
 - `OPS-READINESS-001`：已补 `/api/v1/health/ready` readiness endpoint，当前检查默认数据库连接；依赖不可用时返回 HTTP 503 和脱敏状态，不暴露 DSN、异常堆栈或本地路径。Prometheus/Sentry/外部告警和真实 staging 仍后续验证。
 - `OPS-SQLITE-BACKUP-001`：已补 `backup_sqlite` management command，支持 dry-run、输出目录、文件名和显式覆盖，默认输出到 ignored 的 `backend/backups/`；该命令仅覆盖当前 SQLite-first 本地备份，不声明 PostgreSQL/MySQL 或远程备份完成。
@@ -70,12 +71,13 @@
 - `PURCHASE-AUTO-001`：已补 `purchase-links/parse` 外部商品链接解析入口，User Web 和 Mobile H5 手工代购页可把解析结果填入商品行；当前只做 host/item id/URL 规范化和人工确认备注，不抓取真实第三方页面、不自动下单。
 - `ACCOUNT-SETTINGS-001`：已补会员自助改密码 API、User Web/H5 注册并自动登录入口、Web `/settings` 和 H5 `/me/settings` 账户设置页；当前不接短信/邮件验证码、找回密码或第三方登录。
 - `ADMIN-PANELS-001`：已把 Admin Web `/dashboard` 和 `/roles` 从通用占位工作台替换为真实面板。Dashboard 由 `GET /api/v1/admin/dashboard` 按角色权限返回真实模块指标、工作队列和最近审计动作；角色权限页读取真实角色和权限覆盖矩阵。
-- `RBAC-ROLES-001`：已补 `iam.role.manage` 写权限、权限列表 API、角色创建/编辑 API 和 Admin Web `/roles` 新增/编辑弹窗；`super_admin` 内置角色不可编辑。角色删除、后台用户分配角色、create/update/delete 更细分权和外部 IAM 仍后续补齐。
-- `RBAC-ADMIN-USERS-001`：已补 `iam.admin.view` / `iam.admin.manage`，新增后台管理员账号 API 和 Admin Web `/admin-users` 页面，支持创建普通管理员、启停账号、重置密码和分配角色；内置超级管理员账号不可编辑，当前登录管理员不可修改自己的状态、角色或密码。账号删除、外部 IAM/SSO/MFA 和业务按钮级更细分权仍后续补齐。
+- `RBAC-ROLES-001`：已补 `iam.role.manage` 写权限、权限列表 API、角色创建/编辑 API 和 Admin Web `/roles` 新增/编辑弹窗；`super_admin` 内置角色不可编辑。角色删除、后台用户分配角色和外部 IAM 仍后续补齐。
+- `RBAC-ADMIN-USERS-001`：已补 `iam.admin.view` / `iam.admin.manage`，新增后台管理员账号 API 和 Admin Web `/admin-users` 页面，支持创建普通管理员、启停账号、重置密码和分配角色；内置超级管理员账号不可编辑，当前登录管理员不可修改自己的状态、角色或密码。账号删除和外部 IAM/SSO/MFA 仍后续补齐。
+- `RBAC-BUSINESS-ACTIONS-001`：已补 `members.manage`、`warehouses.manage`、`parcels.manage`、`parcels.export`、`waybills.manage`、`finance.manage`、`files.manage`、`purchases.manage`、`products.manage`、`tickets.manage`、`content.manage`、`audit.logs.export`、`growth.view` 和 `growth.manage`；后台业务写接口和 Admin Web 写入口已按模块级 action 权限控制。每个 create/update/delete 子动作和审批流仍后续补齐。
 
 ## Current Next Task
 
-任务图中的 `RBAC-ADMIN-USERS-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
+任务图中的 `RBAC-BUSINESS-ACTIONS-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
 
 - 生产化边界：补对象存储、PostgreSQL/MySQL/Redis 真实验证计划、告警和部署验证。
 - 需业务/合规确认的外部集成：真实支付、真实物流 API、真实自动采购下单和外部商品抓取。

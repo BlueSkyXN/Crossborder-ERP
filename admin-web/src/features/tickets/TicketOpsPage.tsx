@@ -39,6 +39,7 @@ import type { Ticket, TicketStatus, TicketType } from "./types";
 
 type WorkspaceContext = {
   allowedCodes: Set<string>;
+  permissionCodes: Set<string>;
 };
 
 type ActiveStatus = "ALL" | TicketStatus;
@@ -102,8 +103,10 @@ function filterRows<T>(rows: T[], keyword: string, pickText: (row: T) => unknown
 }
 
 export function TicketOpsPage() {
-  const { allowedCodes } = useOutletContext<WorkspaceContext>();
+  const { allowedCodes, permissionCodes } = useOutletContext<WorkspaceContext>();
   const hasPermission = allowedCodes.has("tickets.view");
+  const canManage = permissionCodes.has("tickets.manage");
+  const canManageFiles = permissionCodes.has("files.manage");
   const queryClient = useQueryClient();
   const { message } = AntdApp.useApp();
   const [replyForm] = Form.useForm<ReplyFormValues>();
@@ -146,6 +149,9 @@ export function TicketOpsPage() {
     mutationFn: async ({ ticketId, values }: { ticketId: number; values: ReplyFormValues }) => {
       let fileId = "";
       if (replyFile) {
+        if (!canManageFiles) {
+          throw new Error("缺少 files.manage，不能上传附件");
+        }
         const uploaded = await adminFilesApi.uploadFile(replyFile, "MESSAGE_ATTACHMENT");
         fileId = uploaded.file_id;
       }
@@ -235,7 +241,7 @@ export function TicketOpsPage() {
           </Button>
           <Button
             size="small"
-            disabled={record.status === "CLOSED"}
+            disabled={!canManage || record.status === "CLOSED"}
             loading={markProcessingMutation.isPending}
             onClick={() => markProcessingMutation.mutate(record.id)}
           >
@@ -252,6 +258,7 @@ export function TicketOpsPage() {
 
   return (
     <Space orientation="vertical" size={16} style={{ width: "100%" }}>
+      {!canManage && <Alert type="info" showIcon message="当前账号只读工单，缺少 tickets.manage。" />}
       <Row gutter={[16, 16]}>
         <Col xs={24} md={8}>
           <Card>
@@ -358,7 +365,7 @@ export function TicketOpsPage() {
               />
             </Card>
 
-            {selectedTicket.status !== "CLOSED" && (
+            {canManage && selectedTicket.status !== "CLOSED" && (
               <Card size="small" title="客服回复">
                 <Form
                   form={replyForm}
@@ -369,10 +376,14 @@ export function TicketOpsPage() {
                     <Input.TextArea rows={4} placeholder="输入给会员的处理说明" />
                   </Form.Item>
                   <Form.Item label="附件">
+                    {!canManageFiles && (
+                      <Alert type="info" showIcon message="当前账号缺少 files.manage，不能上传回复附件。" />
+                    )}
                     <input
                       key={replyFile?.name || "empty-ticket-reply-file"}
                       type="file"
                       accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+                      disabled={!canManageFiles}
                       onChange={(event) => setReplyFile(event.target.files?.[0] ?? null)}
                     />
                   </Form.Item>

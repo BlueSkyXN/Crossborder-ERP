@@ -48,6 +48,7 @@ import type {
 
 type WorkspaceContext = {
   allowedCodes: Set<string>;
+  permissionCodes: Set<string>;
 };
 
 type MemberFormValues = {
@@ -122,8 +123,11 @@ function serviceAdminOptions(admins: ServiceAdminUser[]) {
 }
 
 export function MemberOpsPage() {
-  const { allowedCodes } = useOutletContext<WorkspaceContext>();
+  const { allowedCodes, permissionCodes } = useOutletContext<WorkspaceContext>();
   const hasPermission = allowedCodes.has("members.view");
+  const canManage = permissionCodes.has("members.manage");
+  const canViewGrowth = permissionCodes.has("growth.view");
+  const canManageGrowth = permissionCodes.has("growth.manage");
   const queryClient = useQueryClient();
   const { message, modal } = AntdApp.useApp();
   const [form] = Form.useForm<MemberFormValues>();
@@ -158,7 +162,7 @@ export function MemberOpsPage() {
   const growthQuery = useQuery({
     queryKey: [...memberGrowthQueryKey, selectedMemberId],
     queryFn: () => memberOpsApi.getMemberGrowth(Number(selectedMemberId)),
-    enabled: hasPermission && Boolean(selectedMemberId),
+    enabled: hasPermission && canViewGrowth && Boolean(selectedMemberId),
   });
 
   const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
@@ -325,6 +329,7 @@ export function MemberOpsPage() {
               size="small"
               danger
               icon={<LockOutlined />}
+              disabled={!canManage}
               loading={actionLoading}
               onClick={() =>
                 modal.confirm({
@@ -342,13 +347,14 @@ export function MemberOpsPage() {
             <Button
               size="small"
               icon={<UnlockOutlined />}
+              disabled={!canManage}
               loading={actionLoading}
               onClick={() => unfreezeMutation.mutate(record.id)}
             >
               解冻
             </Button>
           )}
-          <Button size="small" onClick={() => setResetTarget(record)}>
+          <Button size="small" disabled={!canManage} onClick={() => setResetTarget(record)}>
             重置密码
           </Button>
         </Space>
@@ -436,7 +442,7 @@ export function MemberOpsPage() {
   ];
 
   const submitUpdate = (values: MemberFormValues) => {
-    if (!selectedMember) {
+    if (!selectedMember || !canManage) {
       return;
     }
     updateMutation.mutate({ memberId: selectedMember.id, values });
@@ -475,6 +481,7 @@ export function MemberOpsPage() {
         }
       >
         <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+          {!canManage && <Alert type="info" showIcon message="当前账号只读会员，缺少 members.manage。" />}
           {membersQuery.isError && (
             <Alert type="error" showIcon message={getErrorMessage(membersQuery.error)} />
           )}
@@ -544,7 +551,7 @@ export function MemberOpsPage() {
               </Descriptions.Item>
             </Descriptions>
 
-            <Form form={form} layout="vertical" onFinish={submitUpdate}>
+            <Form form={form} layout="vertical" disabled={!canManage} onFinish={submitUpdate}>
               <Row gutter={12}>
                 <Col xs={24} md={12}>
                   <Form.Item name="display_name" label="会员昵称">
@@ -576,79 +583,88 @@ export function MemberOpsPage() {
                 <Input.TextArea rows={4} maxLength={500} showCount />
               </Form.Item>
               <Space>
-                <Button type="primary" htmlType="submit" loading={updateMutation.isPending}>
-                  保存资料
-                </Button>
-                <Button onClick={() => form.resetFields()}>重置表单</Button>
+                {canManage && (
+                  <Button type="primary" htmlType="submit" loading={updateMutation.isPending}>
+                    保存资料
+                  </Button>
+                )}
+                {canManage && <Button onClick={() => form.resetFields()}>重置表单</Button>}
               </Space>
             </Form>
 
-            <Card
-              size="small"
-              title="积分推广"
-              extra={
-                <Button size="small" icon={<GiftOutlined />} onClick={() => setPointAdjustTarget(selectedMember)}>
-                  调整积分
-                </Button>
-              }
-            >
-              <Space orientation="vertical" size={12} style={{ width: "100%" }}>
-                {growthQuery.isError && <Alert type="error" showIcon message={getErrorMessage(growthQuery.error)} />}
-                <Row gutter={[12, 12]}>
-                  <Col xs={12} md={6}>
-                    <Statistic title="当前积分" value={growthQuery.data?.summary.points_balance ?? 0} />
-                  </Col>
-                  <Col xs={12} md={6}>
-                    <Statistic title="邀请码" value={growthQuery.data?.summary.referral_code || "-"} />
-                  </Col>
-                  <Col xs={12} md={6}>
-                    <Statistic title="有效邀请" value={growthQuery.data?.summary.active_invited_count ?? 0} />
-                  </Col>
-                  <Col xs={12} md={6}>
-                    <Statistic
-                      title="已确认返利"
-                      value={growthQuery.data?.summary.confirmed_rebate_amount || "0.00"}
-                      prefix={growthQuery.data?.summary.currency || "CNY"}
+            {canViewGrowth ? (
+              <Card
+                size="small"
+                title="积分推广"
+                extra={
+                  canManageGrowth ? (
+                    <Button size="small" icon={<GiftOutlined />} onClick={() => setPointAdjustTarget(selectedMember)}>
+                      调整积分
+                    </Button>
+                  ) : null
+                }
+              >
+                <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+                  {!canManageGrowth && <Alert type="info" showIcon message="当前账号只读积分推广，缺少 growth.manage。" />}
+                  {growthQuery.isError && <Alert type="error" showIcon message={getErrorMessage(growthQuery.error)} />}
+                  <Row gutter={[12, 12]}>
+                    <Col xs={12} md={6}>
+                      <Statistic title="当前积分" value={growthQuery.data?.summary.points_balance ?? 0} />
+                    </Col>
+                    <Col xs={12} md={6}>
+                      <Statistic title="邀请码" value={growthQuery.data?.summary.referral_code || "-"} />
+                    </Col>
+                    <Col xs={12} md={6}>
+                      <Statistic title="有效邀请" value={growthQuery.data?.summary.active_invited_count ?? 0} />
+                    </Col>
+                    <Col xs={12} md={6}>
+                      <Statistic
+                        title="已确认返利"
+                        value={growthQuery.data?.summary.confirmed_rebate_amount || "0.00"}
+                        prefix={growthQuery.data?.summary.currency || "CNY"}
+                      />
+                    </Col>
+                  </Row>
+                  {growthQuery.data?.summary.points_rule_note && (
+                    <Alert
+                      type="info"
+                      showIcon
+                      title={growthQuery.data.summary.points_rule_note}
+                      description={growthQuery.data.summary.rebate_rule_note}
                     />
-                  </Col>
-                </Row>
-                {growthQuery.data?.summary.points_rule_note && (
-                  <Alert
-                    type="info"
-                    showIcon
-                    title={growthQuery.data.summary.points_rule_note}
-                    description={growthQuery.data.summary.rebate_rule_note}
+                  )}
+                  <Table<PointLedger>
+                    size="small"
+                    rowKey="id"
+                    loading={growthQuery.isLoading}
+                    columns={pointLedgerColumns}
+                    dataSource={growthQuery.data?.point_ledgers ?? []}
+                    pagination={false}
+                    locale={{ emptyText: <Empty description="暂无积分流水" /> }}
                   />
-                )}
-                <Table<PointLedger>
-                  size="small"
-                  rowKey="id"
-                  loading={growthQuery.isLoading}
-                  columns={pointLedgerColumns}
-                  dataSource={growthQuery.data?.point_ledgers ?? []}
-                  pagination={false}
-                  locale={{ emptyText: <Empty description="暂无积分流水" /> }}
-                />
-                <Table<ReferralRelation>
-                  size="small"
-                  rowKey="id"
-                  loading={growthQuery.isLoading}
-                  columns={referralColumns}
-                  dataSource={growthQuery.data?.referrals ?? []}
-                  pagination={false}
-                  locale={{ emptyText: <Empty description="暂无邀请关系" /> }}
-                />
-                <Table<RebateRecord>
-                  size="small"
-                  rowKey="id"
-                  loading={growthQuery.isLoading}
-                  columns={rebateColumns}
-                  dataSource={growthQuery.data?.rebates ?? []}
-                  pagination={false}
-                  locale={{ emptyText: <Empty description="暂无返利记录" /> }}
-                />
-              </Space>
-            </Card>
+                  <Table<ReferralRelation>
+                    size="small"
+                    rowKey="id"
+                    loading={growthQuery.isLoading}
+                    columns={referralColumns}
+                    dataSource={growthQuery.data?.referrals ?? []}
+                    pagination={false}
+                    locale={{ emptyText: <Empty description="暂无邀请关系" /> }}
+                  />
+                  <Table<RebateRecord>
+                    size="small"
+                    rowKey="id"
+                    loading={growthQuery.isLoading}
+                    columns={rebateColumns}
+                    dataSource={growthQuery.data?.rebates ?? []}
+                    pagination={false}
+                    locale={{ emptyText: <Empty description="暂无返利记录" /> }}
+                  />
+                </Space>
+              </Card>
+            ) : (
+              <Alert type="info" showIcon message="当前账号不能查看积分推广，缺少 growth.view。" />
+            )}
           </Space>
         )}
       </Drawer>

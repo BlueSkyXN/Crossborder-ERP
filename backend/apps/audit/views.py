@@ -31,6 +31,7 @@ class AdminAuditLogExportView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "audit.logs.view"
+    method_permissions = {"GET": "audit.logs.export"}
 
     @extend_schema(tags=["admin-audit"], responses={200: OpenApiTypes.BINARY})
     def get(self, request):

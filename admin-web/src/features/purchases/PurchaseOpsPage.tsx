@@ -53,6 +53,7 @@ import type {
 
 type WorkspaceContext = {
   allowedCodes: Set<string>;
+  permissionCodes: Set<string>;
 };
 
 type ActiveStatus = "ALL" | PurchaseOrderStatus;
@@ -188,7 +189,8 @@ function buildOperationTimeline(order: PurchaseOrder) {
 }
 
 export function PurchaseOpsPage() {
-  const { allowedCodes } = useOutletContext<WorkspaceContext>();
+  const { allowedCodes, permissionCodes } = useOutletContext<WorkspaceContext>();
+  const canManage = permissionCodes.has("purchases.manage");
   const queryClient = useQueryClient();
   const { message } = AntdApp.useApp();
   const [reviewForm] = Form.useForm<ReviewFormValues>();
@@ -366,22 +368,22 @@ export function PurchaseOpsPage() {
   const renderActionButtons = (order: PurchaseOrder) => (
     <Space size={4} wrap>
       <Button size="small" title="查看详情" icon={<EyeOutlined />} onClick={() => setDetailOrderId(order.id)} />
-      {order.status === "PENDING_REVIEW" && (
+      {canManage && order.status === "PENDING_REVIEW" && (
         <Button size="small" type="primary" title="审核" icon={<CheckCircleOutlined />} onClick={() => openAction("review", order)} />
       )}
-      {order.status === "PENDING_PROCUREMENT" && (
+      {canManage && order.status === "PENDING_PROCUREMENT" && (
         <Button size="small" type="primary" title="采购" icon={<ShoppingOutlined />} onClick={() => openAction("procure", order)} />
       )}
-      {order.status === "PROCURED" && (
+      {canManage && order.status === "PROCURED" && (
         <Button size="small" type="primary" title="到货" icon={<TruckOutlined />} onClick={() => openAction("arrive", order)} />
       )}
-      {order.status === "ARRIVED" && (
+      {canManage && order.status === "ARRIVED" && (
         <Button size="small" type="primary" title="转包裹" icon={<ExportOutlined />} onClick={() => openAction("convert", order)} />
       )}
-      {["PENDING_REVIEW", "PENDING_PROCUREMENT", "PROCURED"].includes(order.status) && (
+      {canManage && ["PENDING_REVIEW", "PENDING_PROCUREMENT", "PROCURED"].includes(order.status) && (
         <Button size="small" title="异常" danger icon={<ExceptionOutlined />} onClick={() => openAction("exception", order)} />
       )}
-      {["PENDING_PAYMENT", "EXCEPTION"].includes(order.status) && (
+      {canManage && ["PENDING_PAYMENT", "EXCEPTION"].includes(order.status) && (
         <Button size="small" title="取消" icon={<CloseCircleOutlined />} onClick={() => openAction("cancel", order)} />
       )}
     </Space>
@@ -431,6 +433,7 @@ export function PurchaseOpsPage() {
         </div>
         <Button icon={<ReloadOutlined />} onClick={() => ordersQuery.refetch()}>刷新</Button>
       </div>
+      {!canManage && <Alert type="info" showIcon message="当前账号只读代购，缺少 purchases.manage。" />}
 
       <Row gutter={[16, 16]}>
         <Col xs={24} md={6}><Card><Statistic title="待审核" value={statusCounts.PENDING_REVIEW} suffix="单" /></Card></Col>

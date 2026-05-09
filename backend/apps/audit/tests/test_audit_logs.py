@@ -2,12 +2,14 @@ from datetime import timedelta
 from io import StringIO
 
 import pytest
+from django.contrib.auth.hashers import make_password
 from django.core.management import call_command
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.audit.models import AuditLog, AuditOperatorType
+from apps.iam.models import AdminUser, Permission, Role
 from apps.iam.services import seed_iam_demo_data
 from apps.members.services import seed_member_demo_data
 
@@ -33,6 +35,18 @@ def admin_login(client: APIClient, email="admin@example.com", password="password
 
 def admin_token(client: APIClient, email="admin@example.com") -> str:
     return admin_login(client, email=email).json()["data"]["access_token"]
+
+
+def create_admin_with_permissions(email: str, permission_codes: list[str]) -> AdminUser:
+    role = Role.objects.create(code=email.split("@", maxsplit=1)[0].replace(".", "_"), name=email)
+    role.permissions.set(Permission.objects.filter(code__in=permission_codes))
+    admin = AdminUser.objects.create(
+        email=email,
+        name=email,
+        password_hash=make_password("password123"),
+    )
+    admin.roles.set([role])
+    return admin
 
 
 def test_admin_mutation_writes_audit_log_and_redacts_sensitive_data(api_client, seeded_audit_data):
@@ -90,6 +104,8 @@ def test_audit_log_list_requires_audit_permission(api_client, seeded_audit_data)
 def test_audit_log_export_csv_requires_permission_and_keeps_redaction(api_client, seeded_audit_data):
     super_token = admin_token(api_client)
     warehouse_token = admin_token(api_client, email="warehouse@example.com")
+    create_admin_with_permissions("audit-viewer@example.com", ["dashboard.view", "audit.logs.view"])
+    audit_viewer_token = admin_token(api_client, email="audit-viewer@example.com")
     response = api_client.post(
         reverse("admin-wallet-recharge", kwargs={"user_id": 1}),
         {"amount": "10.00", "remark": "导出测试", "password": "should-not-leak"},
@@ -102,12 +118,22 @@ def test_audit_log_export_csv_requires_permission_and_keeps_redaction(api_client
         f"{reverse('admin-audit-log-export')}?action=admin-wallet-recharge",
         HTTP_AUTHORIZATION=f"Bearer {warehouse_token}",
     )
+    view_only_denied = api_client.get(
+        f"{reverse('admin-audit-log-export')}?action=admin-wallet-recharge",
+        HTTP_AUTHORIZATION=f"Bearer {audit_viewer_token}",
+    )
+    view_only_list = api_client.get(
+        f"{reverse('admin-audit-log-list')}?action=admin-wallet-recharge",
+        HTTP_AUTHORIZATION=f"Bearer {audit_viewer_token}",
+    )
     allowed = api_client.get(
         f"{reverse('admin-audit-log-export')}?action=admin-wallet-recharge",
         HTTP_AUTHORIZATION=f"Bearer {super_token}",
     )
 
     assert denied.status_code == 403
+    assert view_only_list.status_code == 200
+    assert view_only_denied.status_code == 403
     assert allowed.status_code == 200
     assert allowed["Content-Type"].startswith("text/csv")
     assert "audit-logs-export.csv" in allowed["Content-Disposition"]

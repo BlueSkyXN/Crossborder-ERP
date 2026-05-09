@@ -354,6 +354,25 @@ async function clickByText(page, text) {
   return clicked;
 }
 
+async function clickExactButtonText(page, text) {
+  const clicked = await evaluate(
+    page,
+    `(() => {
+      const normalized = (value) => (value || "").replace(/\\s+/g, " ").trim();
+      const targetText = ${JSON.stringify(text)};
+      const candidates = Array.from(document.querySelectorAll("button,a,[role='button']"));
+      const element = candidates.find((candidate) => normalized(candidate.textContent) === targetText);
+      if (!element) {
+        throw new Error("Exact clickable text not found: " + targetText);
+      }
+      element.click();
+      return normalized(element.textContent);
+    })()`,
+  );
+  await delay(250);
+  return clicked;
+}
+
 async function clickSubmitButton(page, text) {
   const clicked = await evaluate(
     page,
@@ -455,6 +474,55 @@ async function fillByPlaceholder(page, placeholder, value) {
   );
 }
 
+async function createMemberRemittanceFromBrowserSession(page, journey) {
+  return evaluate(
+    page,
+    `(async () => {
+      const persisted = JSON.parse(localStorage.getItem("crossborder-user-auth") || "{}");
+      const token = persisted?.state?.token;
+      if (!token) {
+        throw new Error("Missing member auth token for browser remittance");
+      }
+      const authHeader = { Authorization: \`Bearer \${token}\` };
+      const form = new FormData();
+      form.append("usage", "REMITTANCE_PROOF");
+      form.append(
+        "file",
+        new File(["%PDF-1.4\\n% QA-BROWSER-004 remittance proof\\n%%EOF"], "qa-browser-004-remittance.pdf", {
+          type: "application/pdf",
+        })
+      );
+      const uploadResponse = await fetch("/api/v1/files", {
+        method: "POST",
+        headers: authHeader,
+        body: form,
+      });
+      const uploadPayload = await uploadResponse.json();
+      if (!uploadResponse.ok || uploadPayload.code !== "OK") {
+        throw new Error("Browser remittance proof upload failed: " + JSON.stringify(uploadPayload));
+      }
+      const remittanceResponse = await fetch("/api/v1/remittances", {
+        method: "POST",
+        headers: {
+          ...authHeader,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: "18.88",
+          currency: "CNY",
+          proof_file_id: uploadPayload.data.file_id,
+          remark: ${JSON.stringify(journey.remittanceRemark)},
+        }),
+      });
+      const remittancePayload = await remittanceResponse.json();
+      if (!remittanceResponse.ok || remittancePayload.code !== "OK") {
+        throw new Error("Browser remittance create failed: " + JSON.stringify(remittancePayload));
+      }
+      return remittancePayload.data.request_no;
+    })()`,
+  );
+}
+
 async function waitForPlaceholder(page, placeholder) {
   return waitFor(page, `input placeholder ${placeholder}`, () =>
     evaluate(
@@ -523,11 +591,29 @@ async function runAdmin(debugPort, journey) {
   await waitForText(page, "应付款");
   await waitForText(page, "供应商");
   await waitForText(page, "新建应付款");
+  await clickByText(page, "线下汇款");
+  await waitForText(page, "汇款审核");
+  await fillByPlaceholder(page, "搜索单号、会员、凭证", journey.remittanceRemark);
+  await waitForText(page, journey.remittanceRemark);
+  await clickByText(page, "通过");
+  await waitForText(page, "审核通过线下汇款");
+  await fillByLabel(page, "审核备注", "QA-BROWSER-004 财务浏览器审核入账");
+  await clickByText(page, "确认入账");
+  await clickByText(page, "已入账");
+  await waitForText(page, journey.remittanceRemark);
   await navigate(page, `${ADMIN_URL}/members`, "会员管理");
   await waitForText(page, "user@example.com");
   await clickByText(page, "详情");
   await waitForText(page, "积分推广");
   await waitForText(page, "当前积分");
+  await navigate(page, `${ADMIN_URL}/tickets`, "客服工单");
+  await fillByPlaceholder(page, "搜索单号、会员、标题", journey.ticketTitle);
+  await waitForText(page, journey.ticketTitle);
+  await clickExactButtonText(page, "处理");
+  await waitForText(page, "客服回复");
+  await fillByLabel(page, "回复内容", journey.adminTicketReply);
+  await clickByText(page, "发送回复");
+  await waitForText(page, journey.adminTicketReply);
   await navigate(page, `${ADMIN_URL}/audit-logs`, "操作审计");
   await waitForText(page, "admin-login");
   await waitForText(page, "导出 CSV");
@@ -543,6 +629,7 @@ async function runAdmin(debugPort, journey) {
   assertNoIssues("Admin Web", page.issues);
   page.cdp.close();
   console.log("[QA-BROWSER-002] Admin Web scanned the browser-created parcel into stock");
+  console.log("[QA-BROWSER-004] Admin Web approved the browser-created remittance and replied to the browser-created ticket");
   console.log("[QA-BROWSER-001] Admin Web login, parcels, shipping batch, finance payable, growth, and audit smoke passed");
   console.log(
     "[ADMIN-PANELS-001] Admin Web dashboard, roles, admin users, warehouses, purchases, products, tickets, and content panels passed",
@@ -568,6 +655,21 @@ async function runUser(debugPort, journey) {
   await fillByLabel(page, "备注", "QA-BROWSER-002");
   await clickByText(page, "提交预报");
   await waitForText(page, journey.trackingNo);
+  await navigate(page, `${USER_URL}/finance`, "财务中心");
+  await waitForText(page, "提交线下汇款");
+  await fillByLabel(page, "汇款金额 CNY", "18.88");
+  await fillByLabel(page, "备注", journey.remittanceRemark);
+  journey.remittanceNo = await createMemberRemittanceFromBrowserSession(page, journey);
+  await navigate(page, `${USER_URL}/finance`, "财务中心");
+  await waitForText(page, journey.remittanceRemark);
+  await waitForText(page, "待审核");
+  await navigate(page, `${USER_URL}/tickets`, "消息中心");
+  await waitForText(page, "创建工单");
+  await fillByLabel(page, "标题", journey.ticketTitle);
+  await fillByLabel(page, "问题描述", journey.ticketContent);
+  await clickSubmitButton(page, "提交工单");
+  await waitForText(page, journey.ticketTitle);
+  await waitForText(page, "待处理");
   await navigate(page, `${USER_URL}/dashboard`, "会员中心");
   await waitForText(page, "积分推广");
   await waitForText(page, "邀请码");
@@ -579,7 +681,20 @@ async function runUser(debugPort, journey) {
   assertNoIssues("User Web", page.issues);
   page.cdp.close();
   console.log("[QA-BROWSER-002] User Web created a parcel forecast through the browser form");
+  console.log("[QA-BROWSER-004] User Web created a browser-authenticated remittance and support ticket");
   console.log("[QA-BROWSER-001] User Web login, parcels, and growth smoke passed");
+}
+
+async function verifyUserTicketReply(debugPort, journey) {
+  const page = await createPage(debugPort);
+  await navigate(page, `${USER_URL}/tickets`, "消息中心");
+  await waitForPlaceholder(page, "搜索单号、标题或内容");
+  await fillByPlaceholder(page, "搜索单号、标题或内容", journey.ticketTitle);
+  await waitForText(page, journey.ticketTitle);
+  await waitForText(page, journey.adminTicketReply);
+  assertNoIssues("User Web ticket reply verification", page.issues);
+  page.cdp.close();
+  console.log("[QA-BROWSER-004] User Web verified the admin ticket reply through the browser");
 }
 
 async function verifyUserParcelInStock(debugPort, journey) {
@@ -620,13 +735,21 @@ async function runMobile(debugPort) {
 let launched;
 try {
   launched = await launchChrome();
-  const journey = { trackingNo: `BRW-${Date.now()}` };
+  const journeyId = Date.now();
+  const journey = {
+    trackingNo: `BRW-${journeyId}`,
+    remittanceRemark: `QA-BROWSER-004-REM-${journeyId}`,
+    ticketTitle: `QA Browser Ticket ${journeyId}`,
+    ticketContent: "QA-BROWSER-004 用户端浏览器创建客服工单",
+    adminTicketReply: "QA-BROWSER-004 后台客服浏览器回复",
+  };
   console.log(`[QA-BROWSER-001] using Chrome: ${launched.chromePath}`);
   console.log(`[QA-BROWSER-001] using remote debugging port: ${launched.debugPort}`);
   console.log(`[QA-BROWSER-001] using temporary profile: ${USER_DATA_DIR}`);
   console.log(`[QA-BROWSER-002] using browser journey tracking number: ${journey.trackingNo}`);
   await runUser(launched.debugPort, journey);
   await runAdmin(launched.debugPort, journey);
+  await verifyUserTicketReply(launched.debugPort, journey);
   await verifyUserParcelInStock(launched.debugPort, journey);
   await runMobile(launched.debugPort);
 } finally {

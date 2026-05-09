@@ -336,7 +336,7 @@ export function TicketOpsPage() {
               <Timeline
                 items={selectedTicket.messages.map((item) => ({
                   color: item.sender_type === "ADMIN" ? "blue" : "green",
-                  children: (
+                  content: (
                     <Space orientation="vertical" size={4}>
                       <Space wrap>
                         <Tag color={item.sender_type === "ADMIN" ? "blue" : "green"}>

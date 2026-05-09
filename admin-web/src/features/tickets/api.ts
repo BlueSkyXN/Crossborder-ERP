@@ -15,7 +15,7 @@ export const ticketOpsApi = {
   markProcessing: (ticketId: number) =>
     requestData<Ticket>({ method: "POST", url: `/admin/tickets/${ticketId}/mark-processing` }),
   replyTicket: (ticketId: number, payload: TicketReplyPayload) =>
-    requestData<Ticket>({ method: "POST", url: `/admin/tickets/${ticketId}/reply`, data: payload }),
+    requestData<Ticket>({ method: "POST", url: `/admin/tickets/${ticketId}/messages`, data: payload }),
   closeTicket: (ticketId: number, payload: TicketClosePayload) =>
     requestData<Ticket>({ method: "POST", url: `/admin/tickets/${ticketId}/close`, data: payload }),
 };

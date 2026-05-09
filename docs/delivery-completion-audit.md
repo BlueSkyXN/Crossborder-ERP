@@ -14,6 +14,7 @@
 - 基础应用安全响应头，包括 `nosniff`、Referrer Policy、COOP、X-Frame-Options 和 Permissions Policy。
 - 运维 readiness endpoint，当前检查默认数据库连接。
 - SQLite-first 本地显式备份命令。
+- 本地软删除文件显式清理命令。
 - `npm run e2e` 自动验收主链路和最小代购链路。
 - `npm run e2e:browser` 自动验收 Admin Web、User Web、Mobile H5 登录、关键页面 smoke 和一条真实包裹预报/入库/回看浏览器旅程。
 - CSV 和标准 `.xlsx` 批量预报导入。
@@ -32,6 +33,7 @@
 | 基础应用安全响应头 | 本地已验证 health endpoint 输出最小安全 header；TLS/HSTS 不声明完成 | `docs/agent-runs/2026-05-09-SECURITY-HEADERS-001.md`、`backend/apps/common/tests/test_health.py` |
 | 运维 readiness 检查 | 本地已验证默认数据库连接检查；外部监控/告警不声明完成 | `docs/agent-runs/2026-05-09-OPS-READINESS-001.md`、`backend/apps/common/tests/test_health.py` |
 | SQLite 本地备份 | 本地已验证 `backup_sqlite --dry-run` 和备份测试；生产数据库备份不声明完成 | `docs/agent-runs/2026-05-09-OPS-SQLITE-BACKUP-001.md`、`backend/apps/common/tests/test_backup_sqlite.py` |
+| 本地软删除文件清理 | 本地已验证 `purge_deleted_files --dry-run` 和清理测试；对象存储生命周期不声明完成 | `docs/agent-runs/2026-05-09-STORAGE-CLEANUP-001.md`、`backend/apps/files/tests/test_purge_deleted_files.py` |
 | 证明纯 AI 驱动全栈 ERP | 每个正式任务留摘要证据，不记录过细过程 | `docs/ai-development-proof.md`、`docs/agent-runs/` |
 | 每轮任务 PR、更新 PR 信息并合并 main | 已按任务分支和 PR 合并推进；最后任务以 PR 合并收口 | GitHub PR 记录、`docs/agent-runs/` |
 
@@ -56,6 +58,7 @@
 | 基础安全响应头 | 后端 health endpoint 已回归验证最小安全 header；HSTS/TLS 仍后续验证 | `docs/agent-runs/2026-05-09-SECURITY-HEADERS-001.md` |
 | 运维 readiness | 后端 `/api/v1/health/ready` 已验证默认数据库连接检查和 503 脱敏失败响应 | `docs/agent-runs/2026-05-09-OPS-READINESS-001.md` |
 | SQLite 本地备份 | `backup_sqlite` 已验证可生成可读取备份，并支持 dry-run、覆盖保护和边界失败 | `docs/agent-runs/2026-05-09-OPS-SQLITE-BACKUP-001.md` |
+| 本地文件清理 | `purge_deleted_files` 已验证 dry-run、真实删除、ACTIVE/未到期保护、missing、unsafe 路径和非普通文件跳过 | `docs/agent-runs/2026-05-09-STORAGE-CLEANUP-001.md` |
 
 ## 验收命令
 
@@ -82,6 +85,7 @@ git diff --check
 - 真实 TLS、HSTS、反向代理和 staging 域名未验证；当前只完成应用层基础安全 header。
 - Prometheus/Sentry/外部告警和真实 staging 探针未验证；当前只完成本地 readiness endpoint。
 - PostgreSQL/MySQL 生产备份、远程备份、加密、轮转和恢复演练未验证；当前只完成 SQLite 本地显式备份命令。
+- 对象存储生命周期、CDN、缩略图、病毒扫描和远程文件归档未验证；当前只完成本地软删除文件清理命令。
 - `npm run e2e:browser` 已纳入仓库，并覆盖一条真实包裹预报/入库/回看旅程；Playwright、组件级测试、视觉回归和更多业务旅程仍需后续增强。
 - 真实支付、自动采购、对象存储、外部 SIEM/审计告警、真实打印硬件、物流 API 后续补齐。
 - 复杂业务规则保持 `TODO_CONFIRM`。

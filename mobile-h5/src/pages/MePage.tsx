@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 import { fetchMe } from "../features/auth/api";
 import { useAuthStore } from "../features/auth/store";
+import { fetchGrowthSummary } from "../features/growth/api";
 import { fetchPurchaseOrders, fetchPurchaseWallet } from "../features/purchases/api";
 import styles from "./PurchaseMobile.module.css";
 
@@ -30,6 +31,10 @@ export function MePage() {
   const walletQuery = useQuery({
     queryKey: ["mobile", "member", "purchase-wallet"],
     queryFn: fetchPurchaseWallet,
+  });
+  const growthQuery = useQuery({
+    queryKey: ["mobile", "member", "growth-summary"],
+    queryFn: fetchGrowthSummary,
   });
 
   useEffect(() => {
@@ -95,6 +100,32 @@ export function MePage() {
           <div className={styles.metric}>
             <span>代购订单</span>
             <strong>{orders.length}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.panel}>
+        <div className={styles.sectionHead}>
+          <span>Growth</span>
+          <h2>积分推广</h2>
+          <p>邀请码、邀请关系和返利统计。</p>
+        </div>
+        <div className={styles.quickGrid}>
+          <div className={styles.metric}>
+            <span>当前积分</span>
+            <strong>{growthQuery.data?.points_balance ?? 0}</strong>
+          </div>
+          <div className={styles.metric}>
+            <span>邀请码</span>
+            <strong>{growthQuery.data?.referral_code || user?.profile?.member_no || "-"}</strong>
+          </div>
+          <div className={styles.metric}>
+            <span>有效邀请</span>
+            <strong>{growthQuery.data?.active_invited_count ?? 0}</strong>
+          </div>
+          <div className={styles.metric}>
+            <span>已确认返利</span>
+            <strong>{formatMoney(growthQuery.data?.confirmed_rebate_amount || "0.00", growthQuery.data?.currency || "CNY")}</strong>
           </div>
         </div>
       </section>

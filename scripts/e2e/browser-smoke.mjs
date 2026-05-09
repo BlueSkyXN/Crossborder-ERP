@@ -312,9 +312,14 @@ async function runAdmin(debugPort) {
   await waitForText(page, "应付款");
   await waitForText(page, "供应商");
   await waitForText(page, "新建应付款");
+  await navigate(page, `${ADMIN_URL}/members`, "会员管理");
+  await waitForText(page, "user@example.com");
+  await clickByText(page, "详情");
+  await waitForText(page, "积分推广");
+  await waitForText(page, "当前积分");
   assertNoIssues("Admin Web", page.issues);
   page.cdp.close();
-  console.log("[QA-BROWSER-001] Admin Web login, parcels, shipping batch, and finance payable smoke passed");
+  console.log("[QA-BROWSER-001] Admin Web login, parcels, shipping batch, finance payable, and growth smoke passed");
 }
 
 async function runUser(debugPort) {
@@ -325,9 +330,12 @@ async function runUser(debugPort) {
   await waitForText(page, "批量预报");
   await waitForText(page, "选择 CSV 文件");
   await waitForText(page, "导出");
+  await navigate(page, `${USER_URL}/dashboard`, "会员中心");
+  await waitForText(page, "积分推广");
+  await waitForText(page, "邀请码");
   assertNoIssues("User Web", page.issues);
   page.cdp.close();
-  console.log("[QA-BROWSER-001] User Web login and parcels smoke passed");
+  console.log("[QA-BROWSER-001] User Web login, parcels, and growth smoke passed");
 }
 
 async function runMobile(debugPort) {
@@ -337,9 +345,12 @@ async function runMobile(debugPort) {
   await waitForPath(page, "/ship");
   await waitForText(page, "复制地址");
   await waitForText(page, "我的包裹");
+  await navigate(page, `${MOBILE_URL}/me`, "我的");
+  await waitForText(page, "积分推广");
+  await waitForText(page, "邀请码");
   assertNoIssues("Mobile H5", page.issues);
   page.cdp.close();
-  console.log("[QA-BROWSER-001] Mobile H5 login and ship smoke passed");
+  console.log("[QA-BROWSER-001] Mobile H5 login, ship, and growth smoke passed");
 }
 
 let launched;

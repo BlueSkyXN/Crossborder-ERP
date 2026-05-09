@@ -26,7 +26,7 @@
 | `QA-BROWSER-001` | P1 | 浏览器级 E2E | system Chrome CDP 三端 smoke，覆盖登录和关键页面 | 已完成：不下载浏览器，不使用用户 profile，CI 可重复 |
 | `SHIP-BATCH-001` | P2 | 发货批次/转单/打印 | 发货批次模型、运单归批、批量轨迹、转单号、打印模板占位 | 已完成：不接硬件；打印只生成模板数据 |
 | `PAYABLE-001` | P2 | 供应商/成本/应付 | 供应商、成本类型、应付款、审批/核销基础 | 已完成：与应收钱包分离，金额精度和状态测试 |
-| `GROWTH-001` | P2 | 积分/推广/返利 | 积分流水、积分兑换占位、邀请关系、返利统计 | 规则不明确项保持 `TODO_CONFIRM` |
+| `GROWTH-001` | P2 | 积分/推广/返利 | 积分流水、积分兑换占位、邀请关系、返利统计 | 已完成基础；规则不明确项保持 `TODO_CONFIRM` |
 | `PURCHASE-AUTO-001` | P3 | 外链解析/自动采购 | 外部链接解析 provider 接口、人工 fallback、合规边界 | 不抓取真实第三方前不声明自动采购完成 |
 
 ## Completed Production Gap Tasks
@@ -42,17 +42,15 @@
 - `QA-BROWSER-001`：已补 system Chrome CDP 浏览器 smoke，自动启动临时 SQLite/media/profile 下的后端和三端前端，覆盖 Admin Web、User Web、Mobile H5 登录和关键页面，并纳入 CI `Browser Smoke` job；不下载浏览器，不使用用户日常 Chrome profile。
 - `SHIP-BATCH-001`：已补后台发货批次模型/API，支持创建批次、待发货运单归批/移出、锁定后批量发货、批量轨迹、转单号和承运商批次号；Admin Web 运单处理页已增加批次列表、详情、归批、批量发货和面单/拣货单/交接单打印模板数据预览入口。打印仍只生成结构化模板数据，不接真实硬件。
 - `PAYABLE-001`：已补后台供应商、成本类型和应付款模型/API，支持应付款待审核、确认、核销和取消状态流；Admin Web 财务页已增加应付款、供应商和成本类型入口，API E2E 和 Browser Smoke 已覆盖基础链路。真实银行付款、自动打款和外部财务系统同步仍未接入。
+- `GROWTH-001`：已补会员积分流水、邀请关系、返利记录和奖励积分统计；Admin Web 会员详情可审计积分/邀请/返利并可手工调整积分，User Web 和 Mobile H5 个人中心已展示积分推广入口；API E2E、后端测试和 Browser Smoke 已覆盖基础链路。真实联盟、提现、税务、多级分销和最终积分/返利规则仍未接入。
 
 ## Current Next Task
 
-`GROWTH-001` 是当前下一项，因为供应商、成本类型和应付基础已补齐，积分、推广和返利仍是源报告里的用户增长缺口。
+任务图中的 `GROWTH-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
 
-建议 `GROWTH-001` 范围：
-
-- 新增积分流水、邀请关系和返利统计基础模型/API。
-- 明确积分/返利与钱包余额、PaymentOrder 的边界。
-- User Web、Mobile H5 和 Admin Web 增加基础入口。
-- 规则不明确项保持 `TODO_CONFIRM`，并补状态、权限和 E2E 测试。
+- Excel 原生解析增强：确认 `.xlsx` 是硬需求后，再引入受控依赖、模板和回归测试。
+- 完整浏览器旅程增强：在 system Chrome CDP smoke 之外补更完整业务流、视觉回归或组件级测试。
+- 审计日志/生产化边界：补后台关键操作日志、对象存储、PostgreSQL/MySQL/Redis 真实验证计划和部署验证。
 
 ## Completion Boundary
 

@@ -129,6 +129,7 @@
 - 首发国家、渠道和币种。
 - 汇款渠道、银行账户展示和对账规则。
 - 供应商结算账户、付款审批和真实付款规则。
+- 积分获取/兑换比例、邀请归因、返利比例、结算周期、提现、税务和风控规则。
 - 无主包裹认领凭证。
 - 真实打印模板。
 - 线上支付回调。
@@ -148,15 +149,16 @@
 | 邮件/短信/验证码 | 真实通道需要账号、回调和风控 | 当前用 no-op/console backend；验证码规则保持 `TODO_CONFIRM` |
 | 支付/物流/商品外部接口 | 真实接口涉及密钥、回调、签名、失败补偿 | P0 只做人工充值、线下汇款人工审核、余额支付、人工轨迹和手工代购 |
 | 应付核销 | 当前只记录人工核销凭证，不连接真实银行、自动打款或外部财务系统 | `PAYABLE-001` 已保持应付与钱包/PaymentOrder 分离；真实付款和供应商对账后续单独验证 |
+| 积分/推广/返利 | 当前只记录积分流水、邀请关系和返利统计，不接真实联盟、提现、税务或多级分销 | `GROWTH-001` 已保持返利与钱包/PaymentOrder 分离；最终规则统一标记 `TODO_CONFIRM` |
 | 浏览器测试依赖 | Playwright 浏览器二进制下载会占用磁盘，也可能写缓存 | 当前 `npm run e2e:browser` 使用系统 Chrome/Chromium 和 `.tmp/browser-e2e/` 临时 profile；不下载浏览器，不使用用户日常 profile |
 | Node/Python 版本 | 本机 `python3` 可能不是 3.12；Node 版本较新可能带来依赖兼容问题 | Python 由 `uv` 项目本地管理；前端依赖锁定后再验证 |
 
 ## 下一步
 
-按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前已进入源报告生产缺口收敛阶段，下一任务是 `GROWTH-001`：
+按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `GROWTH-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
 
 ```text
-补齐积分、推广和返利基础。
+Excel 原生解析增强 / 完整浏览器旅程增强 / 审计日志与生产化边界。
 ```
 
 当前执行约束：不使用 Docker，不启动 PostgreSQL/MySQL/Redis；验证以本地 `.venv`、SQLite、pytest、API E2E 和 system Chrome browser smoke 为主。PostgreSQL/MySQL/Redis 只做配置兼容，不做真实验证。

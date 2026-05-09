@@ -4,6 +4,7 @@ from rest_framework import exceptions, status
 from rest_framework.views import APIView
 
 from apps.common.responses import success_response
+from apps.common.throttles import LoginRateThrottle
 from apps.iam.authentication import AdminTokenAuthentication
 from apps.iam.permissions import HasAdminPermission
 
@@ -69,6 +70,7 @@ class RegisterView(APIView):
 class MemberLoginView(APIView):
     authentication_classes = []
     permission_classes = []
+    throttle_classes = [LoginRateThrottle]
 
     @extend_schema(
         tags=["auth"],

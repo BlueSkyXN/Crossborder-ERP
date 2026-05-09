@@ -5,6 +5,7 @@ import {
   DollarOutlined,
   FileSearchOutlined,
   FileTextOutlined,
+  GlobalOutlined,
   InboxOutlined,
   MessageOutlined,
   SafetyOutlined,
@@ -88,6 +89,14 @@ export const adminRouteMeta: AdminRouteMeta[] = [
     label: "商品管理",
     icon: <ShoppingOutlined />,
     description: "商品资料、分类和基础上架信息。",
+  },
+  {
+    permission: "regions.view",
+    resource: "regions",
+    path: "/regions",
+    label: "地区管理",
+    icon: <GlobalOutlined />,
+    description: "国家/地区、省州、城市等基础资料维护。",
   },
   {
     permission: "tickets.view",

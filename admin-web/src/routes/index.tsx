@@ -16,6 +16,7 @@ import { MemberOpsPage } from "../features/members/MemberOpsPage";
 import { ParcelWmsPage } from "../features/parcels/ParcelWmsPage";
 import { ProductCatalogPage } from "../features/products/ProductCatalogPage";
 import { PurchaseOpsPage } from "../features/purchases/PurchaseOpsPage";
+import { RegionManagePage } from "../features/regions/RegionManagePage";
 import { TicketOpsPage } from "../features/tickets/TicketOpsPage";
 import { WaybillOpsPage } from "../features/waybills/WaybillOpsPage";
 import { WarehouseConfigPage } from "../features/warehouses/WarehouseConfigPage";
@@ -52,6 +53,8 @@ export const router = createBrowserRouter([
                 <PurchaseOpsPage />
               ) : route.resource === "products" ? (
                 <ProductCatalogPage />
+              ) : route.resource === "regions" ? (
+                <RegionManagePage />
               ) : route.resource === "tickets" ? (
                 <TicketOpsPage />
               ) : route.resource === "content" ? (

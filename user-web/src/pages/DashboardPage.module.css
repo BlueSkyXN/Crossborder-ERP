@@ -203,6 +203,23 @@
   font-weight: 800;
 }
 
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.cardActions button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 800;
+}
+
 .skeleton,
 .empty {
   padding: 28px;

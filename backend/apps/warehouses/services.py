@@ -71,7 +71,12 @@ def seed_warehouse_demo_data() -> None:
         channel=air,
         name="测试空运基础计费",
         defaults={
-            "rule_json": {"TODO_CONFIRM": "首重续重、体积重、偏远费、保险费后续确认"},
+            "rule_json": {
+                "first_weight_kg": 0.5,
+                "first_weight_fee": "30.00",
+                "additional_per_kg": "15.00",
+                "volumetric_divisor": 5000,
+            },
             "status": ConfigStatus.ACTIVE,
         },
     )
@@ -79,7 +84,12 @@ def seed_warehouse_demo_data() -> None:
         channel=sea,
         name="测试海运基础计费",
         defaults={
-            "rule_json": {"TODO_CONFIRM": "首重续重、体积重、偏远费、保险费后续确认"},
+            "rule_json": {
+                "first_weight_kg": 1.0,
+                "first_weight_fee": "20.00",
+                "additional_per_kg": "8.00",
+                "volumetric_divisor": 6000,
+            },
             "status": ConfigStatus.ACTIVE,
         },
     )
@@ -102,3 +112,65 @@ def seed_warehouse_demo_data() -> None:
             code=code,
             defaults={"name": name, "price": "0.00", "status": ConfigStatus.ACTIVE},
         )
+
+
+# ─── Freight Estimation ─────────────────────────────────────
+
+from decimal import Decimal, ROUND_HALF_UP  # noqa: E402
+import math  # noqa: E402
+
+
+def _compute_volumetric_weight(length_cm: float, width_cm: float, height_cm: float, divisor: int) -> Decimal:
+    vol = Decimal(str(length_cm)) * Decimal(str(width_cm)) * Decimal(str(height_cm))
+    return (vol / Decimal(str(divisor))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def estimate_freight(
+    *,
+    channel_id: int,
+    weight_kg: float,
+    length_cm: float = 0,
+    width_cm: float = 0,
+    height_cm: float = 0,
+) -> dict:
+    """Estimate shipping cost using active RatePlan of the given channel."""
+    try:
+        channel = ShippingChannel.objects.get(pk=channel_id, status=ConfigStatus.ACTIVE)
+    except ShippingChannel.DoesNotExist:
+        return {"error": "渠道不存在或已停用", "fee": None}
+
+    rate_plan = RatePlan.objects.filter(channel=channel, status=ConfigStatus.ACTIVE).first()
+    if not rate_plan:
+        return {"error": "该渠道暂无可用计费方案", "fee": None}
+
+    rule = rate_plan.rule_json
+    first_weight_kg = Decimal(str(rule.get("first_weight_kg", 0.5)))
+    first_weight_fee = Decimal(str(rule.get("first_weight_fee", "0")))
+    additional_per_kg = Decimal(str(rule.get("additional_per_kg", "0")))
+    volumetric_divisor = int(rule.get("volumetric_divisor", 5000))
+
+    actual_weight = Decimal(str(weight_kg))
+    vol_weight = Decimal("0")
+    if length_cm > 0 and width_cm > 0 and height_cm > 0:
+        vol_weight = _compute_volumetric_weight(length_cm, width_cm, height_cm, volumetric_divisor)
+
+    billable_weight = max(actual_weight, vol_weight)
+
+    if billable_weight <= first_weight_kg:
+        fee = first_weight_fee
+    else:
+        extra_kg = billable_weight - first_weight_kg
+        extra_units = Decimal(str(math.ceil(float(extra_kg))))
+        fee = first_weight_fee + extra_units * additional_per_kg
+
+    return {
+        "channel_code": channel.code,
+        "channel_name": channel.name,
+        "actual_weight_kg": str(actual_weight),
+        "volumetric_weight_kg": str(vol_weight),
+        "billable_weight_kg": str(billable_weight),
+        "fee": str(fee.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+        "currency": "CNY",
+        "rate_plan": rate_plan.name,
+        "error": None,
+    }

@@ -14,6 +14,7 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 
 import { ForbiddenPage } from "../../pages/ForbiddenPage";
 import { fetchAdminDashboard } from "./api";
+import { DashboardCharts } from "./DashboardCharts";
 import type { DashboardAuditLog, DashboardCard, DashboardModule, DashboardQueueItem, DashboardTone } from "./types";
 
 type WorkspaceContext = {
@@ -203,6 +204,14 @@ export function AdminDashboardPage() {
             <DashboardSummaryCard card={card} />
           </Col>
         ))}
+      </Row>
+
+      <Row gutter={[16, 16]}>
+        <Col span={24}>
+          <Card title="月度趋势">
+            <DashboardCharts />
+          </Card>
+        </Col>
       </Row>
 
       <Row gutter={[16, 16]}>

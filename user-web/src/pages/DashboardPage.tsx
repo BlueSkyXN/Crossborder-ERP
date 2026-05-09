@@ -20,7 +20,9 @@ import { useNavigate } from "react-router-dom";
 
 import { fetchMe } from "../features/auth/api";
 import { useAuthStore } from "../features/auth/store";
+import { FreightEstimateCard } from "../features/dashboard/FreightEstimateCard";
 import { fetchGrowthSummary } from "../features/growth/api";
+import { fetchParcels } from "../features/parcels/api";
 import { fetchPurchaseOrders } from "../features/purchases/api";
 import { fetchWarehouseAddress, fetchWarehouses } from "../features/warehouses/api";
 import { fetchWallet, fetchWaybills } from "../features/waybills/api";
@@ -69,6 +71,10 @@ export function DashboardPage() {
   const purchaseOrdersQuery = useQuery({
     queryKey: ["member", "purchase-orders"],
     queryFn: fetchPurchaseOrders,
+  });
+  const parcelsQuery = useQuery({
+    queryKey: ["member", "parcels"],
+    queryFn: fetchParcels,
   });
   const walletQuery = useQuery({
     queryKey: ["member", "wallet"],
@@ -128,15 +134,17 @@ export function DashboardPage() {
     addressQuery.isError ||
     waybillsQuery.isError ||
     purchaseOrdersQuery.isError ||
+    parcelsQuery.isError ||
     walletQuery.isError ||
     growthQuery.isError;
   const isLoading = meQuery.isLoading || warehousesQuery.isLoading || addressQuery.isLoading;
   const waybills = waybillsQuery.data ?? [];
+  const parcels = parcelsQuery.data ?? [];
   const purchaseOrders = purchaseOrdersQuery.data ?? [];
   const pendingPaymentWaybills = waybills.filter((waybill) => waybill.status === "PENDING_PAYMENT");
   const pendingPaymentPurchases = purchaseOrders.filter((order) => order.status === "PENDING_PAYMENT");
   const statusEntries = [
-    { label: "待预报包裹", value: 0, icon: <InboxOutlined /> },
+    { label: "待预报包裹", value: parcels.filter((parcel) => parcel.status === "PENDING_INBOUND").length, icon: <InboxOutlined /> },
     { label: "待打包运单", value: waybills.filter((waybill) => waybill.status === "PENDING_PACKING").length, icon: <TruckOutlined /> },
     {
       label: "待支付金额",
@@ -185,10 +193,18 @@ export function DashboardPage() {
             </button>
             <button
               type="button"
-              onClick={() => document.getElementById("growth-panel")?.scrollIntoView({ block: "start" })}
+              onClick={() => navigate("/growth/referrals")}
             >
               <GiftOutlined />
-              积分推广
+              推广邀请
+            </button>
+            <button type="button" onClick={() => navigate("/growth/points")}>
+              <GiftOutlined />
+              积分明细
+            </button>
+            <button type="button" onClick={() => navigate("/growth/rebates")}>
+              <GiftOutlined />
+              返利记录
             </button>
             <button type="button" onClick={() => navigate("/tickets")}>
               <MessageOutlined />
@@ -350,7 +366,14 @@ export function DashboardPage() {
               </strong>
             </li>
           </ul>
+          <div className={styles.cardActions}>
+            <button type="button" onClick={() => navigate("/growth/referrals")}>查看邀请</button>
+            <button type="button" onClick={() => navigate("/growth/points")}>积分流水</button>
+            <button type="button" onClick={() => navigate("/growth/rebates")}>返利明细</button>
+          </div>
         </div>
+
+        <FreightEstimateCard />
       </section>
 
       <section className={styles.statusGrid}>

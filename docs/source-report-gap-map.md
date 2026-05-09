@@ -10,7 +10,7 @@
 - Admin Web、User Web、Mobile H5 已覆盖登录、仓库地址、包裹预报、扫描入库、申请打包、审核计费、余额支付、发货轨迹、确认收货、商品/购物车/手工代购最小链路。
 - `npm run e2e` 已覆盖 API 级 P0 主流程，并已把线下汇款审核入账纳入主链路资金来源。
 
-但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FILE-SNIFF-001` 已补齐上传文件扩展名/MIME/基础文件头一致性校验；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 模板下载和批量预报解析；`CSV-EXPORT-SAFE-001` 已补齐 CSV 导出公式样式字段转义；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础；`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`QA-BROWSER-003` 已加固 Browser Smoke 导航等待和失败诊断；`QA-BROWSER-004` 已补齐财务汇款审核和客服工单回复跨面板浏览器旅程；`QA-BROWSER-005` 已补齐运单创建、后台审核计费、余额支付、后台发货、轨迹回看和确认收货的浏览器旅程；`CI-EVIDENCE-001` 已补齐 Agent 证据 CI 门禁；`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础；`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础；`GROWTH-001` 已补齐积分流水、邀请关系、返利记录统计和三端入口基础；`AUDITLOG-001` 已补齐后台关键写操作审计日志和查询面板；`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令；`SECURITY-HEADERS-001` 已补齐基础应用安全响应头配置和测试；`OPS-READINESS-001` 已补齐默认数据库 readiness 检查；`OPS-SQLITE-BACKUP-001` 已补齐 SQLite-first 本地备份命令；`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令；`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口；`ACCOUNT-SETTINGS-001` 已补齐前台注册、账户设置和会员自助改密码基础；`ACCOUNT-RESET-001` 已补齐会员找回密码和 reset token 重置密码闭环；`ADMIN-PANELS-001` 已把后台 dashboard/roles 从固定假数据占位面板替换为真实接口面板；`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环；`RBAC-ADMIN-USERS-001` 已补齐管理员账号创建、启停、密码重置和角色分配闭环；`RBAC-BUSINESS-ACTIONS-001` 已补齐后台业务写操作的模块级 action 权限拆分；`CONFIG-EXTERNAL-SERVICES-001` 已补齐 PostgreSQL/MySQL/Redis/Celery 的无连接 DSN 边界检查；`RBAC-DELETE-001` 已补齐角色与管理员账号安全删除闭环；`RBAC-IAM-ACTIONS-001` 已补齐 IAM 角色/管理员账号 create/update/delete 细权限拆分。剩余差距集中在真实生产部署/TLS/HSTS/监控/告警/远程备份/对象存储/病毒扫描等运维边界、需要业务/合规确认的真实外部下单/支付/物流集成、其他业务模块 create/update/delete 子权限/审批流，以及视觉回归/组件级测试/更大范围浏览器流。
+但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FILE-SNIFF-001` 已补齐上传文件扩展名/MIME/基础文件头一致性校验；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 模板下载和批量预报解析；`CSV-EXPORT-SAFE-001` 已补齐 CSV 导出公式样式字段转义；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础；`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`QA-BROWSER-003` 已加固 Browser Smoke 导航等待和失败诊断；`QA-BROWSER-004` 已补齐财务汇款审核和客服工单回复跨面板浏览器旅程；`QA-BROWSER-005` 已补齐运单创建、后台审核计费、余额支付、后台发货、轨迹回看和确认收货的浏览器旅程；`CI-EVIDENCE-001` 已补齐 Agent 证据 CI 门禁；`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础；`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础；`GROWTH-001` 已补齐积分流水、邀请关系、返利记录统计和三端入口基础；`AUDITLOG-001` 已补齐后台关键写操作审计日志和查询面板；`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令；`SECURITY-HEADERS-001` 已补齐基础应用安全响应头配置和测试；`OPS-READINESS-001` 已补齐默认数据库 readiness 检查；`OPS-SQLITE-BACKUP-001` 已补齐 SQLite-first 本地备份命令；`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令；`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口；`ACCOUNT-SETTINGS-001` 已补齐前台注册、账户设置和会员自助改密码基础；`ACCOUNT-RESET-001` 已补齐会员找回密码和 reset token 重置密码闭环；`ADMIN-PANELS-001` 已把后台 dashboard/roles 从固定假数据占位面板替换为真实接口面板；`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环；`RBAC-ADMIN-USERS-001` 已补齐管理员账号创建、启停、密码重置和角色分配闭环；`RBAC-BUSINESS-ACTIONS-001` 已补齐后台业务写操作的模块级 action 权限拆分；`CONFIG-EXTERNAL-SERVICES-001` 已补齐 PostgreSQL/MySQL/Redis/Celery 的无连接 DSN 边界检查；`RBAC-DELETE-001` 已补齐角色与管理员账号安全删除闭环；`RBAC-IAM-ACTIONS-001` 已补齐 IAM 角色/管理员账号 create/update/delete 细权限拆分；`ERP-ENHANCE-001` 已补齐国家/地区层级数据管理与种子数据、商品多语言翻译模型与 API、商品属性体系（类型/分类/可筛选）、运费估算引擎（首重+续重+体积重）、Admin/User/Mobile 三端国际化框架、前端仪表盘图表与地区管理面板、用户端运费估算与积分推广返利独立页、移动端首页轮播瀑布流与左右分类布局、API 限流保护（LocMemCache 三级阈值）和领域事件信号（包裹/运单/支付/会员）。剩余差距集中在真实生产部署/TLS/HSTS/监控/告警/远程备份/对象存储/病毒扫描等运维边界、需要业务/合规确认的真实外部下单/支付/物流集成、其他业务模块 create/update/delete 子权限/审批流，以及视觉回归/组件级测试/更大范围浏览器流。
 
 ## Source Scope
 
@@ -32,11 +32,11 @@
 | 后台 MVP 范围 | ChatGPT Admin L924-L936 要求后台基础框架、通用列表、基础配置、会员、商品、代购、包裹仓储、运单、批次发货、财务核心、内容基础 | 部分完成；会员后台、线下汇款、内容基础和发货批次已补 |
 | 后台后端服务 | ChatGPT Admin L1005-L1023 要求 RBAC、文件、会员、消息、包裹、运单、批次、转单、财务应收/应付、内容、打印、操作日志 | 部分完成；文件、消息、内容、批次、转单、打印模板数据、应付基础、审计日志基础和模块级业务写权限已补 |
 | 用户 Web MVP | ChatGPT User Web L773-L789 要求用户账户、控制台、仓库地址、商品、购物车、订单、代购、包裹、运单、支付、财务、地址、消息 | 部分完成；地址簿、文件上传、独立财务页、消息工单、注册入口和账户设置已补，真实在线充值未完成 |
-| 用户 Web 第二阶段 | ChatGPT User Web L795-L803 要求批量导入、直邮、无主包裹、线下汇款、推广返利、积分、物流对接、帮助中心 | 线下汇款、无主包裹认领、帮助中心、CSV / `.xlsx` 批量预报导入、积分/推广/返利基础已补；物流对接仍后续 |
+| 用户 Web 第二阶段 | ChatGPT User Web L795-L803 要求批量导入、直邮、无主包裹、线下汇款、推广返利、积分、物流对接、帮助中心 | 线下汇款、无主包裹认领、帮助中心、CSV / `.xlsx` 批量预报导入、积分/推广/返利基础已补；运费估算已补，积分推广返利独立页已补；物流对接仍后续 |
 | 用户 Web 后端任务 | ChatGPT User Web L879-L902 要求账户、仓库、商品、购物车、订单、代购、包裹、运单、支付、财务、汇款、积分、推广、地址、消息、无主、文件、审计 | P0 主链路、地址、文件、汇款、消息工单、无主用户认领、积分/推广基础和后台审计日志已完成 |
-| 移动端 MVP | ChatGPT Mobile L892-L907 要求五栏导航、登录、首页搜索、分类、商品详情、购物车、确认订单、集运地址、预报、包裹、打包、运单、追踪、我的、设置 | 部分完成；分类为复用页，地址、财务、消息入口和账户设置已补，多语言等未完整 |
-| 移动端二阶段 | ChatGPT Mobile L913-L922 要求注册/找回、微信登录、代购订单列表、财务、地址、多语言、消息、客服、无主认领 | 注册、找回密码、代购订单列表、财务、地址、消息工单和无主认领已补；微信登录、多语言和真实通知通道仍需业务/通道确认 |
-| Gemini Admin 核心模块 | Gemini Admin L168-L175 明确 WMS、会员、商品、应收、应付、图片、网站管理、基础设置 | 应收/应付/商品/WMS/网站管理基础已补；生产图片增强仍缺 |
+| 移动端 MVP | ChatGPT Mobile L892-L907 要求五栏导航、登录、首页搜索、分类、商品详情、购物车、确认订单、集运地址、预报、包裹、打包、运单、追踪、我的、设置 | 部分完成；分类为复用页，地址、财务、消息入口和账户设置已补，多语言框架已补，首页轮播瀑布流已补 |
+| 移动端二阶段 | ChatGPT Mobile L913-L922 要求注册/找回、微信登录、代购订单列表、财务、地址、多语言、消息、客服、无主认领 | 注册、找回密码、代购订单列表、财务、地址、消息工单和无主认领已补；多语言框架已补（i18next）；微信登录和真实通知通道仍需业务/通道确认 |
+| Gemini Admin 核心模块 | Gemini Admin L168-L175 明确 WMS、会员、商品、应收、应付、图片、网站管理、基础设置 | 应收/应付/商品/WMS/网站管理基础已补，商品属性体系已补；生产图片增强仍缺 |
 | Gemini User Web 需求 | Gemini User Web L290-L303 明确 dashboard、商品、手工代购、预报、包裹、无主、运单、流水、充值、推广、地址、客服 | 部分完成；地址、流水、线下汇款、客服工单、无主用户认领和推广/积分基础已补 |
 | Gemini Mobile 需求 | Gemini Mobile L289-L303 明确登录、搜索、分类、商品、购物车、确认订单、仓库地址、包裹、追踪、无主、我的、设置 | 部分完成；地址、财务入口、客服工单、无主认领和设置已补，多语言未完整 |
 
@@ -45,6 +45,7 @@
 | 层 | 已确认实现 | 证据 |
 | --- | --- | --- |
 | Backend apps | `common`、`addresses`、`iam`、`members`、`warehouses`、`parcels`、`waybills`、`finance`、`products`、`purchases`、`tickets`、`content` | `backend/config/settings/base.py` |
+| Regions | 国家/地区层级树、种子数据（23 条 8 国）、公共 + Admin CRUD API | `backend/apps/regions/` |
 | Backend routes | 上述 app 均挂到 `/api/v1/`，并暴露 OpenAPI/Swagger | `backend/config/urls.py` |
 | Members | 用户 email/phone/status、会员档案、会员编号、仓库识别码、客服负责人、内部服务备注 | `backend/apps/members/models.py` |
 | Growth | 积分流水、邀请关系、返利记录、奖励积分统计；规则未定项用 `TODO_CONFIRM` 标注，且不进入钱包余额 | `backend/apps/members/models.py`；`backend/apps/members/services.py` |

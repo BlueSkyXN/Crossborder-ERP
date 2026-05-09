@@ -26,14 +26,19 @@ from .serializers import (
     WarehouseListResponseSerializer,
     WarehouseSerializer,
 )
-from .services import build_member_warehouse_address
+from .services import build_member_warehouse_address, estimate_freight
 
 
 class AdminConfigViewSet(viewsets.ModelViewSet):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "warehouses.view"
-    write_permission = "warehouses.manage"
+    method_permissions = {
+        "POST": "warehouses.create",
+        "PUT": "warehouses.update",
+        "PATCH": "warehouses.update",
+        "DELETE": "warehouses.delete",
+    }
 
     def list(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.get_queryset(), many=True)
@@ -112,3 +117,34 @@ class WarehouseAddressView(APIView):
         return success_response(
             build_member_warehouse_address(warehouse, request.user.profile.warehouse_code)
         )
+
+
+class FreightEstimateView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    @extend_schema(tags=["freight"])
+    def post(self, request):
+        channel_id = request.data.get("channel_id")
+        weight_kg = request.data.get("weight_kg")
+        if not channel_id or weight_kg is None:
+            return success_response(
+                {"error": "channel_id 和 weight_kg 为必填"}, status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            channel_id = int(channel_id)
+            weight_kg = float(weight_kg)
+        except (ValueError, TypeError):
+            return success_response(
+                {"error": "参数类型错误"}, status=status.HTTP_400_BAD_REQUEST,
+            )
+        result = estimate_freight(
+            channel_id=channel_id,
+            weight_kg=weight_kg,
+            length_cm=float(request.data.get("length_cm", 0)),
+            width_cm=float(request.data.get("width_cm", 0)),
+            height_cm=float(request.data.get("height_cm", 0)),
+        )
+        if result.get("error"):
+            return success_response(result, status=status.HTTP_400_BAD_REQUEST)
+        return success_response(result)

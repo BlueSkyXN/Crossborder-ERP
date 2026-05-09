@@ -5,6 +5,9 @@ import { AddressesPage } from "../pages/AddressesPage";
 import { ContentCenterPage } from "../pages/ContentCenterPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { FinancePage } from "../pages/FinancePage";
+import { PointsPage } from "../features/growth/PointsPage";
+import { RebatePage } from "../features/growth/RebatePage";
+import { ReferralPage } from "../features/growth/ReferralPage";
 import { LoginPage } from "../pages/LoginPage";
 import { ParcelsPage } from "../pages/ParcelsPage";
 import { PurchasesPage } from "../pages/PurchasesPage";
@@ -25,6 +28,9 @@ export const router = createBrowserRouter([
       { path: "/dashboard", element: <DashboardPage /> },
       { path: "/addresses", element: <AddressesPage /> },
       { path: "/finance", element: <FinancePage /> },
+      { path: "/growth/referrals", element: <ReferralPage /> },
+      { path: "/growth/points", element: <PointsPage /> },
+      { path: "/growth/rebates", element: <RebatePage /> },
       { path: "/parcels", element: <ParcelsPage /> },
       { path: "/unclaimed-parcels", element: <UnclaimedParcelsPage /> },
       { path: "/waybills", element: <WaybillsPage /> },

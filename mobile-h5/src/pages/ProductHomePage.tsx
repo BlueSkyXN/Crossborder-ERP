@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { BannerCarousel } from "../features/home/BannerCarousel";
+import { ProductWaterfall } from "../features/home/ProductWaterfall";
 import { addCartItem, fetchCartItems, fetchProducts } from "../features/purchases/api";
 import type { Product, ProductSku } from "../features/purchases/types";
 import styles from "./PurchaseMobile.module.css";
@@ -31,10 +33,6 @@ function isPurchasableProduct(product: Product) {
   return product.skus.some((sku) => sku.status === "ACTIVE" && sku.stock > 0);
 }
 
-function skuPrice(product: Product) {
-  return firstActiveSku(product)?.price || "0.00";
-}
-
 export function ProductHomePage({ mode = "home" }: ProductHomePageProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -59,6 +57,7 @@ export function ProductHomePage({ mode = "home" }: ProductHomePageProps) {
     () => [...new Set(products.map((product) => product.category_name).filter((name): name is string => Boolean(name)))],
     [products],
   );
+  const categoryItems = useMemo(() => ["ALL", ...categories], [categories]);
   const filteredProducts = useMemo(() => {
     const normalized = keyword.trim().toLowerCase();
     return products.filter((product) => {
@@ -108,6 +107,11 @@ export function ProductHomePage({ mode = "home" }: ProductHomePageProps) {
     addCartMutation.mutate({ sku_id: selectedSku.id, quantity: Number(quantity || 1) });
   };
 
+  const handleSelectProduct = (product: Product) => {
+    setSelectedProductId(product.id);
+    setSelectedSkuId(firstActiveSku(product)?.id ?? null);
+  };
+
   return (
     <main className={styles.page}>
       <header className={styles.top}>
@@ -115,7 +119,7 @@ export function ProductHomePage({ mode = "home" }: ProductHomePageProps) {
           寄件
         </button>
         <div>
-          <span>{mode === "category" ? "Category" : "Mall"}</span>
+          <span>{mode === "category" ? "商品分类" : "商品商城"}</span>
           <h1>{mode === "category" ? "商品分类" : "代购首页"}</h1>
         </div>
         <button type="button" onClick={() => navigate("/cart")}>
@@ -123,18 +127,23 @@ export function ProductHomePage({ mode = "home" }: ProductHomePageProps) {
         </button>
       </header>
 
-      <section className={styles.hero}>
-        <h2>自营商品与手工代购</h2>
-        <p>移动端直接选购商品，也可以从我的页面提交手工代购单，付款后进入后台采购处理。</p>
-        <div className={styles.heroActions}>
-          <button className={styles.primaryButton} type="button" onClick={() => navigate("/cart")}>
-            查看购物车
-          </button>
-          <button className={styles.secondaryButton} type="button" onClick={() => navigate("/me/purchases/manual")}>
-            手工代购
-          </button>
-        </div>
-      </section>
+      {mode === "home" && (
+        <>
+          <BannerCarousel />
+          <section className={styles.hero}>
+            <h2>自营商品与手工代购</h2>
+            <p>移动端直接选购商品，也可以从我的页面提交手工代购单，付款后进入后台采购处理。</p>
+            <div className={styles.heroActions}>
+              <button className={styles.primaryButton} type="button" onClick={() => navigate("/cart")}>
+                查看购物车
+              </button>
+              <button className={styles.secondaryButton} type="button" onClick={() => navigate("/me/purchases/manual")}>
+                手工代购
+              </button>
+            </div>
+          </section>
+        </>
+      )}
 
       <section className={styles.summary}>
         <div>
@@ -156,32 +165,36 @@ export function ProductHomePage({ mode = "home" }: ProductHomePageProps) {
         <div className={styles.error}>{addCartMutation.error instanceof Error ? addCartMutation.error.message : "加入失败"}</div>
       )}
 
-      <input
-        className={styles.searchInput}
-        value={keyword}
-        placeholder="搜索商品或 SKU"
-        onChange={(event) => setKeyword(event.target.value)}
-      />
+      {mode === "home" && (
+        <>
+          <input
+            className={styles.searchInput}
+            value={keyword}
+            placeholder="搜索商品或 SKU"
+            onChange={(event) => setKeyword(event.target.value)}
+          />
 
-      <div className={styles.chips}>
-        <button
-          className={`${styles.chip} ${category === "ALL" ? styles.activeChip : ""}`}
-          type="button"
-          onClick={() => setCategory("ALL")}
-        >
-          全部
-        </button>
-        {categories.map((item) => (
-          <button
-            key={item}
-            className={`${styles.chip} ${category === item ? styles.activeChip : ""}`}
-            type="button"
-            onClick={() => setCategory(item)}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
+          <div className={styles.chips}>
+            <button
+              className={`${styles.chip} ${category === "ALL" ? styles.activeChip : ""}`}
+              type="button"
+              onClick={() => setCategory("ALL")}
+            >
+              全部
+            </button>
+            {categories.map((item) => (
+              <button
+                key={item}
+                className={`${styles.chip} ${category === item ? styles.activeChip : ""}`}
+                type="button"
+                onClick={() => setCategory(item)}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       {productsQuery.isLoading && (
         <div className={styles.loading}>
@@ -190,34 +203,40 @@ export function ProductHomePage({ mode = "home" }: ProductHomePageProps) {
         </div>
       )}
       {productsQuery.isError && <ErrorBlock status="default" title="商品加载失败" description="请刷新后重试" />}
-      {!productsQuery.isLoading && !productsQuery.isError && filteredProducts.length === 0 && (
+      {!productsQuery.isLoading && !productsQuery.isError && filteredProducts.length === 0 && mode === "home" && (
         <Empty description="暂无匹配商品" />
       )}
 
-      {!productsQuery.isLoading && !productsQuery.isError && filteredProducts.length > 0 && (
-        <section className={styles.productList}>
-          {filteredProducts.map((product) => (
-            <button
-              key={product.id}
-              type="button"
-              className={`${styles.productCard} ${selectedProduct?.id === product.id ? styles.selected : ""}`}
-              onClick={() => {
-                setSelectedProductId(product.id);
-                setSelectedSkuId(firstActiveSku(product)?.id ?? null);
-              }}
-            >
-              <div className={styles.thumb}>{product.main_image_file_id || product.category_name || "商品"}</div>
-              <div className={styles.productBody}>
-                <span>{product.category_name || "未分类"}</span>
-                <h3>{product.title}</h3>
-                <p>{product.description || "暂无商品说明"}</p>
-                <div className={styles.priceLine}>
-                  <strong>{formatMoney(skuPrice(product))}</strong>
-                  <small>{firstActiveSku(product) ? `库存 ${firstActiveSku(product)?.stock}` : "暂无 SKU"}</small>
-                </div>
-              </div>
-            </button>
-          ))}
+      {!productsQuery.isLoading && !productsQuery.isError && filteredProducts.length > 0 && mode === "home" && (
+        <ProductWaterfall products={filteredProducts} selectedProductId={selectedProduct?.id} onSelect={handleSelectProduct} />
+      )}
+
+      {!productsQuery.isLoading && !productsQuery.isError && mode === "category" && (
+        <section className={styles.categorySplit}>
+          <aside className={styles.categoryLeft} aria-label="一级分类">
+            {categoryItems.map((item) => (
+              <button
+                key={item}
+                className={category === item ? styles.activeCategoryItem : ""}
+                type="button"
+                onClick={() => setCategory(item)}
+              >
+                {item === "ALL" ? "全部商品" : item}
+              </button>
+            ))}
+          </aside>
+          <div className={styles.categoryRight}>
+            <div className={styles.sectionHead}>
+              <span>分类浏览</span>
+              <h2>{category === "ALL" ? "全部商品" : category}</h2>
+              <p>选择左侧分类，浏览对应商品与可购 SKU。</p>
+            </div>
+            {filteredProducts.length === 0 ? (
+              <Empty description="该分类暂无商品" />
+            ) : (
+              <ProductWaterfall products={filteredProducts} selectedProductId={selectedProduct?.id} onSelect={handleSelectProduct} />
+            )}
+          </div>
         </section>
       )}
 

@@ -32,6 +32,8 @@ import { useOutletContext } from "react-router-dom";
 
 import { ForbiddenPage } from "../../pages/ForbiddenPage";
 import { productCatalogApi } from "./api";
+import { ProductAttributesPanel } from "./ProductAttributesPanel";
+import { ProductTranslationsPanel } from "./ProductTranslationsPanel";
 import type {
   CatalogStatus,
   Product,
@@ -48,6 +50,7 @@ type WorkspaceContext = {
 };
 
 type ActiveTab = "categories" | "products" | "skus";
+type ProductDetailTab = "skus" | "translations" | "attributes";
 type CatalogAction =
   | { type: "category"; mode: "create"; record?: ProductCategory }
   | { type: "category"; mode: "edit"; record: ProductCategory }
@@ -146,6 +149,8 @@ export function ProductCatalogPage() {
   const [productForm] = Form.useForm<ProductFormValues>();
   const [skuForm] = Form.useForm<SkuFormValues>();
   const [activeTab, setActiveTab] = useState<ActiveTab>("products");
+  const [productDetailTab, setProductDetailTab] = useState<ProductDetailTab>("skus");
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [keyword, setKeyword] = useState("");
   const [action, setAction] = useState<CatalogAction | null>(null);
 
@@ -168,6 +173,8 @@ export function ProductCatalogPage() {
   const activeProductCount = products.filter((product) => product.status === "ACTIVE").length;
   const activeSkuCount = skus.filter((sku) => sku.status === "ACTIVE").length;
   const totalStock = skus.reduce((sum, sku) => sum + sku.stock, 0);
+  const selectedProduct = products.find((product) => product.id === selectedProductId) || null;
+  const selectedProductSkus = selectedProductId ? skus.filter((sku) => sku.product === selectedProductId) : [];
 
   const categoryOptions = categories.map((category) => ({ label: category.name, value: category.id }));
   const productOptions = products.map((product) => ({ label: product.title, value: product.id }));
@@ -195,6 +202,12 @@ export function ProductCatalogPage() {
     setAction(null);
   };
 
+  const openCreateSku = (productId?: number) => {
+    skuForm.resetFields();
+    skuForm.setFieldsValue({ product_id: productId, status: "ACTIVE", stock: 0, spec_json_text: "{}" });
+    setAction({ type: "sku", mode: "create" });
+  };
+
   const openCreate = (type: ActiveTab) => {
     if (type === "categories") {
       categoryForm.resetFields();
@@ -207,9 +220,7 @@ export function ProductCatalogPage() {
       setAction({ type: "product", mode: "create" });
     }
     if (type === "skus") {
-      skuForm.resetFields();
-      skuForm.setFieldsValue({ status: "ACTIVE", stock: 0, spec_json_text: "{}" });
-      setAction({ type: "sku", mode: "create" });
+      openCreateSku();
     }
   };
 
@@ -491,6 +502,14 @@ export function ProductCatalogPage() {
               loading={productsQuery.isLoading}
               dataSource={filteredProducts}
               columns={productColumns}
+              rowSelection={{
+                type: "radio",
+                selectedRowKeys: selectedProductId ? [selectedProductId] : [],
+                onChange: (keys) => setSelectedProductId(Number(keys[0])),
+              }}
+              onRow={(record) => ({
+                onClick: () => setSelectedProductId(record.id),
+              })}
               pagination={{ pageSize: 10, showSizeChanger: true }}
               scroll={{ x: 990 }}
               locale={{ emptyText: <Empty description="暂无商品" /> }}
@@ -520,6 +539,67 @@ export function ProductCatalogPage() {
           )}
         </Space>
       </Card>
+
+      {selectedProduct && (
+        <Card
+          title={`商品扩展资料：${selectedProduct.title}`}
+          extra={<Typography.Text type="secondary">选择商品后维护 SKU、翻译和属性</Typography.Text>}
+        >
+          <Tabs
+            activeKey={productDetailTab}
+            onChange={(key) => setProductDetailTab(key as ProductDetailTab)}
+            items={[
+              {
+                key: "skus",
+                label: `SKU 管理 ${selectedProductSkus.length}`,
+                children: (
+                  <Space orientation="vertical" size={12} className="full-width-input">
+                    <Space className="full-width-input" style={{ justifyContent: "space-between" }}>
+                      <Typography.Text type="secondary">维护当前商品的 SKU 价格、库存和规格。</Typography.Text>
+                      {canManage && (
+                        <Button
+                          type="primary"
+                          size="small"
+                          icon={<PlusOutlined />}
+                          onClick={() => openCreateSku(selectedProduct.id)}
+                        >
+                          新增 SKU
+                        </Button>
+                      )}
+                    </Space>
+                    <Table
+                      rowKey="id"
+                      size="small"
+                      loading={skusQuery.isLoading}
+                      dataSource={selectedProductSkus}
+                      columns={skuColumns}
+                      pagination={false}
+                      scroll={{ x: 1110 }}
+                      locale={{ emptyText: <Empty description="当前商品暂无 SKU" /> }}
+                    />
+                  </Space>
+                ),
+              },
+              {
+                key: "translations",
+                label: "多语言翻译",
+                children: <ProductTranslationsPanel productId={selectedProduct.id} canManage={canManage} />,
+              },
+              {
+                key: "attributes",
+                label: "商品属性",
+                children: (
+                  <ProductAttributesPanel
+                    productId={selectedProduct.id}
+                    categories={categories}
+                    canManage={canManage}
+                  />
+                ),
+              },
+            ]}
+          />
+        </Card>
+      )}
 
       <Modal
         title={action?.type === "category" ? "分类" : action?.type === "product" ? "商品" : "SKU"}

@@ -11,6 +11,7 @@
 - 任务执行使用 `CELERY_TASK_ALWAYS_EAGER=true`。
 - 缓存使用 Django local memory cache。
 - 三端前端使用 pnpm workspace。
+- 后端响应已本地验证基础安全 header，包括 `nosniff`、`Referrer-Policy`、`Cross-Origin-Opener-Policy`、`X-Frame-Options` 和 `Permissions-Policy`。
 
 启动命令：
 
@@ -76,6 +77,15 @@ staging 至少需要以下环境变量：
 | `DJANGO_SECRET_KEY` | 使用随机强密钥 | 未在真实 staging 验证 |
 | `DJANGO_DEBUG` | `false` | 未在真实 staging 验证 |
 | `DJANGO_ALLOWED_HOSTS` | staging API 域名 | 未在真实 staging 验证 |
+| `DJANGO_SECURE_CONTENT_TYPE_NOSNIFF` | `true` | 本地已验证 |
+| `DJANGO_SECURE_REFERRER_POLICY` | `same-origin` 或按域名策略调整 | 本地已验证默认值 |
+| `DJANGO_SECURE_CROSS_ORIGIN_OPENER_POLICY` | `same-origin` 或按跨窗口需求调整 | 本地已验证默认值 |
+| `DJANGO_X_FRAME_OPTIONS` | `DENY` | 本地已验证默认值 |
+| `DJANGO_PERMISSIONS_POLICY` | 禁用未使用的浏览器能力 | 本地已验证默认值 |
+| `DJANGO_SECURE_HSTS_SECONDS` | HTTPS 验证后再设置正数 | `configured_unverified` |
+| `DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS` | 仅确认所有子域 HTTPS 后启用 | `configured_unverified` |
+| `DJANGO_SECURE_HSTS_PRELOAD` | 仅确认 preload 要求后启用 | `configured_unverified` |
+| `DJANGO_SECURE_SSL_REDIRECT` | 反向代理 HTTPS 头配置确认后启用 | `configured_unverified` |
 | `DATABASE_URL` | PostgreSQL DSN | `configured_unverified` |
 | `REDIS_URL` | Redis DSN | `configured_unverified` |
 | `CELERY_TASK_ALWAYS_EAGER` | `false` | `configured_unverified` |
@@ -121,6 +131,29 @@ staging 发布顺序建议：
 - media 目录必须持久化。
 - 对象存储需要签名 URL、生命周期策略和备份策略。
 - 缩略图、病毒扫描、图片处理和 CDN 仍需后续补齐。
+
+## 安全响应头
+
+`SECURITY-HEADERS-001` 已把基础安全响应头纳入后端设置和测试：
+
+| Header | 当前默认 | 验证状态 |
+| --- | --- | --- |
+| `X-Content-Type-Options` | `nosniff` | 本地已验证 |
+| `Referrer-Policy` | `same-origin` | 本地已验证 |
+| `Cross-Origin-Opener-Policy` | `same-origin` | 本地已验证 |
+| `X-Frame-Options` | `DENY` | 本地已验证 |
+| `Permissions-Policy` | `camera=(),microphone=(),geolocation=(),payment=(),usb=()` | 本地已验证 |
+
+HSTS 和 HTTPS redirect 当前只暴露环境变量，不默认启用。原因是本地和 CI 仍通过 HTTP 验证，贸然开启会破坏 no-Docker local-first 验收。上线前需要先确认真实 HTTPS、反向代理转发头、域名和子域策略，再设置：
+
+```bash
+DJANGO_SECURE_HSTS_SECONDS=31536000
+DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS=true
+DJANGO_SECURE_HSTS_PRELOAD=true
+DJANGO_SECURE_SSL_REDIRECT=true
+```
+
+上述 HTTPS/HSTS 配置在真实 staging 验证前仍只能标记为 `configured_unverified`。
 
 ## 审计日志留存
 

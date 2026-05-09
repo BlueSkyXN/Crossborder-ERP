@@ -228,4 +228,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/AUDIT-RETENTION-001.md
     depends_on: [AUDITLOG-001, QA-BROWSER-002]
+    next: SECURITY-HEADERS-001
+  - id: SECURITY-HEADERS-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/SECURITY-HEADERS-001.md
+    depends_on: [AUDIT-RETENTION-001]
     next: null

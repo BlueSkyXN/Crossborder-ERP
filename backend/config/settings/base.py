@@ -24,6 +24,25 @@ ALLOWED_HOSTS = env.list(
     default=["localhost", "127.0.0.1", "testserver"],
 )
 
+SECURE_CONTENT_TYPE_NOSNIFF = env.bool("DJANGO_SECURE_CONTENT_TYPE_NOSNIFF", default=True)
+SECURE_REFERRER_POLICY = env("DJANGO_SECURE_REFERRER_POLICY", default="same-origin")
+SECURE_CROSS_ORIGIN_OPENER_POLICY = env(
+    "DJANGO_SECURE_CROSS_ORIGIN_OPENER_POLICY",
+    default="same-origin",
+)
+X_FRAME_OPTIONS = env("DJANGO_X_FRAME_OPTIONS", default="DENY")
+PERMISSIONS_POLICY = env(
+    "DJANGO_PERMISSIONS_POLICY",
+    default="camera=(),microphone=(),geolocation=(),payment=(),usb=()",
+)
+SECURE_HSTS_SECONDS = env.int("DJANGO_SECURE_HSTS_SECONDS", default=0)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
+    "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS",
+    default=False,
+)
+SECURE_HSTS_PRELOAD = env.bool("DJANGO_SECURE_HSTS_PRELOAD", default=False)
+SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=False)
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -51,6 +70,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "apps.common.middleware.PermissionsPolicyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",

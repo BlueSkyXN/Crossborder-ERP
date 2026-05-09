@@ -7,6 +7,7 @@ import { LoginPage } from "../pages/LoginPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { adminRouteMeta } from "../features/auth/menu";
 import { FinancePage } from "../features/finance/FinancePage";
+import { MemberOpsPage } from "../features/members/MemberOpsPage";
 import { ParcelWmsPage } from "../features/parcels/ParcelWmsPage";
 import { ProductCatalogPage } from "../features/products/ProductCatalogPage";
 import { PurchaseOpsPage } from "../features/purchases/PurchaseOpsPage";
@@ -32,6 +33,8 @@ export const router = createBrowserRouter([
             element:
               route.resource === "warehouses" ? (
                 <WarehouseConfigPage />
+              ) : route.resource === "members" ? (
+                <MemberOpsPage />
               ) : route.resource === "parcels" ? (
                 <ParcelWmsPage />
               ) : route.resource === "waybills" ? (

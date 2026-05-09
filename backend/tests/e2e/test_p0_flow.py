@@ -179,6 +179,57 @@ def _run_ticket_flow(*, admin_client: APIClient, member_client: APIClient, suffi
     }
 
 
+def _run_member_admin_flow(*, admin_client: APIClient, member_client: APIClient, member: dict) -> dict:
+    members = _api_data(admin_client.get("/api/v1/admin/members", {"keyword": member["email"]}))["items"]
+    assert len(members) == 1
+    admin_member = members[0]
+    assert admin_member["profile"]["member_no"] == member["profile"]["member_no"]
+
+    service_admins = _api_data(admin_client.get("/api/v1/admin/member-service-admins"))["items"]
+    assigned_admin = next(item for item in service_admins if item["email"] == "admin@example.com")
+    updated = _api_data(
+        admin_client.patch(
+            f"/api/v1/admin/members/{admin_member['id']}",
+            {
+                "display_name": "E2E 会员",
+                "phone": "13900002222",
+                "level": "vip",
+                "assigned_admin_id": assigned_admin["id"],
+                "service_note": "TODO_CONFIRM: E2E 手动客服分配占位",
+            },
+            format="json",
+        )
+    )
+    assert updated["profile"]["level"] == "vip"
+    assert updated["profile"]["assigned_admin_id"] == assigned_admin["id"]
+
+    frozen = _api_data(admin_client.post(f"/api/v1/admin/members/{admin_member['id']}/freeze"))
+    assert frozen["status"] == "FROZEN"
+    blocked = member_client.get("/api/v1/me")
+    assert blocked.status_code == 403
+    assert blocked.json()["code"] == "FORBIDDEN"
+
+    unfrozen = _api_data(admin_client.post(f"/api/v1/admin/members/{admin_member['id']}/unfreeze"))
+    assert unfrozen["status"] == "ACTIVE"
+    restored = _api_data(member_client.get("/api/v1/me"))
+    assert restored["email"] == member["email"]
+
+    reset = _api_data(
+        admin_client.post(
+            f"/api/v1/admin/members/{admin_member['id']}/reset-password",
+            {"password": PASSWORD},
+            format="json",
+        )
+    )
+    assert reset["id"] == admin_member["id"]
+    return {
+        "member_no": updated["profile"]["member_no"],
+        "status": unfrozen["status"],
+        "level": updated["profile"]["level"],
+        "assigned_admin": updated["profile"]["assigned_admin_name"],
+    }
+
+
 def _run_offline_remittance_flow(
     *,
     admin_client: APIClient,
@@ -587,10 +638,17 @@ def test_p0_forwarding_and_purchase_e2e():
         member_client=member_client,
         suffix="MAIN",
     )
+    member_admin_result = _run_member_admin_flow(
+        admin_client=admin_client,
+        member_client=member_client,
+        member=member,
+    )
 
     print("[E2E-001] 主链路完成:", main_result)
     print("[E2E-001] 代购链路完成:", purchase_result)
     print("[MSG-001] 工单链路完成:", ticket_result)
+    print("[MEMBER-001] 会员后台链路完成:", member_admin_result)
     assert main_result["status"] == "SIGNED"
     assert purchase_result["waybill_status"] == "PENDING_REVIEW"
     assert ticket_result["status"] == "PROCESSING"
+    assert member_admin_result["status"] == "ACTIVE"

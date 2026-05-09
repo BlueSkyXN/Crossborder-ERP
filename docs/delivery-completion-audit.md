@@ -20,6 +20,8 @@
 - 后台真实运营控制台和角色权限矩阵，替换固定假数据占位工作台。
 - `npm run e2e` 自动验收主链路和最小代购链路。
 - `npm run e2e:browser` 自动验收 Admin Web、User Web、Mobile H5 登录、关键页面 smoke 和一条真实包裹预报/入库/回看浏览器旅程。
+- Browser Smoke 导航等待、失败页面快照和服务日志输出已加固，降低 CI 偶发误判并提升失败可诊断性。
+- Agent 证据 CI 门禁已纳入 PR/main，自动校验任务图、current-state 和 Agent run 摘要一致性。
 - CSV 和标准 `.xlsx` 批量预报导入。
 - README、部署说明、演示脚本、已知问题和下一阶段计划。
 
@@ -40,6 +42,8 @@
 | 外部商品链接解析 | 本地已验证 `purchase-links/parse`，User Web/Mobile H5 手工代购入口已整合；真实抓取/自动下单不声明完成 | `docs/agent-runs/2026-05-09-PURCHASE-AUTO-001.md`、`backend/apps/purchases/tests/test_purchases.py` |
 | 会员注册与账户设置 | 本地已验证注册、资料更新、旧密码失效和新密码登录；User Web `/settings`、Mobile H5 `/me/settings` 已整合；短信/邮件验证码和找回密码不声明完成 | `docs/agent-runs/2026-05-09-ACCOUNT-SETTINGS-001.md`、`backend/apps/members/tests/test_members.py` |
 | 后台占位面板真实化 | Admin Web `/dashboard` 和 `/roles` 已改为真实接口面板；角色编辑和细粒度 RBAC 不声明完成 | `docs/agent-runs/2026-05-09-ADMIN-PANELS-001.md`、`backend/apps/iam/tests/test_admin_auth.py` |
+| Browser Smoke 稳定性 | CDP 导航等待、页面快照诊断和失败服务日志输出已加固；不新增依赖或下载浏览器 | `docs/agent-runs/2026-05-09-QA-BROWSER-003.md`、`scripts/e2e/browser-smoke.mjs` |
+| Agent 证据门禁 | CI 校验任务图、current-state、任务文件、Agent run 摘要、验证结果和未验证边界说明 | `docs/agent-runs/2026-05-09-CI-EVIDENCE-001.md`、`scripts/ci/validate_agent_evidence.py` |
 | 证明纯 AI 驱动全栈 ERP | 每个正式任务留摘要证据，不记录过细过程 | `docs/ai-development-proof.md`、`docs/agent-runs/` |
 | 每轮任务 PR、更新 PR 信息并合并 main | 已按任务分支和 PR 合并推进；最后任务以 PR 合并收口 | GitHub PR 记录、`docs/agent-runs/` |
 

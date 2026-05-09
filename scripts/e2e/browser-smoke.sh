@@ -23,6 +23,10 @@ kill_tree() {
 
 cleanup() {
   local status=$?
+  if [[ "$status" -ne 0 && -d "$LOG_DIR" ]]; then
+    echo "[QA-BROWSER-001] browser smoke failed; service logs:" >&2
+    find "$LOG_DIR" -maxdepth 1 -type f -print -exec sh -c 'echo "---- $1"; tail -n 120 "$1"' sh {} \; >&2 || true
+  fi
   for pid in "${PIDS[@]:-}"; do
     kill_tree "$pid"
   done

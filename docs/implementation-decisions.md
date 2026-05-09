@@ -151,10 +151,10 @@
 
 ## 下一步
 
-按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前已进入源报告生产缺口收敛阶段，下一任务是 `SHIP-BATCH-001`：
+按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前已进入源报告生产缺口收敛阶段，下一任务是 `PAYABLE-001`：
 
 ```text
-补齐发货批次、转单号和打印模板数据基础。
+补齐供应商、成本类型和应付基础。
 ```
 
 当前执行约束：不使用 Docker，不启动 PostgreSQL/MySQL/Redis；验证以本地 `.venv`、SQLite、pytest、API E2E 和 system Chrome browser smoke 为主。PostgreSQL/MySQL/Redis 只做配置兼容，不做真实验证。

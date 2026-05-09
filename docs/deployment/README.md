@@ -16,6 +16,7 @@
 - 后端提供 `backup_sqlite` 显式 SQLite 本地备份命令，默认输出到 ignored 的 `backend/backups/`。
 - 后端提供 `purge_deleted_files` 显式本地软删除文件清理命令。
 - 后端提供 `purchase-links/parse` 外部商品链接解析入口，当前仅做本地 URL 解析和人工代购 fallback。
+- 后端提供会员找回密码 reset token API，当前本地/demo/test 可暴露 `dev_reset_token`，真实短信/邮件通知通道仍未接入。
 
 启动命令：
 
@@ -95,6 +96,8 @@ staging 至少需要以下环境变量：
 | `DATABASE_URL` | PostgreSQL 或 MySQL DSN | `configured_unverified`，仅做 DSN 解析边界检查 |
 | `REDIS_URL` | Redis DSN | `configured_unverified`，仅做 DSN 解析边界检查 |
 | `CELERY_TASK_ALWAYS_EAGER` | `false` | `configured_unverified` |
+| `MEMBER_PASSWORD_RESET_TOKEN_TTL_MINUTES` | `30` 或按安全策略调整 | 本地已验证 |
+| `MEMBER_PASSWORD_RESET_EXPOSE_TOKEN` | `false` | 本地/demo/test 已验证；生产应关闭 |
 | `MEDIA_ROOT` | 持久化挂载目录 | 本地文件模式已验证 |
 | `PUBLIC_BASE_URL` | staging API base URL | 未在真实 staging 验证 |
 | `ADMIN_WEB_URL` | staging Admin URL | 未在真实 staging 验证 |
@@ -189,7 +192,7 @@ uv run python manage.py backup_sqlite --database default --force
 - 内容 CMS 当前使用数据库文本内容，不接外部富文本上传；公开接口只返回已发布内容，正式条款/隐私/帮助文案仍需业务或法务确认。
 - 批量导入使用 `IMPORT_FILE` 文件用途，支持 CSV 和标准 `.xlsx` parser；导入模板/导出 CSV 是即时响应，不持久化到 git 或 media，上传的源 CSV/Excel 按本地 `MEDIA_ROOT` 文件策略保存，导出 CSV 会转义公式样式字段。
 - 外部商品链接解析只识别 host、商品 ID 和规范化 URL，结果进入手工代购商品行；当前不抓取真实第三方页面、不自动下单、不保存平台账号或凭证。
-- 会员注册、账户资料设置和登录态内改密码已完成；短信/邮件验证码、找回密码和微信登录仍需真实通道确认后单独接入。
+- 会员注册、账户资料设置、登录态内改密码和 reset token 找回密码已完成；短信/邮件验证码、真实通知送达和微信登录仍需真实通道确认后单独接入。
 - 后台 `/dashboard` 使用 `GET /api/v1/admin/dashboard` 返回当前管理员可见模块的真实聚合数据；`/roles` 和 `/admin-users` 读取真实 IAM 数据。业务写操作按模块级 `*.manage` / `*.export` 权限控制，角色/管理员安全删除已完成，create/update/delete 子权限后续单独增强。
 - 软删除文件可用 `purge_deleted_files --older-than-days N --dry-run` 预演清理，再显式执行真实清理。该命令只删除已软删除且超过保留期的本地物理文件，不删除数据库记录。
 

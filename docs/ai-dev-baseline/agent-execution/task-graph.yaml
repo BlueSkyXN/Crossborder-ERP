@@ -308,4 +308,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/CSV-EXPORT-SAFE-001.md
     depends_on: [IMPORT-001, AUDIT-RETENTION-001, FILE-SNIFF-001]
+    next: ACCOUNT-RESET-001
+  - id: ACCOUNT-RESET-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/ACCOUNT-RESET-001.md
+    depends_on: [ACCOUNT-SETTINGS-001, SECURITY-HEADERS-001]
     next: null

@@ -56,6 +56,27 @@ class User(models.Model):
         return True
 
 
+class PasswordResetToken(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="password_reset_tokens")
+    token_hash = models.CharField(max_length=64, unique=True)
+    expires_at = models.DateTimeField()
+    consumed_at = models.DateTimeField(null=True, blank=True)
+    requested_ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "password_reset_tokens"
+        ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["user", "expires_at"], name="idx_pwd_reset_user_expires"),
+            models.Index(fields=["token_hash"], name="idx_pwd_reset_hash"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user_id}:{self.expires_at.isoformat()}"
+
+
 class MemberProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     member_no = models.CharField(max_length=30, unique=True)

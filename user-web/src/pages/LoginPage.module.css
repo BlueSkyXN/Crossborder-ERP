@@ -91,7 +91,7 @@
 
 .modeSwitch {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   padding: 4px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -152,12 +152,29 @@
   opacity: 0.7;
 }
 
+.secondary {
+  height: 40px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 800;
+}
+
 .error {
   padding: 10px 12px;
   border: 1px solid #fecaca;
   border-radius: 6px;
   background: #fef2f2;
   color: #b91c1c;
+}
+
+.notice {
+  padding: 10px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 @media (max-width: 780px) {

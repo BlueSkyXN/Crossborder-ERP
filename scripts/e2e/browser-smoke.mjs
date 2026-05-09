@@ -552,6 +552,7 @@ async function runAdmin(debugPort, journey) {
 async function runUser(debugPort, journey) {
   const page = await createPage(debugPort);
   await navigate(page, `${USER_URL}/login?redirect=%2Fparcels`, "会员登录");
+  await waitForText(page, "找回密码");
   await clickSubmitButton(page, "登录");
   await waitForPath(page, "/parcels");
   await waitForText(page, "批量预报");
@@ -598,6 +599,7 @@ async function verifyUserParcelInStock(debugPort, journey) {
 async function runMobile(debugPort) {
   const page = await createPage(debugPort, { mobile: true });
   await navigate(page, `${MOBILE_URL}/login?redirect=%2Fship`, "登录");
+  await waitForText(page, "找回密码");
   await clickSubmitButton(page, "登录");
   await waitForPath(page, "/ship");
   await waitForText(page, "复制地址");

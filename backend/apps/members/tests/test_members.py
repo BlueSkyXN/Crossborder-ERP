@@ -1,8 +1,12 @@
+from datetime import timedelta
+
 import pytest
+from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.iam.services import seed_iam_demo_data
-from apps.members.models import MemberProfile, User
+from apps.members.models import MemberProfile, PasswordResetToken, User
 from apps.members.services import seed_member_demo_data
 
 
@@ -106,6 +110,80 @@ def test_member_can_change_password_and_login_with_new_password(client, seeded_m
     assert response.json()["data"]["changed"] is True
     assert member_login(client).status_code == 403
     assert member_login(client, password="new-password123").status_code == 200
+
+
+@override_settings(MEMBER_PASSWORD_RESET_EXPOSE_TOKEN=True)
+def test_member_can_reset_password_with_one_time_token(client, seeded_member):
+    request_response = client.post(
+        reverse("member-password-reset-request"),
+        {"email": "user@example.com"},
+        content_type="application/json",
+        HTTP_USER_AGENT="pytest-agent",
+    )
+
+    assert request_response.status_code == 200
+    request_body = request_response.json()["data"]
+    reset_token = request_body["dev_reset_token"]
+    stored_token = PasswordResetToken.objects.get(user__email="user@example.com")
+    assert stored_token.token_hash != reset_token
+    assert stored_token.user_agent == "pytest-agent"
+
+    confirm_response = client.post(
+        reverse("member-password-reset-confirm"),
+        {"email": "user@example.com", "token": reset_token, "new_password": "reset-password123"},
+        content_type="application/json",
+    )
+
+    assert confirm_response.status_code == 200
+    assert confirm_response.json()["data"]["reset"] is True
+    stored_token.refresh_from_db()
+    assert stored_token.consumed_at is not None
+    assert member_login(client).status_code == 403
+    assert member_login(client, password="reset-password123").status_code == 200
+
+    reuse_response = client.post(
+        reverse("member-password-reset-confirm"),
+        {"email": "user@example.com", "token": reset_token, "new_password": "another-password123"},
+        content_type="application/json",
+    )
+    assert reuse_response.status_code == 400
+    assert "token" in reuse_response.json()["data"]["field_errors"]
+
+
+@override_settings(MEMBER_PASSWORD_RESET_EXPOSE_TOKEN=True)
+def test_member_password_reset_request_does_not_leak_unknown_email(client, seeded_member):
+    response = client.post(
+        reverse("member-password-reset-request"),
+        {"email": "missing@example.com"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    body = response.json()["data"]
+    assert body["requested"] is True
+    assert "dev_reset_token" not in body
+    assert PasswordResetToken.objects.count() == 0
+
+
+@override_settings(MEMBER_PASSWORD_RESET_EXPOSE_TOKEN=True)
+def test_member_password_reset_rejects_expired_token(client, seeded_member):
+    request_response = client.post(
+        reverse("member-password-reset-request"),
+        {"email": "user@example.com"},
+        content_type="application/json",
+    )
+    reset_token = request_response.json()["data"]["dev_reset_token"]
+    PasswordResetToken.objects.update(expires_at=timezone.now() - timedelta(minutes=1))
+
+    response = client.post(
+        reverse("member-password-reset-confirm"),
+        {"email": "user@example.com", "token": reset_token, "new_password": "reset-password123"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert "token" in response.json()["data"]["field_errors"]
+    assert member_login(client).status_code == 200
 
 
 def test_member_change_password_rejects_wrong_current_password(client, seeded_member):

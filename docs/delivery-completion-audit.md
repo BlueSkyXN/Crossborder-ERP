@@ -19,6 +19,7 @@
 - 文件上传基础内容签名校验。
 - 外部商品链接解析入口和人工代购 fallback。
 - 会员注册、账户资料设置和会员自助改密码基础。
+- 会员找回密码和 reset token 重置密码基础。
 - 后台真实运营控制台和角色权限矩阵，替换固定假数据占位工作台。
 - 后台角色创建、编辑和权限分配基础闭环。
 - 后台管理员账号创建、启停、密码重置和角色分配基础闭环。
@@ -49,7 +50,8 @@
 | 文件上传内容签名 | 本地已验证扩展名、MIME 与基础文件头一致性校验；病毒扫描/对象存储不声明完成 | `docs/agent-runs/2026-05-09-FILE-SNIFF-001.md`、`backend/apps/files/tests/test_files.py` |
 | CSV 导出公式防护 | 本地已验证包裹导出和审计日志导出转义公式样式字段；导出审批/DLP 不声明完成 | `docs/agent-runs/2026-05-09-CSV-EXPORT-SAFE-001.md`、`backend/apps/common/tests/test_csv_exports.py` |
 | 外部商品链接解析 | 本地已验证 `purchase-links/parse`，User Web/Mobile H5 手工代购入口已整合；真实抓取/自动下单不声明完成 | `docs/agent-runs/2026-05-09-PURCHASE-AUTO-001.md`、`backend/apps/purchases/tests/test_purchases.py` |
-| 会员注册与账户设置 | 本地已验证注册、资料更新、旧密码失效和新密码登录；User Web `/settings`、Mobile H5 `/me/settings` 已整合；短信/邮件验证码和找回密码不声明完成 | `docs/agent-runs/2026-05-09-ACCOUNT-SETTINGS-001.md`、`backend/apps/members/tests/test_members.py` |
+| 会员注册与账户设置 | 本地已验证注册、资料更新、旧密码失效和新密码登录；User Web `/settings`、Mobile H5 `/me/settings` 已整合；短信/邮件验证码不声明完成 | `docs/agent-runs/2026-05-09-ACCOUNT-SETTINGS-001.md`、`backend/apps/members/tests/test_members.py` |
+| 会员找回密码 | 本地已验证 reset token 只保存 hash、过期/一次性消费和新密码登录；User Web/Mobile H5 登录页已整合入口；真实短信/邮件通知不声明完成 | `docs/agent-runs/2026-05-09-ACCOUNT-RESET-001.md`、`backend/apps/members/tests/test_members.py` |
 | 后台占位面板真实化 | Admin Web `/dashboard`、`/roles` 和 `/admin-users` 已改为真实接口面板；角色创建、编辑、权限分配、管理员角色分配和业务模块级 action 权限已补齐 | `docs/agent-runs/2026-05-09-ADMIN-PANELS-001.md`、`docs/agent-runs/2026-05-09-RBAC-ROLES-001.md`、`docs/agent-runs/2026-05-09-RBAC-ADMIN-USERS-001.md`、`docs/agent-runs/2026-05-09-RBAC-BUSINESS-ACTIONS-001.md`、`backend/apps/iam/tests/test_admin_auth.py` |
 | Browser Smoke 稳定性 | CDP 导航等待、页面快照诊断和失败服务日志输出已加固；不新增依赖或下载浏览器 | `docs/agent-runs/2026-05-09-QA-BROWSER-003.md`、`scripts/e2e/browser-smoke.mjs` |
 | Agent 证据门禁 | CI 校验任务图、current-state、任务文件、Agent run 摘要、验证结果和未验证边界说明 | `docs/agent-runs/2026-05-09-CI-EVIDENCE-001.md`、`scripts/ci/validate_agent_evidence.py` |
@@ -113,4 +115,4 @@ git diff --check
 - `npm run e2e:browser` 已纳入仓库，并覆盖一条真实包裹预报/入库/回看旅程；Playwright、组件级测试、视觉回归和更多业务旅程仍需后续增强。
 - `npm run inspect:services` 已纳入仓库，但只做无连接 DSN 检查；PostgreSQL/MySQL/Redis/Celery 真实运行仍需后续验证。
 - 真实支付、真实自动采购下单、对象存储、外部 SIEM/审计告警、真实打印硬件、物流 API 和业务 create/update/delete 子权限后续补齐。
-- 短信/邮件验证码、找回密码、微信登录、多语言和复杂业务规则保持 `TODO_CONFIRM`。
+- 短信/邮件验证码、真实通知送达、微信登录、多语言和复杂业务规则保持 `TODO_CONFIRM`。

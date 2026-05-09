@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from decimal import Decimal
+import hashlib
+import secrets
 
+from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Max, Q, QuerySet, Sum
@@ -13,6 +16,7 @@ from apps.tickets.models import TicketStatus
 
 from .models import (
     MemberProfile,
+    PasswordResetToken,
     PointLedger,
     PointTransactionDirection,
     PointTransactionType,
@@ -35,6 +39,13 @@ TODO_CONFIRM_REBATE_RULE = "TODO_CONFIRM: 返利比例、结算周期、提现�
 class MemberLoginResult:
     user: User
     access_token: str
+
+
+@dataclass(frozen=True)
+class PasswordResetRequestResult:
+    requested: bool
+    reset_token: str | None
+    expires_at: object | None
 
 
 def issue_member_access_token(user: User) -> str:
@@ -324,6 +335,73 @@ def login_user(email: str, password: str) -> MemberLoginResult:
     User.objects.filter(id=user.id).update(last_login_at=timezone.now())
     user.refresh_from_db()
     return MemberLoginResult(user=user, access_token=issue_member_access_token(user))
+
+
+def _normalize_email(email: str) -> str:
+    return email.strip().lower()
+
+
+def _hash_password_reset_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def request_member_password_reset(
+    *,
+    email: str,
+    request_ip: str | None = None,
+    user_agent: str = "",
+) -> PasswordResetRequestResult:
+    now = timezone.now()
+    normalized_email = _normalize_email(email)
+    user = User.objects.filter(email__iexact=normalized_email, status=UserStatus.ACTIVE).first()
+    if not user:
+        return PasswordResetRequestResult(requested=True, reset_token=None, expires_at=None)
+
+    token = secrets.token_urlsafe(32)
+    expires_at = now + timezone.timedelta(minutes=settings.MEMBER_PASSWORD_RESET_TOKEN_TTL_MINUTES)
+    with transaction.atomic():
+        PasswordResetToken.objects.filter(user=user, consumed_at__isnull=True, expires_at__gt=now).update(
+            consumed_at=now
+        )
+        PasswordResetToken.objects.create(
+            user=user,
+            token_hash=_hash_password_reset_token(token),
+            expires_at=expires_at,
+            requested_ip=request_ip or None,
+            user_agent=(user_agent or "")[:255],
+        )
+    return PasswordResetRequestResult(requested=True, reset_token=token, expires_at=expires_at)
+
+
+@transaction.atomic
+def confirm_member_password_reset(*, email: str, token: str, new_password: str) -> User:
+    normalized_email = _normalize_email(email)
+    try:
+        user = User.objects.select_for_update().select_related("profile").get(
+            email__iexact=normalized_email,
+            status=UserStatus.ACTIVE,
+        )
+    except User.DoesNotExist as exc:
+        raise exceptions.ValidationError({"token": ["重置令牌无效或已过期"]}) from exc
+
+    now = timezone.now()
+    try:
+        reset_token = PasswordResetToken.objects.select_for_update().get(
+            user=user,
+            token_hash=_hash_password_reset_token(token),
+        )
+    except PasswordResetToken.DoesNotExist as exc:
+        raise exceptions.ValidationError({"token": ["重置令牌无效或已过期"]}) from exc
+    if reset_token.consumed_at or reset_token.expires_at <= now:
+        raise exceptions.ValidationError({"token": ["重置令牌无效或已过期"]})
+    if check_password(new_password, user.password_hash):
+        raise exceptions.ValidationError({"new_password": ["新密码不能与当前密码相同"]})
+
+    user.password_hash = make_password(new_password)
+    user.save(update_fields=["password_hash", "updated_at"])
+    reset_token.consumed_at = now
+    reset_token.save(update_fields=["consumed_at"])
+    return user
 
 
 def update_member_profile(user: User, *, display_name: str | None = None, phone: str | None = None) -> User:

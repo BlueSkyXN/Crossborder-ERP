@@ -298,4 +298,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/RBAC-DELETE-001.md
     depends_on: [RBAC-ROLES-001, RBAC-ADMIN-USERS-001, RBAC-BUSINESS-ACTIONS-001]
+    next: FILE-SNIFF-001
+  - id: FILE-SNIFF-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/FILE-SNIFF-001.md
+    depends_on: [FILE-001, IMPORT-XLSX-001, STORAGE-CLEANUP-001]
     next: null

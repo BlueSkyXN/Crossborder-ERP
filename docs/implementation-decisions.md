@@ -37,6 +37,7 @@
 | 运维 readiness | `/api/v1/health/ready` 检查当前默认数据库连接 | 区分进程存活和依赖可用；不暴露 DSN、异常堆栈或本地路径 |
 | SQLite 本地备份 | `backup_sqlite` management command，默认输出到 ignored 的 `backend/backups/` | 当前 SQLite-first 阶段的显式备份手段；不替代生产数据库备份策略 |
 | 本地文件清理 | `purge_deleted_files` 只清理超过保留期的 `StoredFile.DELETED` 本地物理文件 | 控制 `MEDIA_ROOT` 增长；不替代对象存储生命周期、病毒扫描或远程归档 |
+| 文件上传内容校验 | 文件上传同时校验扩展名、MIME 和基础文件头 | 在不新增依赖的前提下拦截明显伪装文件；不替代病毒扫描、缩略图、EXIF 清理或对象存储 |
 | 外链解析 | `purchase-links/parse` 只做本地 URL 解析和人工代购 fallback | 满足源报告链接代购入口基础；不抓取第三方页面、不自动下单、不接平台账号 |
 | 本地部署 | 当前暂不考虑 Docker；先做 no-Docker local-first | 用户明确要求暂不考虑 Docker，避免拉镜像和启动容器 |
 
@@ -153,7 +154,8 @@
 | Redis 缺失 | 缓存、分布式锁、Celery broker、异步任务、限流不能真实验证 | 当前使用本地内存缓存和同步任务；禁止依赖 Redis 完成 P0 关键一致性 |
 | DSN 检查边界 | 只解析 `DATABASE_URL`/`REDIS_URL` 不等于 runtime 可用 | `inspect:services` 输出 `configured_unverified`，且明确 `django_setup_performed=false`、`external_connections_opened=false` |
 | Celery 异步边界 | 同步 eager 模式不能暴露序列化、重试、并发和 broker 故障问题 | 当前只用于保持接口形态；真实异步任务后续单独验证 |
-| 文件存储 | 本地 `MEDIA_ROOT` 与对象存储/反向代理访问控制不同 | 当前仅支持本地文件；文件权限和对象存储后置 |
+| 文件存储 | 本地 `MEDIA_ROOT` 与对象存储/反向代理访问控制不同 | 当前支持本地文件、鉴权下载、checksum 和基础内容签名校验；对象存储、签名 URL 和反向代理权限后置 |
+| 文件内容安全 | 基础文件头校验不能发现病毒、恶意图片载荷、EXIF 泄露或 CSV 公式注入 | 当前仅拦截明显扩展名/MIME/文件头不一致和 CSV NUL 二进制内容；病毒扫描、EXIF 清理、图片解码和 CSV 公式防护后续单独做 |
 | 本地文件清理 | 过早删除软删除文件可能影响人工恢复和审计 | 当前清理命令必须显式传入保留天数，默认支持 dry-run，不删除数据库记录 |
 | 邮件/短信/验证码 | 真实通道需要账号、回调和风控 | `ACCOUNT-SETTINGS-001` 只补注册、资料设置和登录态内改密码；验证码、找回密码和第三方登录保持 `TODO_CONFIRM` |
 | Excel 导入 | `.xlsx` 可用标准 ZIP/XML 结构解析，但旧 `.xls` 需要额外依赖 | 当前不新增依赖，支持标准 `.xlsx` 和 CSV；旧 `.xls` 要求另存 |
@@ -170,10 +172,10 @@
 
 ## 下一步
 
-按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `RBAC-DELETE-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
+按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `FILE-SNIFF-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
 
 ```text
-生产化边界 / 需业务确认的外部集成 / 测试深度增强。
+生产化边界 / 需业务确认的外部集成 / 测试深度增强 / 权限与审批深度增强。
 ```
 
 当前执行约束：不使用 Docker，不启动 PostgreSQL/MySQL/Redis；验证以本地 `.venv`、SQLite、pytest、API E2E 和 system Chrome browser smoke 为主。PostgreSQL/MySQL/Redis 只做配置解析和边界检查，不做真实验证。

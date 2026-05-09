@@ -15,6 +15,7 @@
 - 运维 readiness endpoint，当前检查默认数据库连接。
 - SQLite-first 本地显式备份命令。
 - 本地软删除文件显式清理命令。
+- 文件上传基础内容签名校验。
 - 外部商品链接解析入口和人工代购 fallback。
 - 会员注册、账户资料设置和会员自助改密码基础。
 - 后台真实运营控制台和角色权限矩阵，替换固定假数据占位工作台。
@@ -44,6 +45,7 @@
 | 运维 readiness 检查 | 本地已验证默认数据库连接检查；外部监控/告警不声明完成 | `docs/agent-runs/2026-05-09-OPS-READINESS-001.md`、`backend/apps/common/tests/test_health.py` |
 | SQLite 本地备份 | 本地已验证 `backup_sqlite --dry-run` 和备份测试；生产数据库备份不声明完成 | `docs/agent-runs/2026-05-09-OPS-SQLITE-BACKUP-001.md`、`backend/apps/common/tests/test_backup_sqlite.py` |
 | 本地软删除文件清理 | 本地已验证 `purge_deleted_files --dry-run` 和清理测试；对象存储生命周期不声明完成 | `docs/agent-runs/2026-05-09-STORAGE-CLEANUP-001.md`、`backend/apps/files/tests/test_purge_deleted_files.py` |
+| 文件上传内容签名 | 本地已验证扩展名、MIME 与基础文件头一致性校验；病毒扫描/对象存储不声明完成 | `docs/agent-runs/2026-05-09-FILE-SNIFF-001.md`、`backend/apps/files/tests/test_files.py` |
 | 外部商品链接解析 | 本地已验证 `purchase-links/parse`，User Web/Mobile H5 手工代购入口已整合；真实抓取/自动下单不声明完成 | `docs/agent-runs/2026-05-09-PURCHASE-AUTO-001.md`、`backend/apps/purchases/tests/test_purchases.py` |
 | 会员注册与账户设置 | 本地已验证注册、资料更新、旧密码失效和新密码登录；User Web `/settings`、Mobile H5 `/me/settings` 已整合；短信/邮件验证码和找回密码不声明完成 | `docs/agent-runs/2026-05-09-ACCOUNT-SETTINGS-001.md`、`backend/apps/members/tests/test_members.py` |
 | 后台占位面板真实化 | Admin Web `/dashboard`、`/roles` 和 `/admin-users` 已改为真实接口面板；角色创建、编辑、权限分配、管理员角色分配和业务模块级 action 权限已补齐 | `docs/agent-runs/2026-05-09-ADMIN-PANELS-001.md`、`docs/agent-runs/2026-05-09-RBAC-ROLES-001.md`、`docs/agent-runs/2026-05-09-RBAC-ADMIN-USERS-001.md`、`docs/agent-runs/2026-05-09-RBAC-BUSINESS-ACTIONS-001.md`、`backend/apps/iam/tests/test_admin_auth.py` |
@@ -74,6 +76,7 @@
 | 运维 readiness | 后端 `/api/v1/health/ready` 已验证默认数据库连接检查和 503 脱敏失败响应 | `docs/agent-runs/2026-05-09-OPS-READINESS-001.md` |
 | SQLite 本地备份 | `backup_sqlite` 已验证可生成可读取备份，并支持 dry-run、覆盖保护和边界失败 | `docs/agent-runs/2026-05-09-OPS-SQLITE-BACKUP-001.md` |
 | 本地文件清理 | `purge_deleted_files` 已验证 dry-run、真实删除、ACTIVE/未到期保护、missing、unsafe 路径和非普通文件跳过 | `docs/agent-runs/2026-05-09-STORAGE-CLEANUP-001.md` |
+| 文件上传内容校验 | 上传阶段已验证扩展名、MIME 和基础文件头一致性，伪装图片和明显非 ZIP `.xlsx` 会被拒绝 | `docs/agent-runs/2026-05-09-FILE-SNIFF-001.md` |
 | 外链代购入口 | `purchase-links/parse` 已验证常见平台识别、未知平台 fallback、敏感 URL 拒绝，并已进入 Web/H5 手工代购页 | `docs/agent-runs/2026-05-09-PURCHASE-AUTO-001.md` |
 | 后台控制台和 RBAC | `/api/v1/admin/dashboard` 按权限返回真实聚合指标，Admin Web `/dashboard`、`/roles` 与 `/admin-users` 不再使用固定假数据占位页；角色、管理员账号、删除保护和业务写操作分别由 `iam.*.manage`、`*.manage` / `*.export` 控制 | `docs/agent-runs/2026-05-09-ADMIN-PANELS-001.md`、`docs/agent-runs/2026-05-09-RBAC-ROLES-001.md`、`docs/agent-runs/2026-05-09-RBAC-ADMIN-USERS-001.md`、`docs/agent-runs/2026-05-09-RBAC-BUSINESS-ACTIONS-001.md`、`docs/agent-runs/2026-05-09-RBAC-DELETE-001.md` |
 | 外部服务配置边界 | `DATABASE_URL`/`REDIS_URL`/Celery eager 可通过无连接脚本检查，PostgreSQL/MySQL/Redis/Celery 仍不声明真实可用 | `docs/agent-runs/2026-05-09-CONFIG-EXTERNAL-SERVICES-001.md`、`scripts/config/inspect_configured_services.py` |
@@ -103,7 +106,7 @@ git diff --check
 - 真实 TLS、HSTS、反向代理和 staging 域名未验证；当前只完成应用层基础安全 header。
 - Prometheus/Sentry/外部告警和真实 staging 探针未验证；当前只完成本地 readiness endpoint。
 - PostgreSQL/MySQL 生产备份、远程备份、加密、轮转和恢复演练未验证；当前只完成 SQLite 本地显式备份命令。
-- 对象存储生命周期、CDN、缩略图、病毒扫描和远程文件归档未验证；当前只完成本地软删除文件清理命令。
+- 对象存储生命周期、CDN、缩略图、病毒扫描、EXIF 清理和远程文件归档未验证；当前只完成本地软删除文件清理命令和基础内容签名校验。
 - `npm run e2e:browser` 已纳入仓库，并覆盖一条真实包裹预报/入库/回看旅程；Playwright、组件级测试、视觉回归和更多业务旅程仍需后续增强。
 - `npm run inspect:services` 已纳入仓库，但只做无连接 DSN 检查；PostgreSQL/MySQL/Redis/Celery 真实运行仍需后续验证。
 - 真实支付、真实自动采购下单、对象存储、外部 SIEM/审计告警、真实打印硬件、物流 API 和业务 create/update/delete 子权限后续补齐。

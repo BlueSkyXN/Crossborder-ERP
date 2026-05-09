@@ -11,6 +11,7 @@ from apps.warehouses.services import seed_warehouse_demo_data
 ADMIN_EMAIL = "admin@example.com"
 MEMBER_EMAIL = "user@example.com"
 PASSWORD = "password123"
+JPEG_BYTES = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00\x48\x00\x48\x00\x00\xff\xd9"
 
 
 def _api_data(response, *, expected_status=200):
@@ -95,7 +96,7 @@ def _upload_admin_parcel_photo(admin_client: APIClient, suffix: str) -> dict:
                 "usage": "PARCEL_PHOTO",
                 "file": SimpleUploadedFile(
                     f"e2e-{suffix.lower()}-photo.jpg",
-                    b"e2e-photo",
+                    JPEG_BYTES,
                     content_type="image/jpeg",
                 ),
             },
@@ -113,7 +114,7 @@ def _upload_member_remittance_proof(member_client: APIClient, suffix: str) -> di
                 "usage": "REMITTANCE_PROOF",
                 "file": SimpleUploadedFile(
                     f"e2e-{suffix.lower()}-remittance.jpg",
-                    b"e2e-remittance-proof",
+                    JPEG_BYTES,
                     content_type="image/jpeg",
                 ),
             },
@@ -131,7 +132,7 @@ def _upload_member_message_attachment(member_client: APIClient, suffix: str) -> 
                 "usage": "MESSAGE_ATTACHMENT",
                 "file": SimpleUploadedFile(
                     f"e2e-{suffix.lower()}-message.jpg",
-                    b"e2e-message-attachment",
+                    JPEG_BYTES,
                     content_type="image/jpeg",
                 ),
             },

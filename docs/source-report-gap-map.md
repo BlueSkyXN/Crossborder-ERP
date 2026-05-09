@@ -10,7 +10,7 @@
 - Admin Web、User Web、Mobile H5 已覆盖登录、仓库地址、包裹预报、扫描入库、申请打包、审核计费、余额支付、发货轨迹、确认收货、商品/购物车/手工代购最小链路。
 - `npm run e2e` 已覆盖 API 级 P0 主流程，并已把线下汇款审核入账纳入主链路资金来源。
 
-但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 模板下载和批量预报解析；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础；`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`QA-BROWSER-003` 已加固 Browser Smoke 导航等待和失败诊断；`CI-EVIDENCE-001` 已补齐 Agent 证据 CI 门禁；`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础；`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础；`GROWTH-001` 已补齐积分流水、邀请关系、返利记录统计和三端入口基础；`AUDITLOG-001` 已补齐后台关键写操作审计日志和查询面板；`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令；`SECURITY-HEADERS-001` 已补齐基础应用安全响应头配置和测试；`OPS-READINESS-001` 已补齐默认数据库 readiness 检查；`OPS-SQLITE-BACKUP-001` 已补齐 SQLite-first 本地备份命令；`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令；`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口；`ACCOUNT-SETTINGS-001` 已补齐前台注册、账户设置和会员自助改密码基础；`ADMIN-PANELS-001` 已把后台 dashboard/roles 从固定假数据占位面板替换为真实接口面板；`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环；`RBAC-ADMIN-USERS-001` 已补齐管理员账号创建、启停、密码重置和角色分配闭环；`RBAC-BUSINESS-ACTIONS-001` 已补齐后台业务写操作的模块级 action 权限拆分；`CONFIG-EXTERNAL-SERVICES-001` 已补齐 PostgreSQL/MySQL/Redis/Celery 的无连接 DSN 边界检查；`RBAC-DELETE-001` 已补齐角色与管理员账号安全删除闭环。剩余差距集中在真实生产部署/TLS/HSTS/监控/告警/远程备份/对象存储等运维边界、需要业务/合规确认的真实外部下单/支付/物流集成、业务 create/update/delete 子权限/审批流，以及视觉回归/组件级测试/更大范围浏览器流。
+但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FILE-SNIFF-001` 已补齐上传文件扩展名/MIME/基础文件头一致性校验；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 模板下载和批量预报解析；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础；`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`QA-BROWSER-003` 已加固 Browser Smoke 导航等待和失败诊断；`CI-EVIDENCE-001` 已补齐 Agent 证据 CI 门禁；`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础；`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础；`GROWTH-001` 已补齐积分流水、邀请关系、返利记录统计和三端入口基础；`AUDITLOG-001` 已补齐后台关键写操作审计日志和查询面板；`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令；`SECURITY-HEADERS-001` 已补齐基础应用安全响应头配置和测试；`OPS-READINESS-001` 已补齐默认数据库 readiness 检查；`OPS-SQLITE-BACKUP-001` 已补齐 SQLite-first 本地备份命令；`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令；`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口；`ACCOUNT-SETTINGS-001` 已补齐前台注册、账户设置和会员自助改密码基础；`ADMIN-PANELS-001` 已把后台 dashboard/roles 从固定假数据占位面板替换为真实接口面板；`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环；`RBAC-ADMIN-USERS-001` 已补齐管理员账号创建、启停、密码重置和角色分配闭环；`RBAC-BUSINESS-ACTIONS-001` 已补齐后台业务写操作的模块级 action 权限拆分；`CONFIG-EXTERNAL-SERVICES-001` 已补齐 PostgreSQL/MySQL/Redis/Celery 的无连接 DSN 边界检查；`RBAC-DELETE-001` 已补齐角色与管理员账号安全删除闭环。剩余差距集中在真实生产部署/TLS/HSTS/监控/告警/远程备份/对象存储/病毒扫描等运维边界、需要业务/合规确认的真实外部下单/支付/物流集成、业务 create/update/delete 子权限/审批流，以及视觉回归/组件级测试/更大范围浏览器流。
 
 ## Source Scope
 
@@ -62,6 +62,7 @@
 | Readiness | `/api/v1/health/ready` 检查默认数据库连接，失败返回 HTTP 503 和脱敏状态 | `backend/apps/common/views.py`；`backend/apps/common/tests/test_health.py` |
 | SQLite backup | `backup_sqlite` 显式备份 file-backed SQLite，支持 dry-run 和覆盖保护 | `backend/apps/common/management/commands/backup_sqlite.py`；`backend/apps/common/tests/test_backup_sqlite.py` |
 | Local file cleanup | `purge_deleted_files` 清理超过保留期的软删除本地文件，支持 dry-run、missing/unsafe 统计 | `backend/apps/files/management/commands/purge_deleted_files.py`；`backend/apps/files/tests/test_purge_deleted_files.py` |
+| File upload sniff | 上传文件校验扩展名、MIME 与基础内容签名一致性，覆盖图片、PDF、旧 `.xls`、标准 `.xlsx` 和 CSV 轻量二进制拦截 | `backend/apps/files/services.py`；`backend/apps/files/tests/test_files.py` |
 
 ## Gap Matrix
 
@@ -70,7 +71,7 @@
 | 地址簿和用户资料 | User Web MVP 把收件地址列为 P0，后端任务列为 `BE-019`；Mobile 二阶段列为地址管理 | `ADDR-001` 已补基础 address app/API、User Web/Mobile 地址簿、运单 `address_id` 和 snapshot 防漂移断言；更复杂用户资料仍留给 `MEMBER-001` | `ADDR-001` 已完成 |
 | 会员后台管理 | Admin MVP 要求会员账号、审核/冻结、客服分配、会员等级、会员留言 | `MEMBER-001` 已补后台会员 API、RBAC、冻结/解冻、测试密码重置、等级和客服服务信息维护；复杂 CRM/自动分配仍后续 | `MEMBER-001` 已完成；复杂 CRM 后续 |
 | 线下汇款和充值审核 | Admin/User Web 均要求线下汇款、汇款单管理、后台审核入账 | `FIN-001` 已补用户提交汇款、`REMITTANCE_PROOF` 凭证、待审/通过/取消状态、后台审核入账防重和三端财务入口；真实线上支付仍不做 | `FIN-001` 已完成；真实支付后续 |
-| 文件上传 | Admin 后端任务要求图片上传、凭证上传、Excel 导入、模板下载；User Web 后端任务要求文件服务 | `FILE-001` 已补本地上传、元数据、大小/MIME/扩展名限制、鉴权下载和包裹图片引用；`IMPORT-001`/`IMPORT-XLSX-001` 已复用 `IMPORT_FILE` 支撑 CSV 和 `.xlsx` 导入；对象存储、缩略图、病毒扫描仍后续 | `FILE-001`/`IMPORT-001`/`IMPORT-XLSX-001` 已完成基础；对象存储增强留给后续 |
+| 文件上传 | Admin 后端任务要求图片上传、凭证上传、Excel 导入、模板下载；User Web 后端任务要求文件服务 | `FILE-001` 已补本地上传、元数据、大小/MIME/扩展名限制、鉴权下载和包裹图片引用；`FILE-SNIFF-001` 已补基础内容签名校验；`IMPORT-001`/`IMPORT-XLSX-001` 已复用 `IMPORT_FILE` 支撑 CSV 和 `.xlsx` 导入；对象存储、缩略图、病毒扫描仍后续 | `FILE-001`/`FILE-SNIFF-001`/`IMPORT-001`/`IMPORT-XLSX-001` 已完成基础；对象存储和病毒扫描增强留给后续 |
 | 客服消息/工单 | Admin/User Web/Mobile 均要求留言、消息列表、客服回复 | `MSG-001` 已补 tickets/messages app、用户 `MESSAGE_ATTACHMENT` 附件校验、后台 `tickets.view` 权限、三端工单入口和 API E2E；真实在线客服/实时推送不做 | `MSG-001` 已完成；实时客服后续 |
 | 内容 CMS | Admin MVP 要求帮助中心、分类、条款隐私、公告、关于我们；Gemini Admin 网站管理同样明确 | `CONTENT-001` 已补 content app、后台 CRUD/发布隐藏、公开只读 API、Admin Web 内容管理、User Web/Mobile H5 展示；正式条款/隐私文案仍需业务/法务确认 | `CONTENT-001` 已完成；文案确认后续 |
 | 无主包裹用户认领 | User Web/Mobile 均要求用户搜索和认领无主包裹 | `PARCEL-CLAIM-001` 已补用户侧脱敏列表/搜索/认领 API，后台审核通过/驳回，审核通过后转会员 `Parcel.IN_STOCK`，三端入口已补 | `PARCEL-CLAIM-001` 已完成 |
@@ -93,7 +94,7 @@
 
 后续不应一次性做超大 PR，建议按依赖顺序拆小任务：
 
-1. 生产化运维边界：补 PostgreSQL/MySQL/Redis 真实连接/迁移验证计划、对象存储、告警和部署验证。
+1. 生产化运维边界：补 PostgreSQL/MySQL/Redis 真实连接/迁移验证计划、对象存储、病毒扫描、告警和部署验证。
 2. 需要业务/合规确认的外部集成：真实支付、真实物流 API、真实自动采购下单和外部商品抓取。
 3. 测试深度增强：在现有 `npm run e2e:browser` 基础上，逐步覆盖视觉回归、组件级测试和更多复杂浏览器流。
 4. 权限深度增强：在现有模块级业务 action 权限基础上，按业务需要继续拆 create/update/delete 子权限和审批流。

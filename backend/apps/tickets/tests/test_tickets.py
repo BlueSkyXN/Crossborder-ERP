@@ -10,6 +10,9 @@ from apps.members.services import issue_member_access_token, register_user, seed
 from apps.tickets.models import Ticket, TicketStatus
 
 
+JPEG_BYTES = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00\x48\x00\x48\x00\x00\xff\xd9"
+
+
 @pytest.fixture
 def seeded_tickets(db):
     seed_iam_demo_data()
@@ -46,7 +49,7 @@ def create_admin_with_permissions(email: str, permission_codes: list[str]) -> Ad
     return admin
 
 
-def image_upload(name="message.jpg", content=b"message-file", content_type="image/jpeg"):
+def image_upload(name="message.jpg", content=JPEG_BYTES, content_type="image/jpeg"):
     return SimpleUploadedFile(name, content, content_type=content_type)
 
 

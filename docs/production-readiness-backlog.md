@@ -45,6 +45,7 @@
 | `RBAC-BUSINESS-ACTIONS-001` | P3 | 业务写操作权限拆分 | 后台业务写接口、Admin Web 写按钮和导出入口按 `*.manage` / `*.export` 权限控制 | 已完成模块级拆分；create/update/delete 子权限和审批流后续 |
 | `CONFIG-EXTERNAL-SERVICES-001` | P3 | 外部服务 DSN 边界检查 | `DATABASE_URL`/`REDIS_URL`/Celery eager 的无连接检查脚本、settings helper 和测试 | 已完成配置解析；不安装驱动、不连接 PostgreSQL/MySQL/Redis |
 | `RBAC-DELETE-001` | P3 | 角色与管理员安全删除 | 角色删除、管理员账号删除、内置/自删/已分配保护、Admin Web 删除入口 | 已完成基础；外部 IAM 和审批流后续 |
+| `FILE-SNIFF-001` | P3 | 文件上传内容签名校验 | 扩展名/MIME/文件头一致性校验，拦截伪装图片/PDF/XLS/XLSX | 已完成基础；病毒扫描、缩略图、对象存储后续 |
 
 ## Completed Production Gap Tasks
 
@@ -78,12 +79,13 @@
 - `RBAC-BUSINESS-ACTIONS-001`：已补 `members.manage`、`warehouses.manage`、`parcels.manage`、`parcels.export`、`waybills.manage`、`finance.manage`、`files.manage`、`purchases.manage`、`products.manage`、`tickets.manage`、`content.manage`、`audit.logs.export`、`growth.view` 和 `growth.manage`；后台业务写接口和 Admin Web 写入口已按模块级 action 权限控制。每个 create/update/delete 子动作和审批流仍后续补齐。
 - `CONFIG-EXTERNAL-SERVICES-001`：已补 `npm run inspect:services` 和 `inspect_configured_services`，可在不执行 Django setup、不安装数据库驱动、不连接外部服务的情况下检查 SQLite/PostgreSQL/MySQL/Redis/Celery 配置边界；PostgreSQL/MySQL/Redis/Celery 仍为 `configured_unverified`。
 - `RBAC-DELETE-001`：已补 `DELETE /api/v1/admin/roles/{id}` 和 `DELETE /api/v1/admin/admin-users/{id}`，Admin Web `/roles` 和 `/admin-users` 已显示删除入口；内置超级管理员角色/账号、当前登录管理员和已分配角色受保护。
+- `FILE-SNIFF-001`：已补上传文件扩展名、MIME 和基础内容签名一致性校验，覆盖 JPEG/PNG/WEBP/GIF/PDF/旧 `.xls`/标准 `.xlsx`，CSV 轻量拦截 NUL 二进制内容；不新增依赖，不声明病毒扫描或对象存储完成。
 
 ## Current Next Task
 
-任务图中的 `RBAC-DELETE-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
+任务图中的 `FILE-SNIFF-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
 
-- 生产化边界：补对象存储、PostgreSQL/MySQL/Redis 真实连接/迁移验证计划、告警和部署验证。
+- 生产化边界：补对象存储、病毒扫描、PostgreSQL/MySQL/Redis 真实连接/迁移验证计划、告警和部署验证。
 - 需业务/合规确认的外部集成：真实支付、真实物流 API、真实自动采购下单和外部商品抓取。
 - 测试深度增强：在现有 system Chrome CDP smoke 和一条真实业务旅程之外，补视觉回归、组件级测试或更多复杂浏览器流。
 

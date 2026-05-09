@@ -7,6 +7,12 @@ from apps.iam.services import seed_iam_demo_data
 from apps.members.services import issue_member_access_token, register_user, seed_member_demo_data
 
 
+JPEG_BYTES = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00\x48\x00\x48\x00\x00\xff\xd9"
+PNG_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+WEBP_BYTES = b"RIFF\x1a\x00\x00\x00WEBPVP8 \x0e\x00\x00\x00"
+PDF_BYTES = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF\n"
+
+
 @pytest.fixture
 def seeded_files(db):
     seed_iam_demo_data()
@@ -31,7 +37,16 @@ def admin_token(client, email="admin@example.com"):
     return response.json()["data"]["access_token"]
 
 
-def image_upload(name="parcel.jpg", content=b"image-bytes", content_type="image/jpeg"):
+def image_upload(name="parcel.jpg", content=None, content_type="image/jpeg"):
+    if content is None:
+        if name.endswith(".png"):
+            content = PNG_BYTES
+        elif name.endswith(".webp"):
+            content = WEBP_BYTES
+        elif name.endswith(".pdf"):
+            content = PDF_BYTES
+        else:
+            content = JPEG_BYTES
     return SimpleUploadedFile(name, content, content_type=content_type)
 
 
@@ -74,7 +89,7 @@ def test_member_cannot_read_or_delete_other_member_file(client, seeded_files):
         reverse("file-list"),
         {
             "usage": FileUsage.MESSAGE_ATTACHMENT,
-            "file": image_upload("message.png", b"message", "image/png"),
+            "file": image_upload("message.png", PNG_BYTES, "image/png"),
         },
         HTTP_AUTHORIZATION=f"Bearer {owner_token}",
     )
@@ -116,11 +131,45 @@ def test_upload_rejects_invalid_type_and_oversized_file(client, seeded_files):
     assert oversized.json()["code"] == "VALIDATION_ERROR"
 
 
+def test_upload_rejects_extension_mime_or_signature_mismatch(client, seeded_files):
+    token = member_token(client)
+    wrong_signature = client.post(
+        reverse("file-list"),
+        {"usage": FileUsage.PARCEL_PHOTO, "file": image_upload("parcel.jpg", b"not-a-jpeg", "image/jpeg")},
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    wrong_mime = client.post(
+        reverse("file-list"),
+        {"usage": FileUsage.PARCEL_PHOTO, "file": image_upload("parcel.jpg", JPEG_BYTES, "image/png")},
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert wrong_signature.status_code == 400
+    assert wrong_signature.json()["data"]["field_errors"]["file_signature"] == ["文件内容与扩展名不匹配"]
+    assert wrong_mime.status_code == 400
+    assert "content_type" in wrong_mime.json()["data"]["field_errors"]
+
+
+def test_member_upload_accepts_pdf_for_document_allowed_usage(client, seeded_files):
+    token = member_token(client)
+
+    response = client.post(
+        reverse("file-list"),
+        {"usage": FileUsage.REMITTANCE_PROOF, "file": image_upload("proof.pdf", PDF_BYTES, "application/pdf")},
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 201
+    data = response.json()["data"]
+    assert data["original_name"] == "proof.pdf"
+    assert data["content_type"] == "application/pdf"
+
+
 def test_admin_file_api_uses_admin_download_url(client, seeded_files):
     token = admin_token(client)
     response = client.post(
         reverse("admin-file-list"),
-        {"usage": FileUsage.PARCEL_PHOTO, "file": image_upload("parcel.webp", b"parcel", "image/webp")},
+        {"usage": FileUsage.PARCEL_PHOTO, "file": image_upload("parcel.webp", WEBP_BYTES, "image/webp")},
         HTTP_AUTHORIZATION=f"Bearer {token}",
     )
 
@@ -135,7 +184,7 @@ def test_admin_file_api_requires_file_manage_permission(client, seeded_files):
 
     response = client.post(
         reverse("admin-file-list"),
-        {"usage": FileUsage.PRODUCT_IMAGE, "file": image_upload("product.jpg", b"product", "image/jpeg")},
+        {"usage": FileUsage.PRODUCT_IMAGE, "file": image_upload("product.jpg", JPEG_BYTES, "image/jpeg")},
         HTTP_AUTHORIZATION=f"Bearer {token}",
     )
 

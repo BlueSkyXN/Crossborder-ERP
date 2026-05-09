@@ -59,6 +59,13 @@ def import_csv_text(rows: list[str]) -> bytes:
     return ("\n".join([header, *rows]) + "\n").encode("utf-8")
 
 
+def invalid_xlsx_like_zip() -> bytes:
+    buffer = BytesIO()
+    with ZipFile(buffer, "w") as workbook:
+        workbook.writestr("not-workbook.txt", "not a standard xlsx workbook")
+    return buffer.getvalue()
+
+
 @override_settings(MEDIA_ROOT="/tmp/crossborder-erp-test-media")
 def test_member_imports_parcel_forecast_csv_and_exports_own_rows(client, seeded_imports):
     token = member_token(client)
@@ -212,7 +219,7 @@ def test_invalid_xlsx_import_file_returns_recorded_failure(client, seeded_import
         client,
         token,
         "forecast.xlsx",
-        b"not-real-xlsx",
+        invalid_xlsx_like_zip(),
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 

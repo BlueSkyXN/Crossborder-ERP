@@ -13,6 +13,9 @@ from apps.warehouses.models import Warehouse
 from apps.warehouses.services import seed_warehouse_demo_data
 
 
+JPEG_BYTES = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00\x48\x00\x48\x00\x00\xff\xd9"
+
+
 @pytest.fixture
 def seeded_parcels(db):
     seed_iam_demo_data()
@@ -43,7 +46,7 @@ def upload_admin_parcel_photo(client, token, name="inbound-photo.jpg"):
         reverse("admin-file-list"),
         {
             "usage": FileUsage.PARCEL_PHOTO,
-            "file": SimpleUploadedFile(name, b"inbound-photo", content_type="image/jpeg"),
+            "file": SimpleUploadedFile(name, JPEG_BYTES, content_type="image/jpeg"),
         },
         HTTP_AUTHORIZATION=f"Bearer {token}",
     )

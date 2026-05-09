@@ -24,10 +24,12 @@ MENU_PERMISSIONS = [
     ("content.view", "内容管理", "content", 88),
     ("audit.logs.view", "审计日志", "audit", 89),
     ("iam.role.view", "角色权限", "roles", 90),
+    ("iam.admin.view", "管理员账号", "admin-users", 92),
 ]
 
 ACTION_PERMISSIONS = [
     ("iam.role.manage", "角色权限管理", "roles", 91, PermissionType.BUTTON),
+    ("iam.admin.manage", "管理员账号管理", "admin-users", 93, PermissionType.BUTTON),
 ]
 
 ALL_PERMISSION_CODES = [item[0] for item in MENU_PERMISSIONS] + [item[0] for item in ACTION_PERMISSIONS]

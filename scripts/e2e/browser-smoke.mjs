@@ -539,11 +539,14 @@ async function runAdmin(debugPort, journey) {
   await verifyRouteText(page, `${ADMIN_URL}/tickets`, ["客服工单", "待处理工单", "处理中"]);
   await verifyRouteText(page, `${ADMIN_URL}/content`, ["内容管理", "已发布", "草稿"]);
   await verifyRouteText(page, `${ADMIN_URL}/roles`, ["角色权限", "权限覆盖矩阵", "super_admin", "新增角色"]);
+  await verifyRouteText(page, `${ADMIN_URL}/admin-users`, ["管理员账号", "账号列表", "新增管理员"]);
   assertNoIssues("Admin Web", page.issues);
   page.cdp.close();
   console.log("[QA-BROWSER-002] Admin Web scanned the browser-created parcel into stock");
   console.log("[QA-BROWSER-001] Admin Web login, parcels, shipping batch, finance payable, growth, and audit smoke passed");
-  console.log("[ADMIN-PANELS-001] Admin Web dashboard, roles, warehouses, purchases, products, tickets, and content panels passed");
+  console.log(
+    "[ADMIN-PANELS-001] Admin Web dashboard, roles, admin users, warehouses, purchases, products, tickets, and content panels passed",
+  );
 }
 
 async function runUser(debugPort, journey) {

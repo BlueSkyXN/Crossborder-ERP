@@ -1,3 +1,4 @@
+from django.contrib.auth.hashers import make_password
 from django.db import transaction
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import exceptions
@@ -8,9 +9,11 @@ from apps.common.responses import success_response
 
 from .authentication import AdminTokenAuthentication
 from .dashboard import build_admin_dashboard_snapshot
-from .models import Permission, Role
+from .models import AdminUser, AdminUserStatus, Permission, Role
 from .permissions import HasAdminPermission, IsAdminAuthenticated
 from .serializers import (
+    AdminAccountSerializer,
+    AdminAccountWriteSerializer,
     AdminLoginSerializer,
     AdminUserSerializer,
     PermissionSerializer,
@@ -131,9 +134,58 @@ class AdminPermissionsView(APIView):
         return success_response({"items": PermissionSerializer(permissions, many=True).data})
 
 
+class AdminAccountsView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "iam.admin.view"
+
+    @extend_schema(tags=["admin-auth"], responses={200: AdminAccountSerializer(many=True)})
+    def get(self, request):
+        accounts = AdminUser.objects.prefetch_related("roles__permissions").all()
+        return success_response({"items": AdminAccountSerializer(accounts, many=True).data})
+
+    @extend_schema(tags=["admin-auth"], request=AdminAccountWriteSerializer, responses={201: AdminAccountSerializer})
+    def post(self, request):
+        ensure_admin_manage_permission(request.user)
+        serializer = AdminAccountWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        admin_account = save_admin_account(serializer.validated_data, actor=request.user)
+        return success_response(AdminAccountSerializer(admin_account).data, status=status.HTTP_201_CREATED)
+
+
+class AdminAccountDetailView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "iam.admin.view"
+
+    def get_admin_account(self, admin_id: int) -> AdminUser:
+        try:
+            return AdminUser.objects.prefetch_related("roles__permissions").get(id=admin_id)
+        except AdminUser.DoesNotExist as exc:
+            raise exceptions.NotFound("管理员不存在") from exc
+
+    @extend_schema(tags=["admin-auth"], responses={200: AdminAccountSerializer})
+    def get(self, request, admin_id: int):
+        return success_response(AdminAccountSerializer(self.get_admin_account(admin_id)).data)
+
+    @extend_schema(tags=["admin-auth"], request=AdminAccountWriteSerializer, responses={200: AdminAccountSerializer})
+    def patch(self, request, admin_id: int):
+        ensure_admin_manage_permission(request.user)
+        admin_account = self.get_admin_account(admin_id)
+        serializer = AdminAccountWriteSerializer(admin_account, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        admin_account = save_admin_account(serializer.validated_data, admin_account=admin_account, actor=request.user)
+        return success_response(AdminAccountSerializer(admin_account).data)
+
+
 def ensure_role_manage_permission(admin_user):
     if not admin_has_permission(admin_user, "iam.role.manage"):
         raise exceptions.PermissionDenied("缺少角色管理权限")
+
+
+def ensure_admin_manage_permission(admin_user):
+    if not admin_has_permission(admin_user, "iam.admin.manage"):
+        raise exceptions.PermissionDenied("缺少管理员账号管理权限")
 
 
 @transaction.atomic
@@ -154,3 +206,44 @@ def save_role(validated_data, role: Role | None = None) -> Role:
         permissions = Permission.objects.filter(code__in=permission_codes)
         role.permissions.set(permissions)
     return Role.objects.prefetch_related("permissions").get(id=role.id)
+
+
+@transaction.atomic
+def save_admin_account(
+    validated_data,
+    *,
+    admin_account: AdminUser | None = None,
+    actor: AdminUser,
+) -> AdminUser:
+    role_codes = validated_data.pop("role_codes", None)
+    raw_password = validated_data.pop("password", "")
+
+    if admin_account is not None:
+        if admin_account.is_super_admin:
+            raise exceptions.ValidationError({"email": "内置超级管理员账号不可修改"})
+        if actor.id == admin_account.id and ("status" in validated_data or role_codes is not None or raw_password):
+            raise exceptions.ValidationError({"email": "当前登录管理员不可修改自己的状态、角色或密码"})
+
+    if admin_account is None:
+        admin_account = AdminUser.objects.create(
+            email=validated_data["email"],
+            name=validated_data["name"],
+            status=validated_data.get("status", AdminUserStatus.ACTIVE),
+            is_super_admin=False,
+            password_hash=make_password(raw_password),
+        )
+    else:
+        for field in ["name", "status"]:
+            if field in validated_data:
+                setattr(admin_account, field, validated_data[field])
+        if raw_password:
+            admin_account.password_hash = make_password(raw_password)
+        update_fields = ["name", "status", "updated_at"]
+        if raw_password:
+            update_fields.append("password_hash")
+        admin_account.save(update_fields=update_fields)
+
+    if role_codes is not None:
+        roles = Role.objects.filter(code__in=role_codes)
+        admin_account.roles.set(roles)
+    return AdminUser.objects.prefetch_related("roles__permissions").get(id=admin_account.id)

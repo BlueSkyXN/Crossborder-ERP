@@ -48,3 +48,16 @@ export type RolePayload = {
   description?: string;
   permission_codes: string[];
 };
+
+export type AdminAccount = AdminUser & {
+  last_login_at: string | null;
+  created_at: string;
+};
+
+export type AdminAccountPayload = {
+  email?: string;
+  name: string;
+  password?: string;
+  status?: AdminUser["status"];
+  role_codes: string[];
+};

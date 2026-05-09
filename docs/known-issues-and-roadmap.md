@@ -7,7 +7,7 @@
 - `docs/source-report-gap-map.md`
 - `docs/production-readiness-backlog.md`
 
-`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 批量预报解析，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础，`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的一条真实浏览器旅程，`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础，`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础，`GROWTH-001` 已补齐积分推广返利基础，`AUDITLOG-001` 已补齐后台关键写操作审计日志，`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令，`SECURITY-HEADERS-001` 已补齐基础应用安全响应头，`OPS-READINESS-001` 已补齐运维 readiness 检查，`OPS-SQLITE-BACKUP-001` 已补齐 SQLite 本地备份命令，`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令，`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口，`ACCOUNT-SETTINGS-001` 已补齐会员注册、账户资料设置和自助改密码基础，`ADMIN-PANELS-001` 已补齐后台 dashboard/roles 真实接口面板，`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环。后续优先按生产化边界、需业务/合规确认的外部集成和测试深度增强逐项收敛。
+`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 批量预报解析，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础，`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的一条真实浏览器旅程，`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础，`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础，`GROWTH-001` 已补齐积分推广返利基础，`AUDITLOG-001` 已补齐后台关键写操作审计日志，`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令，`SECURITY-HEADERS-001` 已补齐基础应用安全响应头，`OPS-READINESS-001` 已补齐运维 readiness 检查，`OPS-SQLITE-BACKUP-001` 已补齐 SQLite 本地备份命令，`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令，`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口，`ACCOUNT-SETTINGS-001` 已补齐会员注册、账户资料设置和自助改密码基础，`ADMIN-PANELS-001` 已补齐后台 dashboard/roles 真实接口面板，`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环，`RBAC-ADMIN-USERS-001` 已补齐管理员账号与角色分配闭环。后续优先按生产化边界、需业务/合规确认的外部集成和测试深度增强逐项收敛。
 
 ## 已知问题
 
@@ -62,14 +62,14 @@
 ### 浏览器测试深度仍需增强
 
 问题：当前 `npm run e2e:browser` 已覆盖三端 smoke，并补了一条会员预报、后台扫描入库、会员回看在库的真实浏览器旅程和后台关键面板导航；`QA-BROWSER-003` 已加固 CDP 导航等待、失败页面快照和服务日志输出。但它还不是覆盖全部业务路径的 Playwright/组件/视觉测试体系。
-影响：可以自动发现三端登录、关键页面加载、后台 dashboard/roles 等关键面板、关键包裹表单流、console error/warning 和网络 4xx/5xx，但还不能完整覆盖所有复杂表单、批量操作、视觉回归和跨端业务旅程。
+影响：可以自动发现三端登录、关键页面加载、后台 dashboard/roles/admin-users 等关键面板、关键包裹表单流、console error/warning 和网络 4xx/5xx，但还不能完整覆盖所有复杂表单、批量操作、视觉回归和跨端业务旅程。
 当前临时处理：`npm run e2e` 继续覆盖 API 级 P0 主链路；`npm run e2e:browser` 使用 `.tmp/browser-e2e/` 临时 SQLite、media、Chrome profile 和测试服务，不下载浏览器，不使用用户日常 Chrome profile；导航失败时输出页面快照，脚本失败清理前输出服务日志尾部。
 后续建议：在确认依赖和浏览器缓存策略后，再逐步引入 Playwright、视觉回归或组件级测试，覆盖更多真实业务旅程。
 是否阻塞 v0.1：否。
 
 ### 审计日志外部归档、告警和细粒度覆盖仍需增强
 
-问题：`AUDITLOG-001` 已完成后台 `/api/v1/admin/**` 写操作请求级审计、财务高风险服务层审计和 Admin Web 查询入口；`AUDIT-RETENTION-001` 已补脱敏 CSV 导出和显式本地留存清理命令；`RBAC-ROLES-001` 已补角色管理写权限。但尚未接外部 SIEM、自动归档、告警规则、导出审批或按 create/update/delete 进一步分权。
+问题：`AUDITLOG-001` 已完成后台 `/api/v1/admin/**` 写操作请求级审计、财务高风险服务层审计和 Admin Web 查询入口；`AUDIT-RETENTION-001` 已补脱敏 CSV 导出和显式本地留存清理命令；`RBAC-ROLES-001`/`RBAC-ADMIN-USERS-001` 已补角色和管理员账号写权限。但尚未接外部 SIEM、自动归档、告警规则、导出审批或按 create/update/delete/export 进一步分权。
 影响：可以支撑 SQLite-first 后台关键操作追溯、导出和本地留存清理验收证明，但不能声明具备完整生产审计合规体系。
 当前临时处理：`audit_logs` 记录操作人、动作、对象、请求方法/路径、状态码、IP、UA、脱敏请求数据和脱敏响应数据；密码/token 等敏感字段不落库；导出使用脱敏后的存量数据；留存清理必须显式执行。
 后续建议：生产化阶段补外部归档、保留期审批、导出审批、告警规则和更细权限。
@@ -154,7 +154,7 @@
 - 在现有 system Chrome CDP smoke 和一条真实业务旅程基础上，补更多浏览器业务旅程、Playwright/组件级测试或视觉回归。
 - 补前端组件级测试和关键表单校验测试。
 - 增加服务端分页、筛选、排序和列表性能优化。
-- 完善 RBAC 细粒度权限，补角色删除、后台用户分配角色，并拆分 view/create/update/delete 操作权限。
+- 完善 RBAC 细粒度权限，补角色/管理员删除，并拆分 view/create/update/delete/export 操作权限。
 - 增强审计日志外部归档、告警、导出审批和合规报表。
 
 ### P1 生产化基础

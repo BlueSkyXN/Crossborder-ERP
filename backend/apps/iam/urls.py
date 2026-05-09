@@ -1,6 +1,8 @@
 from django.urls import path
 
 from .views import (
+    AdminAccountDetailView,
+    AdminAccountsView,
     AdminDashboardView,
     AdminLoginView,
     AdminMenusView,
@@ -18,4 +20,6 @@ urlpatterns = [
     path("admin/permissions", AdminPermissionsView.as_view(), name="admin-permissions"),
     path("admin/roles", AdminRolesView.as_view(), name="admin-roles"),
     path("admin/roles/<int:role_id>", AdminRoleDetailView.as_view(), name="admin-role-detail"),
+    path("admin/admin-users", AdminAccountsView.as_view(), name="admin-accounts"),
+    path("admin/admin-users/<int:admin_id>", AdminAccountDetailView.as_view(), name="admin-account-detail"),
 ]

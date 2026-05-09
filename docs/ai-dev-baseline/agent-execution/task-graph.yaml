@@ -278,4 +278,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/RBAC-ROLES-001.md
     depends_on: [CI-EVIDENCE-001, ADMIN-PANELS-001]
+    next: RBAC-ADMIN-USERS-001
+  - id: RBAC-ADMIN-USERS-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/RBAC-ADMIN-USERS-001.md
+    depends_on: [RBAC-ROLES-001]
     next: null

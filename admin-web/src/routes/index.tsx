@@ -6,6 +6,7 @@ import { ForbiddenPage } from "../pages/ForbiddenPage";
 import { LoginPage } from "../pages/LoginPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { AuditLogPage } from "../features/audit/AuditLogPage";
+import { AdminUserManagementPage } from "../features/auth/AdminUserManagementPage";
 import { adminRouteMeta } from "../features/auth/menu";
 import { RolePermissionPage } from "../features/auth/RolePermissionPage";
 import { ContentCmsPage } from "../features/content/ContentCmsPage";
@@ -59,6 +60,8 @@ export const router = createBrowserRouter([
                 <AuditLogPage />
               ) : route.resource === "roles" ? (
                 <RolePermissionPage />
+              ) : route.resource === "admin-users" ? (
+                <AdminUserManagementPage />
               ) : (
                 <WorkspacePage route={route} />
               ),

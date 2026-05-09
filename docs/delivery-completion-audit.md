@@ -4,12 +4,13 @@
 
 ## 总体结论
 
-`docs/ai-dev-baseline/agent-execution/task-graph.yaml` 中的正式任务已推进到末尾，`current-state.yaml` 标记为完成。当前系统具备：
+`docs/ai-dev-baseline/agent-execution/task-graph.yaml` 中的 P0 交付任务已完成，后续生产级缺口正在按 P6 任务继续收敛。当前系统具备：
 
 - Django/DRF 后端。
 - Admin Web、User Web、Mobile H5 三端入口。
 - 仓库配置、会员、包裹、运单、钱包、商品、购物车、代购等 P0 模块。
 - `npm run e2e` 自动验收主链路和最小代购链路。
+- `npm run e2e:browser` 自动验收 Admin Web、User Web、Mobile H5 登录和关键页面 smoke。
 - README、部署说明、演示脚本、已知问题和下一阶段计划。
 
 ## 用户约束映射
@@ -53,6 +54,7 @@ npm run e2e
 (cd backend && uv run pytest)
 pnpm lint
 pnpm build
+npm run e2e:browser
 actionlint .github/workflows/ci.yml
 git diff --check
 ```
@@ -63,6 +65,6 @@ git diff --check
 
 - Docker Compose 未验证。
 - PostgreSQL/MySQL/Redis/Celery 未真实验证。
-- Playwright 浏览器级 E2E 未纳入仓库。
+- `npm run e2e:browser` 已纳入仓库，但完整业务旅程级 Playwright/组件测试仍需后续增强。
 - 真实支付、自动采购、对象存储、打印、物流 API 后续补齐。
 - 复杂业务规则保持 `TODO_CONFIRM`。

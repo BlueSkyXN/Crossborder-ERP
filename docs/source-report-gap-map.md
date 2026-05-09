@@ -10,7 +10,7 @@
 - Admin Web、User Web、Mobile H5 已覆盖登录、仓库地址、包裹预报、扫描入库、申请打包、审核计费、余额支付、发货轨迹、确认收货、商品/购物车/手工代购最小链路。
 - `npm run e2e` 已覆盖 API 级 P0 主流程，并已把线下汇款审核入账纳入主链路资金来源。
 
-但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出。剩余差距集中在发货批次/转单、应付供应商、积分推广、浏览器级 E2E、Excel 解析增强和生产化运维边界。
+但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础。剩余差距集中在发货批次/转单、应付供应商、积分推广、Excel 解析增强、完整业务旅程级浏览器测试和生产化运维边界。
 
 ## Source Scope
 
@@ -54,8 +54,8 @@
 | Admin Web routes | 控制台、会员、仓库、包裹、运单、财务、代购、商品、内容管理、角色权限入口 | `admin-web/src/features/auth/menu.tsx` |
 | User Web routes | dashboard、addresses、finance、tickets、content、parcels、unclaimed-parcels、waybills、products/cart/purchases | `user-web/src/routes/index.tsx` |
 | Mobile H5 routes | home/category、ship、forecast、parcels、unclaimed-parcels、packing、waybills、cart、me、content、addresses、finance、tickets、purchases/manual | `mobile-h5/src/routes/index.tsx` |
-| CI | PR 和 main push 执行 backend check/OpenAPI/pytest、frontend lint/build | `.github/workflows/ci.yml` L3-L74 |
-| E2E | `npm run e2e` 调用 API 级 P0 pytest 流程 | `package.json` L6-L11 |
+| CI | PR 和 main push 执行 backend check/OpenAPI/pytest、frontend lint/build、Browser Smoke | `.github/workflows/ci.yml` |
+| E2E | `npm run e2e` 调用 API 级 P0 pytest 流程；`npm run e2e:browser` 调用 system Chrome CDP 三端 smoke | `package.json`；`scripts/e2e/` |
 
 ## Gap Matrix
 
@@ -73,17 +73,17 @@
 | 应付、供应商、成本 | Gemini Admin L124-L126、L172 和 ChatGPT Admin L942 要求应付管理 | 当前 finance 仅应收/钱包方向；没有 suppliers/payables/cost types | `PAYABLE-001` |
 | 积分、推广、返利 | User Web 第二阶段和 Mobile 入口均要求积分/推广/好友返利 | 当前 member profile 有 level 字段但没有 points/referrals ledger 和规则 | `GROWTH-001` |
 | 外链解析/自动采购 | User Web/Mobile 要求关键词/链接搜索，Admin 二阶段提到外部平台对接 | 当前支持自营商品和手工代购；不支持稳定外部抓取/自动采购 | `PURCHASE-AUTO-001`，需业务确认和合规确认 |
-| 浏览器级 E2E | 现有 README 已说明 Playwright 后续补齐 | CI 只有 backend pytest 与 frontend lint/build；`npm run e2e` 是 API 级 | `QA-BROWSER-001` |
+| 浏览器级 E2E | 源报告要求三端具备可实际操作产品形态；API E2E 不能发现真实浏览器运行时问题 | `QA-BROWSER-001` 已补 system Chrome CDP smoke，覆盖 Admin Web/User Web/Mobile H5 登录和关键页面，并纳入 CI；完整业务旅程、视觉回归和组件级测试仍可增强 | `QA-BROWSER-001` 已完成基础；完整浏览器旅程后续 |
 | PostgreSQL/MySQL/Redis | 用户已确认先 SQLite，后续补但不真实验证 | 当前只验证 SQLite，Redis/Celery 未真实验证 | 保持 `configured_unverified`，不进入当前验证 gate |
 
 ## Immediate Next Order
 
 后续不应一次性做超大 PR，建议按依赖顺序拆小任务：
 
-1. `QA-BROWSER-001`：在不污染本机环境的前提下引入浏览器级 E2E。
-2. `SHIP-BATCH-001`：发货批次、转单号和打印模板数据。
-3. `PAYABLE-001`：供应商、成本类型和应付基础。
-4. `GROWTH-001`：积分、推广和返利基础规则。
-5. Excel 原生解析增强：如业务确认必须支持 `.xlsx`，再并入后续导入增强任务，引入受控依赖并补回归测试。
+1. `SHIP-BATCH-001`：发货批次、转单号和打印模板数据。
+2. `PAYABLE-001`：供应商、成本类型和应付基础。
+3. `GROWTH-001`：积分、推广和返利基础规则。
+4. Excel 原生解析增强：如业务确认必须支持 `.xlsx`，再并入后续导入增强任务，引入受控依赖并补回归测试。
+5. 完整浏览器旅程增强：在现有 `npm run e2e:browser` 基础上，逐步覆盖更多真实业务流、视觉回归和组件级测试。
 
 每个任务仍需独立分支、PR、更新 PR 信息、CI 通过后合并回 `main`。

@@ -194,3 +194,8 @@ tasks:
     file: tasks/QA-BROWSER-001.md
     depends_on: [IMPORT-001]
     next: SHIP-BATCH-001
+  - id: SHIP-BATCH-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/SHIP-BATCH-001.md
+    depends_on: [QA-BROWSER-001]
+    next: PAYABLE-001

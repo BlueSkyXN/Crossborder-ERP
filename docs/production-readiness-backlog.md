@@ -23,11 +23,11 @@
 | `PARCEL-CLAIM-001` | P1 | 无主包裹用户认领 | 用户侧无主包裹列表/搜索/认领；后台审核；认领后转包裹 | 已完成：防抢认领事务测试、脱敏展示测试、三端入口 |
 | `CONTENT-001` | P1 | 内容 CMS | 帮助、公告、条款、关于我们、显示/排序；用户端展示 | 已完成：后台 CRUD/发布隐藏、三端入口、公开读取测试 |
 | `IMPORT-001` | P1 | 批量导入/导出基础 | 预报模板下载、CSV 导入、错误明细；会员/后台导出策略 | 已完成：不新增依赖，使用标准 CSV fallback；Excel 解析后续 |
+| `QA-BROWSER-001` | P1 | 浏览器级 E2E | system Chrome CDP 三端 smoke，覆盖登录和关键页面 | 已完成：不下载浏览器，不使用用户 profile，CI 可重复 |
 | `SHIP-BATCH-001` | P2 | 发货批次/转单/打印 | 发货批次模型、运单归批、批量轨迹、转单号、打印模板占位 | 不接硬件；打印只生成模板数据 |
 | `PAYABLE-001` | P2 | 供应商/成本/应付 | 供应商、成本类型、应付款、审批/核销基础 | 与应收钱包分离，金额精度测试 |
 | `GROWTH-001` | P2 | 积分/推广/返利 | 积分流水、积分兑换占位、邀请关系、返利统计 | 规则不明确项保持 `TODO_CONFIRM` |
 | `PURCHASE-AUTO-001` | P3 | 外链解析/自动采购 | 外部链接解析 provider 接口、人工 fallback、合规边界 | 不抓取真实第三方前不声明自动采购完成 |
-| `QA-BROWSER-001` | P1 | 浏览器级 E2E | Playwright 或等价浏览器 E2E，覆盖三端 P0 主路 | 先确认浏览器二进制和缓存占用；CI 可重复 |
 
 ## Completed Production Gap Tasks
 
@@ -39,17 +39,19 @@
 - `PARCEL-CLAIM-001`：已补用户侧无主包裹脱敏列表/搜索/认领 API，后台认领通过/驳回审核，审核通过后转为会员 `Parcel.IN_STOCK`；User Web、Mobile H5 和 Admin Web 已补入口和操作。
 - `CONTENT-001`：已补内容分类/内容条目模型、后台 CRUD、发布/隐藏、公开只读 API、Admin Web 内容管理页、User Web `/content` 和 Mobile H5 `/me/content` 展示入口；条款/隐私正式文案仍需业务/法务确认。
 - `IMPORT-001`：已补包裹预报 CSV 模板下载、`IMPORT_FILE` 上传后批量导入、行级错误明细、`ParcelImportJob` 结果记录、会员包裹导出和后台 `parcels.view` CSV 导出；`.xls/.xlsx` 解析仍为后续增强。
+- `QA-BROWSER-001`：已补 system Chrome CDP 浏览器 smoke，自动启动临时 SQLite/media/profile 下的后端和三端前端，覆盖 Admin Web、User Web、Mobile H5 登录和关键页面，并纳入 CI `Browser Smoke` job；不下载浏览器，不使用用户日常 Chrome profile。
 
 ## Current Next Task
 
-`QA-BROWSER-001` 是当前下一项，因为批量导入/导出基础已补齐，浏览器级 E2E 仍是三端真实可用性的主要自动化缺口。
+`SHIP-BATCH-001` 是当前下一项，因为浏览器级 smoke 基础已补齐，发货批次/转单/打印模板数据仍是源报告里的核心后台缺口。
 
-建议 `QA-BROWSER-001` 范围：
+建议 `SHIP-BATCH-001` 范围：
 
-- 先确认仓库内是否已有 Playwright/browser 相关依赖和脚本。
-- 明确浏览器二进制、缓存、profile 和端口占用边界，避免使用用户日常浏览器 profile。
-- 补最小浏览器 smoke，覆盖 Admin Web、User Web、Mobile H5 登录和关键导航。
-- 继续保留 API 级 `npm run e2e` 作为主闭环，不用浏览器 E2E 替代它。
+- 新增发货批次模型和 API，支持把多个待发货运单归入同一批次。
+- 支持维护转单号、承运商批次号和批量轨迹事件。
+- 生成面单/拣货单/发货交接清单的数据结构或预览接口，但不接真实硬件打印。
+- Admin Web 增加批次列表、创建批次、归批和批量发货基础操作。
+- 保持 SQLite-first，并补后端测试、API E2E 和必要的浏览器 smoke 入口。
 
 ## Completion Boundary
 

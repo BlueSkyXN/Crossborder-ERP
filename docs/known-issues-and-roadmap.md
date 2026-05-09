@@ -7,7 +7,7 @@
 - `docs/source-report-gap-map.md`
 - `docs/production-readiness-backlog.md`
 
-`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础。后续优先按 `QA-BROWSER-001`、`SHIP-BATCH-001` 等任务逐项收敛。
+`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础。后续优先按 `SHIP-BATCH-001` 等任务逐项收敛。
 
 ## 已知问题
 
@@ -35,12 +35,12 @@
 后续建议：确认用户恢复 Docker 需求后再补 compose、镜像构建、Nginx 和 staging 验证。
 是否阻塞 v0.1：否，用户当前明确暂不考虑 Docker。
 
-### Playwright 浏览器级 E2E 未纳入仓库
+### 完整浏览器旅程测试仍需增强
 
-问题：当前 `npm run e2e` 是 API 级完整闭环，不是浏览器级 Playwright。
-影响：不能自动发现三端页面布局、按钮遮挡、真实浏览器兼容问题。
-当前临时处理：三端浏览器手工演示脚本已固化；此前各前端任务已做过浏览器验收。
-后续建议：在明确接受浏览器二进制和缓存占用后，引入 Playwright 项目依赖。
+问题：当前已新增 `npm run e2e:browser`，但它是 system Chrome CDP smoke，不是覆盖全部业务旅程的 Playwright 测试体系。
+影响：可以自动发现三端登录、关键页面加载、console error/warning 和网络 4xx/5xx，但还不能完整覆盖复杂表单、批量操作、视觉回归和跨端业务旅程。
+当前临时处理：`npm run e2e` 继续覆盖 API 级 P0 主链路；`npm run e2e:browser` 使用 `.tmp/browser-e2e/` 临时 SQLite、media、Chrome profile 和测试服务，不下载浏览器，不使用用户日常 Chrome profile。
+后续建议：在确认依赖和浏览器缓存策略后，再逐步引入 Playwright 或组件级测试，覆盖更多真实业务旅程。
 是否阻塞 v0.1：否。
 
 ### 对象存储、缩略图和文件安全增强未完成
@@ -103,7 +103,7 @@
 
 ### P1 稳定化
 
-- 引入浏览器级 Playwright E2E，覆盖 Admin Web、User Web、Mobile H5 的主流程。
+- 在现有 system Chrome CDP smoke 基础上，补完整浏览器业务旅程或 Playwright/组件级测试。
 - 补前端组件级测试和关键表单校验测试。
 - 增加服务端分页、筛选、排序和列表性能优化。
 - 完善 RBAC 细粒度权限，拆分 view/create/update/delete 操作权限。

@@ -153,11 +153,12 @@
 | 应付核销 | 当前只记录人工核销凭证，不连接真实银行、自动打款或外部财务系统 | `PAYABLE-001` 已保持应付与钱包/PaymentOrder 分离；真实付款和供应商对账后续单独验证 |
 | 积分/推广/返利 | 当前只记录积分流水、邀请关系和返利统计，不接真实联盟、提现、税务或多级分销 | `GROWTH-001` 已保持返利与钱包/PaymentOrder 分离；最终规则统一标记 `TODO_CONFIRM` |
 | 浏览器测试依赖 | Playwright 浏览器二进制下载会占用磁盘，也可能写缓存 | 当前 `npm run e2e:browser` 使用系统 Chrome/Chromium 和 `.tmp/browser-e2e/` 临时 profile；不下载浏览器，不使用用户日常 profile；关键包裹预报/入库旅程先用 CDP 覆盖 |
+| 审计日志留存 | 外部 SIEM/归档服务需要基础设施和策略确认 | 当前先提供脱敏 CSV 导出和显式 `purge_audit_logs` 本地留存命令；不自动删除生产数据，不声明外部合规归档完成 |
 | Node/Python 版本 | 本机 `python3` 可能不是 3.12；Node 版本较新可能带来依赖兼容问题 | Python 由 `uv` 项目本地管理；前端依赖锁定后再验证 |
 
 ## 下一步
 
-按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `QA-BROWSER-002`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
+按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `AUDIT-RETENTION-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
 
 ```text
 生产化边界 / 需业务确认的外部集成 / 测试深度增强。

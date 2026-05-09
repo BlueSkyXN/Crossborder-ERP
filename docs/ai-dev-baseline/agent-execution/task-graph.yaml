@@ -223,4 +223,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/QA-BROWSER-002.md
     depends_on: [IMPORT-XLSX-001, QA-BROWSER-001]
+    next: AUDIT-RETENTION-001
+  - id: AUDIT-RETENTION-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/AUDIT-RETENTION-001.md
+    depends_on: [AUDITLOG-001, QA-BROWSER-002]
     next: null

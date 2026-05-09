@@ -122,6 +122,18 @@ staging 发布顺序建议：
 - 对象存储需要签名 URL、生命周期策略和备份策略。
 - 缩略图、病毒扫描、图片处理和 CDN 仍需后续补齐。
 
+## 审计日志留存
+
+当前审计日志存储在 `audit_logs` 表。后台 `/audit-logs` 支持导出脱敏 CSV；本地或运维脚本可以用显式命令预演和清理旧日志：
+
+```bash
+cd backend
+uv run python manage.py purge_audit_logs --older-than-days 180 --dry-run
+uv run python manage.py purge_audit_logs --older-than-days 180
+```
+
+该命令不会自动运行。留存天数、归档介质、外部 SIEM 和告警策略仍需生产部署阶段确认。
+
 ## 常见问题
 
 ### 端口被占用怎么办？

@@ -10,6 +10,7 @@
 - Admin Web、User Web、Mobile H5 三端入口。
 - 仓库配置、会员、包裹、运单、钱包、商品、购物车、代购等 P0 模块。
 - 后台关键写操作审计日志和 Admin Web 查询面板。
+- 审计日志脱敏 CSV 导出和显式本地留存清理命令。
 - `npm run e2e` 自动验收主链路和最小代购链路。
 - `npm run e2e:browser` 自动验收 Admin Web、User Web、Mobile H5 登录、关键页面 smoke 和一条真实包裹预报/入库/回看浏览器旅程。
 - CSV 和标准 `.xlsx` 批量预报导入。
@@ -45,6 +46,7 @@
 | 后台采购到货并转 Parcel | 后端和 Admin Web 已覆盖 | `docs/agent-runs/2026-05-09-FEA-005.md` |
 | Parcel 继续走集运链路 | E2E 验证转出包裹可继续申请打包 | `docs/agent-runs/2026-05-09-E2E-001.md` |
 | 后台关键操作审计 | 后台写操作请求级审计、财务高风险服务层审计和 Admin Web 查询入口已覆盖 | `docs/agent-runs/2026-05-09-AUDITLOG-001.md` |
+| 审计导出和本地留存 | 后台审计日志 CSV 导出和 `purge_audit_logs` 显式清理命令已覆盖 | `docs/agent-runs/2026-05-09-AUDIT-RETENTION-001.md` |
 
 ## 验收命令
 
@@ -69,5 +71,5 @@ git diff --check
 - Docker Compose 未验证。
 - PostgreSQL/MySQL/Redis/Celery 未真实验证。
 - `npm run e2e:browser` 已纳入仓库，并覆盖一条真实包裹预报/入库/回看旅程；Playwright、组件级测试、视觉回归和更多业务旅程仍需后续增强。
-- 真实支付、自动采购、对象存储、真实打印硬件、物流 API 后续补齐。
+- 真实支付、自动采购、对象存储、外部 SIEM/审计告警、真实打印硬件、物流 API 后续补齐。
 - 复杂业务规则保持 `TODO_CONFIRM`。

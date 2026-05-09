@@ -446,6 +446,7 @@ async function runAdmin(debugPort, journey) {
   await waitForText(page, "当前积分");
   await navigate(page, `${ADMIN_URL}/audit-logs`, "操作审计");
   await waitForText(page, "admin-login");
+  await waitForText(page, "导出 CSV");
   await waitForText(page, "敏感字段");
   assertNoIssues("Admin Web", page.issues);
   page.cdp.close();

@@ -124,6 +124,13 @@ class AdminRoleDetailView(APIView):
         role = save_role(serializer.validated_data, role=role)
         return success_response(RoleSerializer(role).data)
 
+    @extend_schema(tags=["admin-auth"], responses={200: OpenApiResponse(description="Deleted role id")})
+    def delete(self, request, role_id: int):
+        ensure_role_manage_permission(request.user)
+        role = self.get_role(role_id)
+        deleted_id = delete_role(role)
+        return success_response({"deleted_id": deleted_id})
+
 
 class AdminPermissionsView(APIView):
     authentication_classes = [AdminTokenAuthentication]
@@ -181,6 +188,13 @@ class AdminAccountDetailView(APIView):
         admin_account = save_admin_account(serializer.validated_data, admin_account=admin_account, actor=request.user)
         return success_response(AdminAccountSerializer(admin_account).data)
 
+    @extend_schema(tags=["admin-auth"], responses={200: OpenApiResponse(description="Deleted admin account id")})
+    def delete(self, request, admin_id: int):
+        ensure_admin_manage_permission(request.user)
+        admin_account = self.get_admin_account(admin_id)
+        deleted_id = delete_admin_account(admin_account, actor=request.user)
+        return success_response({"deleted_id": deleted_id})
+
 
 def ensure_role_manage_permission(admin_user):
     if not admin_has_permission(admin_user, "iam.role.manage"):
@@ -210,6 +224,18 @@ def save_role(validated_data, role: Role | None = None) -> Role:
         permissions = Permission.objects.filter(code__in=permission_codes)
         role.permissions.set(permissions)
     return Role.objects.prefetch_related("permissions").get(id=role.id)
+
+
+@transaction.atomic
+def delete_role(role: Role) -> int:
+    if role.code == "super_admin":
+        raise exceptions.ValidationError({"code": "内置超级管理员角色不可删除"})
+    if role.admin_users.exists():
+        raise exceptions.ValidationError({"code": "角色仍分配给管理员，不能删除"})
+
+    deleted_id = role.id
+    role.delete()
+    return deleted_id
 
 
 @transaction.atomic
@@ -251,3 +277,15 @@ def save_admin_account(
         roles = Role.objects.filter(code__in=role_codes)
         admin_account.roles.set(roles)
     return AdminUser.objects.prefetch_related("roles__permissions").get(id=admin_account.id)
+
+
+@transaction.atomic
+def delete_admin_account(admin_account: AdminUser, *, actor: AdminUser) -> int:
+    if admin_account.is_super_admin:
+        raise exceptions.ValidationError({"email": "内置超级管理员账号不可删除"})
+    if actor.id == admin_account.id:
+        raise exceptions.ValidationError({"email": "当前登录管理员不可删除自己"})
+
+    deleted_id = admin_account.id
+    admin_account.delete()
+    return deleted_id

@@ -63,6 +63,13 @@ export function updateAdminRole(roleId: number, payload: RolePayload) {
   });
 }
 
+export function deleteAdminRole(roleId: number) {
+  return requestData<{ deleted_id: number }>({
+    method: "DELETE",
+    url: `/admin/roles/${roleId}`,
+  });
+}
+
 export function fetchAdminAccounts() {
   return requestData<{ items: AdminAccount[] }>({
     method: "GET",
@@ -83,5 +90,12 @@ export function updateAdminAccount(adminId: number, payload: AdminAccountPayload
     method: "PATCH",
     url: `/admin/admin-users/${adminId}`,
     data: payload,
+  });
+}
+
+export function deleteAdminAccount(adminId: number) {
+  return requestData<{ deleted_id: number }>({
+    method: "DELETE",
+    url: `/admin/admin-users/${adminId}`,
   });
 }

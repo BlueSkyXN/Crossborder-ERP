@@ -206,6 +206,70 @@ def test_super_admin_role_is_protected_from_update(client, seeded_iam):
     assert response.json()["code"] == "VALIDATION_ERROR"
 
 
+def test_super_admin_can_delete_unassigned_custom_role(client, seeded_iam):
+    login_response = admin_login(client)
+    token = login_response.json()["data"]["access_token"]
+    role = Role.objects.create(code="temp_ops", name="临时运营")
+    role.permissions.set(Permission.objects.filter(code__in=["dashboard.view", "parcels.view"]))
+
+    response = client.delete(
+        reverse("admin-role-detail", kwargs={"role_id": role.id}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"]["deleted_id"] == role.id
+    assert not Role.objects.filter(id=role.id).exists()
+
+
+def test_role_delete_rejects_assigned_role(client, seeded_iam):
+    login_response = admin_login(client)
+    token = login_response.json()["data"]["access_token"]
+    role = Role.objects.get(code="warehouse")
+
+    response = client.delete(
+        reverse("admin-role-detail", kwargs={"role_id": role.id}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 400
+    assert response.json()["code"] == "VALIDATION_ERROR"
+    assert Role.objects.filter(id=role.id).exists()
+
+
+def test_super_admin_role_is_protected_from_delete(client, seeded_iam):
+    login_response = admin_login(client)
+    token = login_response.json()["data"]["access_token"]
+    role = Role.objects.get(code="super_admin")
+
+    response = client.delete(
+        reverse("admin-role-detail", kwargs={"role_id": role.id}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 400
+    assert response.json()["code"] == "VALIDATION_ERROR"
+    assert Role.objects.filter(id=role.id).exists()
+
+
+def test_role_viewer_without_manage_cannot_delete_roles(client, seeded_iam):
+    warehouse_role = Role.objects.get(code="warehouse")
+    warehouse_role.permissions.add(Permission.objects.get(code="iam.role.view"))
+    login_response = admin_login(client, email="warehouse@example.com")
+    token = login_response.json()["data"]["access_token"]
+    role = Role.objects.create(code="viewer_delete", name="只读删除测试")
+    role.permissions.set(Permission.objects.filter(code__in=["dashboard.view"]))
+
+    response = client.delete(
+        reverse("admin-role-detail", kwargs={"role_id": role.id}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 403
+    assert response.json()["code"] == "FORBIDDEN"
+    assert Role.objects.filter(id=role.id).exists()
+
+
 def test_super_admin_can_list_admin_accounts(client, seeded_iam):
     login_response = admin_login(client)
     token = login_response.json()["data"]["access_token"]
@@ -380,6 +444,78 @@ def test_admin_manager_cannot_modify_self_lockout_fields(client, seeded_iam):
 
     assert response.status_code == 400
     assert response.json()["code"] == "VALIDATION_ERROR"
+
+
+def test_super_admin_can_delete_admin_account(client, seeded_iam):
+    login_response = admin_login(client)
+    token = login_response.json()["data"]["access_token"]
+    account = AdminUser.objects.get(email="buyer@example.com")
+
+    response = client.delete(
+        reverse("admin-account-detail", kwargs={"admin_id": account.id}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"]["deleted_id"] == account.id
+    assert not AdminUser.objects.filter(id=account.id).exists()
+    assert admin_login(client, email="buyer@example.com").status_code != 200
+
+
+def test_super_admin_account_is_protected_from_delete(client, seeded_iam):
+    login_response = admin_login(client)
+    token = login_response.json()["data"]["access_token"]
+    account = AdminUser.objects.get(email="admin@example.com")
+
+    response = client.delete(
+        reverse("admin-account-detail", kwargs={"admin_id": account.id}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 400
+    assert response.json()["code"] == "VALIDATION_ERROR"
+    assert AdminUser.objects.filter(id=account.id).exists()
+
+
+def test_admin_manager_cannot_delete_self(client, seeded_iam):
+    manager_role = Role.objects.create(code="iam_manager_delete", name="IAM 删除管理员")
+    manager_role.permissions.set(
+        Permission.objects.filter(code__in=["dashboard.view", "iam.admin.view", "iam.admin.manage"])
+    )
+    manager = AdminUser.objects.create(
+        email="iam-delete-manager@example.com",
+        name="IAM 删除管理员",
+        password_hash=make_password("password456"),
+    )
+    manager.roles.set([manager_role])
+    login_response = admin_login(client, email="iam-delete-manager@example.com", password="password456")
+    token = login_response.json()["data"]["access_token"]
+
+    response = client.delete(
+        reverse("admin-account-detail", kwargs={"admin_id": manager.id}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 400
+    assert response.json()["code"] == "VALIDATION_ERROR"
+    assert AdminUser.objects.filter(id=manager.id).exists()
+
+
+def test_admin_viewer_without_manage_cannot_delete_admin_accounts(client, seeded_iam):
+    warehouse_role = Role.objects.get(code="warehouse")
+    warehouse_role.permissions.add(Permission.objects.get(code="iam.admin.view"))
+    login_response = admin_login(client, email="warehouse@example.com")
+    token = login_response.json()["data"]["access_token"]
+    account = AdminUser.objects.get(email="buyer@example.com")
+
+    response = client.delete(
+        reverse("admin-account-detail", kwargs={"admin_id": account.id}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 403
+    assert response.json()["code"] == "FORBIDDEN"
+    assert AdminUser.objects.filter(id=account.id).exists()
 
 
 def test_dashboard_requires_admin_token(client, seeded_iam):

@@ -21,6 +21,7 @@
 - 后台角色创建、编辑和权限分配基础闭环。
 - 后台管理员账号创建、启停、密码重置和角色分配基础闭环。
 - 后台业务写操作按模块级 `*.manage` / `*.export` action 权限拆分。
+- 角色与管理员账号安全删除，覆盖内置/自删/已分配保护。
 - PostgreSQL/MySQL/Redis/Celery 无连接 DSN 边界检查。
 - `npm run e2e` 自动验收主链路和最小代购链路。
 - `npm run e2e:browser` 自动验收 Admin Web、User Web、Mobile H5 登录、关键页面 smoke 和一条真实包裹预报/入库/回看浏览器旅程。
@@ -74,7 +75,7 @@
 | SQLite 本地备份 | `backup_sqlite` 已验证可生成可读取备份，并支持 dry-run、覆盖保护和边界失败 | `docs/agent-runs/2026-05-09-OPS-SQLITE-BACKUP-001.md` |
 | 本地文件清理 | `purge_deleted_files` 已验证 dry-run、真实删除、ACTIVE/未到期保护、missing、unsafe 路径和非普通文件跳过 | `docs/agent-runs/2026-05-09-STORAGE-CLEANUP-001.md` |
 | 外链代购入口 | `purchase-links/parse` 已验证常见平台识别、未知平台 fallback、敏感 URL 拒绝，并已进入 Web/H5 手工代购页 | `docs/agent-runs/2026-05-09-PURCHASE-AUTO-001.md` |
-| 后台控制台和 RBAC | `/api/v1/admin/dashboard` 按权限返回真实聚合指标，Admin Web `/dashboard`、`/roles` 与 `/admin-users` 不再使用固定假数据占位页；角色、管理员账号和业务写操作分别由 `iam.*.manage`、`*.manage` / `*.export` 控制 | `docs/agent-runs/2026-05-09-ADMIN-PANELS-001.md`、`docs/agent-runs/2026-05-09-RBAC-ROLES-001.md`、`docs/agent-runs/2026-05-09-RBAC-ADMIN-USERS-001.md`、`docs/agent-runs/2026-05-09-RBAC-BUSINESS-ACTIONS-001.md` |
+| 后台控制台和 RBAC | `/api/v1/admin/dashboard` 按权限返回真实聚合指标，Admin Web `/dashboard`、`/roles` 与 `/admin-users` 不再使用固定假数据占位页；角色、管理员账号、删除保护和业务写操作分别由 `iam.*.manage`、`*.manage` / `*.export` 控制 | `docs/agent-runs/2026-05-09-ADMIN-PANELS-001.md`、`docs/agent-runs/2026-05-09-RBAC-ROLES-001.md`、`docs/agent-runs/2026-05-09-RBAC-ADMIN-USERS-001.md`、`docs/agent-runs/2026-05-09-RBAC-BUSINESS-ACTIONS-001.md`、`docs/agent-runs/2026-05-09-RBAC-DELETE-001.md` |
 | 外部服务配置边界 | `DATABASE_URL`/`REDIS_URL`/Celery eager 可通过无连接脚本检查，PostgreSQL/MySQL/Redis/Celery 仍不声明真实可用 | `docs/agent-runs/2026-05-09-CONFIG-EXTERNAL-SERVICES-001.md`、`scripts/config/inspect_configured_services.py` |
 
 ## 验收命令
@@ -105,5 +106,5 @@ git diff --check
 - 对象存储生命周期、CDN、缩略图、病毒扫描和远程文件归档未验证；当前只完成本地软删除文件清理命令。
 - `npm run e2e:browser` 已纳入仓库，并覆盖一条真实包裹预报/入库/回看旅程；Playwright、组件级测试、视觉回归和更多业务旅程仍需后续增强。
 - `npm run inspect:services` 已纳入仓库，但只做无连接 DSN 检查；PostgreSQL/MySQL/Redis/Celery 真实运行仍需后续验证。
-- 真实支付、真实自动采购下单、对象存储、外部 SIEM/审计告警、真实打印硬件、物流 API、角色/管理员删除和业务 create/update/delete 子权限后续补齐。
+- 真实支付、真实自动采购下单、对象存储、外部 SIEM/审计告警、真实打印硬件、物流 API 和业务 create/update/delete 子权限后续补齐。
 - 短信/邮件验证码、找回密码、微信登录、多语言和复杂业务规则保持 `TODO_CONFIRM`。

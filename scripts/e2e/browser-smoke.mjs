@@ -510,7 +510,7 @@ async function runAdmin(debugPort, journey) {
   await fillByLabel(page, "长 cm", "20");
   await fillByLabel(page, "宽 cm", "15");
   await fillByLabel(page, "高 cm", "10");
-  await clickByText(page, "搜索并入库");
+  await clickSubmitButton(page, "搜索并入库");
   await waitForText(page, journey.trackingNo);
   await waitForText(page, "已入库");
   await clickByText(page, "在库包裹");
@@ -538,8 +538,8 @@ async function runAdmin(debugPort, journey) {
   await verifyRouteText(page, `${ADMIN_URL}/products`, ["商品管理", "启用商品", "启用 SKU"]);
   await verifyRouteText(page, `${ADMIN_URL}/tickets`, ["客服工单", "待处理工单", "处理中"]);
   await verifyRouteText(page, `${ADMIN_URL}/content`, ["内容管理", "已发布", "草稿"]);
-  await verifyRouteText(page, `${ADMIN_URL}/roles`, ["角色权限", "权限覆盖矩阵", "super_admin", "新增角色"]);
-  await verifyRouteText(page, `${ADMIN_URL}/admin-users`, ["管理员账号", "账号列表", "新增管理员"]);
+  await verifyRouteText(page, `${ADMIN_URL}/roles`, ["角色权限", "权限覆盖矩阵", "super_admin", "新增角色", "删除"]);
+  await verifyRouteText(page, `${ADMIN_URL}/admin-users`, ["管理员账号", "账号列表", "新增管理员", "删除"]);
   assertNoIssues("Admin Web", page.issues);
   page.cdp.close();
   console.log("[QA-BROWSER-002] Admin Web scanned the browser-created parcel into stock");

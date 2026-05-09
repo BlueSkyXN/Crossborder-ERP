@@ -12,6 +12,7 @@
 - 缓存使用 Django local memory cache。
 - 三端前端使用 pnpm workspace。
 - 后端响应已本地验证基础安全 header，包括 `nosniff`、`Referrer-Policy`、`Cross-Origin-Opener-Policy`、`X-Frame-Options` 和 `Permissions-Policy`。
+- 后端提供 `/api/v1/health/ready` readiness endpoint，当前检查 SQLite/default database 连接。
 
 启动命令：
 
@@ -104,6 +105,15 @@ staging 发布顺序建议：
 5. 构建三端前端。
 6. 配置反向代理和静态资源。
 7. 执行 `npm run e2e`、`npm run e2e:browser` 或等价 staging E2E。
+
+健康检查建议：
+
+| Endpoint | 用途 | 当前验证状态 |
+| --- | --- | --- |
+| `/api/v1/health` | 进程存活和基础 API 可达 | 本地已验证 |
+| `/api/v1/health/ready` | 当前依赖可用性；现阶段检查默认数据库连接 | 本地已验证 |
+
+readiness 失败时返回 HTTP 503 和脱敏状态，不返回数据库 DSN、异常堆栈或本地路径。PostgreSQL/MySQL/Redis/Celery 未真实验证前，不把这些依赖加入当前 readiness gate。
 
 回滚策略：
 

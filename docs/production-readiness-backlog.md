@@ -32,6 +32,7 @@
 | `AUDITLOG-001` | P2 | 操作审计日志 | `audit_logs`、后台写操作审计、财务高风险服务层审计、Admin Web 查询入口 | 已完成基础；敏感字段脱敏，长期归档后续 |
 | `AUDIT-RETENTION-001` | P2 | 审计导出和本地留存 | 审计日志 CSV 导出、显式留存清理命令 | 已完成基础；外部 SIEM/告警仍后续 |
 | `SECURITY-HEADERS-001` | P2 | 基础应用安全响应头 | `nosniff`、Referrer Policy、COOP、X-Frame-Options、Permissions Policy 和环境变量边界 | 已完成基础；TLS/HSTS/staging 仍后续验证 |
+| `OPS-READINESS-001` | P2 | 运维 readiness 检查 | `/api/v1/health/ready`、默认数据库连接检查、503 脱敏失败响应 | 已完成基础；外部监控/告警仍后续 |
 | `PURCHASE-AUTO-001` | P3 | 外链解析/自动采购 | 外部链接解析 provider 接口、人工 fallback、合规边界 | 不抓取真实第三方前不声明自动采购完成 |
 
 ## Completed Production Gap Tasks
@@ -53,10 +54,11 @@
 - `AUDITLOG-001`：已补 `apps.audit`、`audit_logs` 数据表、后台 `/api/v1/admin/**` 写操作请求级审计、财务应付/汇款/钱包人工调整服务层审计、敏感字段脱敏和 Admin Web `/audit-logs` 查询入口；API E2E 和 Browser Smoke 已覆盖审计日志入口。长期归档、外部 SIEM、审计告警和细粒度权限后续补齐。
 - `AUDIT-RETENTION-001`：已补 `/api/v1/admin/audit-logs/export.csv` 脱敏 CSV 导出、Admin Web 导出入口和 `purge_audit_logs --older-than-days` 显式本地留存清理命令；外部 SIEM、自动归档、告警和更细粒度权限后续补齐。
 - `SECURITY-HEADERS-001`：已补后端基础安全响应头配置和 `/api/v1/health` 回归测试，覆盖 `X-Content-Type-Options`、`Referrer-Policy`、`Cross-Origin-Opener-Policy`、`X-Frame-Options` 和 `Permissions-Policy`；真实 TLS、HSTS、反向代理和 staging 域名仍后续验证。
+- `OPS-READINESS-001`：已补 `/api/v1/health/ready` readiness endpoint，当前检查默认数据库连接；依赖不可用时返回 HTTP 503 和脱敏状态，不暴露 DSN、异常堆栈或本地路径。Prometheus/Sentry/外部告警和真实 staging 仍后续验证。
 
 ## Current Next Task
 
-任务图中的 `SECURITY-HEADERS-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
+任务图中的 `OPS-READINESS-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
 
 - 生产化边界：补对象存储、PostgreSQL/MySQL/Redis 真实验证计划、告警和部署验证。
 - 需业务/合规确认的外部集成：真实支付、真实物流 API、自动采购和外部商品抓取。

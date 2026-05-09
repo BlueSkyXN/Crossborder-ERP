@@ -34,6 +34,7 @@
 | 测试 | pytest、DRF APIClient、`npm run e2e`、system Chrome CDP browser smoke | 覆盖后端、API 主链路、三端浏览器基础可用性和一条包裹预报/入库/回看浏览器旅程；Vitest/Playwright/视觉回归仍属后续增强 |
 | 审计日志 | 后台 `/api/v1/admin/**` 写操作请求级审计 + 财务高风险服务层审计 | 满足源报告操作日志基础要求；敏感字段脱敏，不替代长期归档/合规审计系统 |
 | 安全响应头 | Django `SecurityMiddleware` + 项目内 `PermissionsPolicyMiddleware` | 本地可验证最小安全边界；真实 TLS/HSTS/反向代理留到 staging 任务验证 |
+| 运维 readiness | `/api/v1/health/ready` 检查当前默认数据库连接 | 区分进程存活和依赖可用；不暴露 DSN、异常堆栈或本地路径 |
 | 本地部署 | 当前暂不考虑 Docker；先做 no-Docker local-first | 用户明确要求暂不考虑 Docker，避免拉镜像和启动容器 |
 
 ## 路由约定
@@ -156,11 +157,12 @@
 | 浏览器测试依赖 | Playwright 浏览器二进制下载会占用磁盘，也可能写缓存 | 当前 `npm run e2e:browser` 使用系统 Chrome/Chromium 和 `.tmp/browser-e2e/` 临时 profile；不下载浏览器，不使用用户日常 profile；关键包裹预报/入库旅程先用 CDP 覆盖 |
 | 审计日志留存 | 外部 SIEM/归档服务需要基础设施和策略确认 | 当前先提供脱敏 CSV 导出和显式 `purge_audit_logs` 本地留存命令；不自动删除生产数据，不声明外部合规归档完成 |
 | TLS/HSTS/反向代理 | HSTS 和 HTTPS redirect 需要真实域名、证书、反代头和子域策略验证 | 当前只开启本地可测的基础响应头；`SECURE_HSTS_SECONDS` 和 `SECURE_SSL_REDIRECT` 默认关闭，通过环境变量后续启用 |
+| 外部监控/告警 | 需要真实 staging、监控平台和告警接收策略 | 当前仅提供本地可测 readiness endpoint；Prometheus/Sentry/日志聚合后续接入 |
 | Node/Python 版本 | 本机 `python3` 可能不是 3.12；Node 版本较新可能带来依赖兼容问题 | Python 由 `uv` 项目本地管理；前端依赖锁定后再验证 |
 
 ## 下一步
 
-按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `SECURITY-HEADERS-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
+按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `OPS-READINESS-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
 
 ```text
 生产化边界 / 需业务确认的外部集成 / 测试深度增强。

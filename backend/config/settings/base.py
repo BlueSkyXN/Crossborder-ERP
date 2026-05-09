@@ -132,6 +132,7 @@ SPECTACULAR_SETTINGS = {
         "PaymentOrderStatusEnum": "apps.finance.models.PaymentOrderStatus",
         "PaymentBusinessTypeEnum": "apps.finance.models.PaymentBusinessType",
         "RechargeRequestStatusEnum": "apps.finance.models.RechargeRequestStatus",
+        "PayableStatusEnum": "apps.finance.models.PayableStatus",
         "PurchaseOrderStatusEnum": "apps.purchases.models.PurchaseOrderStatus",
         "PurchaseOrderSourceTypeEnum": "apps.purchases.models.PurchaseOrderSourceType",
         "ProcurementTaskStatusEnum": "apps.purchases.models.ProcurementTaskStatus",

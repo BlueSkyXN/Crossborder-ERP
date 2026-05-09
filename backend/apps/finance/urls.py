@@ -1,10 +1,19 @@
 from django.urls import path
 
 from .views import (
+    AdminCostTypeDetailView,
+    AdminCostTypeListCreateView,
     AdminOfflineRemittanceApproveView,
     AdminOfflineRemittanceCancelView,
     AdminOfflineRemittanceListView,
+    AdminPayableCancelView,
+    AdminPayableConfirmView,
+    AdminPayableDetailView,
+    AdminPayableListCreateView,
+    AdminPayableSettleView,
     AdminPaymentOrderListView,
+    AdminSupplierDetailView,
+    AdminSupplierListCreateView,
     AdminUserWalletDeductView,
     AdminUserWalletRechargeView,
     AdminWalletTransactionListView,
@@ -34,4 +43,13 @@ urlpatterns = [
     path("admin/users/<int:user_id>/wallet/recharge", AdminUserWalletRechargeView.as_view(), name="admin-wallet-recharge"),
     path("admin/users/<int:user_id>/wallet/deduct", AdminUserWalletDeductView.as_view(), name="admin-wallet-deduct"),
     path("admin/payment-orders", AdminPaymentOrderListView.as_view(), name="admin-payment-order-list"),
+    path("admin/suppliers", AdminSupplierListCreateView.as_view(), name="admin-supplier-list"),
+    path("admin/suppliers/<int:supplier_id>", AdminSupplierDetailView.as_view(), name="admin-supplier-detail"),
+    path("admin/cost-types", AdminCostTypeListCreateView.as_view(), name="admin-cost-type-list"),
+    path("admin/cost-types/<int:cost_type_id>", AdminCostTypeDetailView.as_view(), name="admin-cost-type-detail"),
+    path("admin/payables", AdminPayableListCreateView.as_view(), name="admin-payable-list"),
+    path("admin/payables/<int:payable_id>", AdminPayableDetailView.as_view(), name="admin-payable-detail"),
+    path("admin/payables/<int:payable_id>/confirm", AdminPayableConfirmView.as_view(), name="admin-payable-confirm"),
+    path("admin/payables/<int:payable_id>/settle", AdminPayableSettleView.as_view(), name="admin-payable-settle"),
+    path("admin/payables/<int:payable_id>/cancel", AdminPayableCancelView.as_view(), name="admin-payable-cancel"),
 ]

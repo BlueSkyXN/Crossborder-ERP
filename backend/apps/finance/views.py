@@ -12,12 +12,20 @@ from apps.members.permissions import IsMemberAuthenticated
 from apps.waybills.models import Waybill
 from apps.waybills.serializers import WaybillSerializer
 
-from .models import PaymentOrder, RechargeRequest, WalletTransaction
+from .models import CostType, Payable, PaymentOrder, RechargeRequest, Supplier, WalletTransaction
 from .serializers import (
+    CostTypeSerializer,
+    CostTypeUpsertSerializer,
     OfflineRemittanceCreateSerializer,
     OfflineRemittanceReviewSerializer,
+    PayableCancelSerializer,
+    PayableSerializer,
+    PayableSettleSerializer,
+    PayableUpsertSerializer,
     PaymentOrderSerializer,
     RechargeRequestSerializer,
+    SupplierSerializer,
+    SupplierUpsertSerializer,
     WalletAdjustmentSerializer,
     WalletSerializer,
     WalletTransactionSerializer,
@@ -25,15 +33,26 @@ from .serializers import (
 )
 from .services import (
     InsufficientBalanceError,
+    PayableStateConflictError,
     PaymentStateConflictError,
     RechargeRequestStateConflictError,
     approve_offline_remittance,
     admin_deduct,
     admin_recharge,
     cancel_offline_remittance,
+    cancel_payable,
+    confirm_payable,
+    create_cost_type,
+    create_payable,
+    create_supplier,
     get_or_create_wallet,
     pay_with_wallet,
+    payable_queryset,
+    settle_payable,
     submit_offline_remittance,
+    update_cost_type,
+    update_payable,
+    update_supplier,
 )
 
 
@@ -46,6 +65,10 @@ def payment_state_conflict_response(exc: PaymentStateConflictError):
 
 
 def recharge_request_state_conflict_response(exc: RechargeRequestStateConflictError):
+    return error_response("STATE_CONFLICT", str(exc), status=status.HTTP_409_CONFLICT)
+
+
+def payable_state_conflict_response(exc: PayableStateConflictError):
     return error_response("STATE_CONFLICT", str(exc), status=status.HTTP_409_CONFLICT)
 
 
@@ -237,3 +260,179 @@ class AdminPaymentOrderListView(APIView):
     def get(self, request):
         payment_orders = PaymentOrder.objects.select_related("user")
         return success_response({"items": PaymentOrderSerializer(payment_orders, many=True).data})
+
+
+class AdminSupplierListCreateView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "finance.view"
+
+    @extend_schema(tags=["admin-finance"], responses={200: SupplierSerializer(many=True)})
+    def get(self, request):
+        suppliers = Supplier.objects.all()
+        return success_response({"items": SupplierSerializer(suppliers, many=True).data})
+
+    @extend_schema(tags=["admin-finance"], request=SupplierUpsertSerializer, responses={201: SupplierSerializer})
+    def post(self, request):
+        serializer = SupplierUpsertSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        supplier = create_supplier(**serializer.validated_data)
+        return success_response(SupplierSerializer(supplier).data, status=status.HTTP_201_CREATED)
+
+
+class AdminSupplierDetailView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "finance.view"
+
+    @extend_schema(tags=["admin-finance"], responses={200: SupplierSerializer})
+    def get(self, request, supplier_id: int):
+        supplier = get_object_or_404(Supplier, id=supplier_id)
+        return success_response(SupplierSerializer(supplier).data)
+
+    @extend_schema(tags=["admin-finance"], request=SupplierUpsertSerializer, responses={200: SupplierSerializer})
+    def patch(self, request, supplier_id: int):
+        serializer = SupplierUpsertSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        supplier = get_object_or_404(Supplier, id=supplier_id)
+        supplier = update_supplier(supplier=supplier, **serializer.validated_data)
+        return success_response(SupplierSerializer(supplier).data)
+
+
+class AdminCostTypeListCreateView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "finance.view"
+
+    @extend_schema(tags=["admin-finance"], responses={200: CostTypeSerializer(many=True)})
+    def get(self, request):
+        cost_types = CostType.objects.all()
+        return success_response({"items": CostTypeSerializer(cost_types, many=True).data})
+
+    @extend_schema(tags=["admin-finance"], request=CostTypeUpsertSerializer, responses={201: CostTypeSerializer})
+    def post(self, request):
+        serializer = CostTypeUpsertSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        cost_type = create_cost_type(**serializer.validated_data)
+        return success_response(CostTypeSerializer(cost_type).data, status=status.HTTP_201_CREATED)
+
+
+class AdminCostTypeDetailView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "finance.view"
+
+    @extend_schema(tags=["admin-finance"], responses={200: CostTypeSerializer})
+    def get(self, request, cost_type_id: int):
+        cost_type = get_object_or_404(CostType, id=cost_type_id)
+        return success_response(CostTypeSerializer(cost_type).data)
+
+    @extend_schema(tags=["admin-finance"], request=CostTypeUpsertSerializer, responses={200: CostTypeSerializer})
+    def patch(self, request, cost_type_id: int):
+        serializer = CostTypeUpsertSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        cost_type = get_object_or_404(CostType, id=cost_type_id)
+        cost_type = update_cost_type(cost_type=cost_type, **serializer.validated_data)
+        return success_response(CostTypeSerializer(cost_type).data)
+
+
+class AdminPayableListCreateView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "finance.view"
+
+    @extend_schema(tags=["admin-finance"], responses={200: PayableSerializer(many=True)})
+    def get(self, request):
+        return success_response({"items": PayableSerializer(payable_queryset(), many=True).data})
+
+    @extend_schema(tags=["admin-finance"], request=PayableUpsertSerializer, responses={201: PayableSerializer})
+    def post(self, request):
+        serializer = PayableUpsertSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        supplier = get_object_or_404(Supplier, id=serializer.validated_data.pop("supplier_id"))
+        cost_type = get_object_or_404(CostType, id=serializer.validated_data.pop("cost_type_id"))
+        payable = create_payable(
+            operator=request.user,
+            supplier=supplier,
+            cost_type=cost_type,
+            **serializer.validated_data,
+        )
+        return success_response(PayableSerializer(payable).data, status=status.HTTP_201_CREATED)
+
+
+class AdminPayableDetailView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "finance.view"
+
+    @extend_schema(tags=["admin-finance"], responses={200: PayableSerializer})
+    def get(self, request, payable_id: int):
+        payable = get_object_or_404(payable_queryset(), id=payable_id)
+        return success_response(PayableSerializer(payable).data)
+
+    @extend_schema(tags=["admin-finance"], request=PayableUpsertSerializer, responses={200: PayableSerializer})
+    def patch(self, request, payable_id: int):
+        serializer = PayableUpsertSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payable = get_object_or_404(Payable, id=payable_id)
+        supplier = get_object_or_404(Supplier, id=serializer.validated_data.pop("supplier_id"))
+        cost_type = get_object_or_404(CostType, id=serializer.validated_data.pop("cost_type_id"))
+        try:
+            payable = update_payable(
+                payable=payable,
+                supplier=supplier,
+                cost_type=cost_type,
+                **serializer.validated_data,
+            )
+        except PayableStateConflictError as exc:
+            return payable_state_conflict_response(exc)
+        return success_response(PayableSerializer(payable).data)
+
+
+class AdminPayableConfirmView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "finance.view"
+
+    @extend_schema(tags=["admin-finance"], request=None, responses={200: PayableSerializer})
+    def post(self, request, payable_id: int):
+        payable = get_object_or_404(Payable, id=payable_id)
+        try:
+            payable = confirm_payable(payable=payable, operator=request.user)
+        except PayableStateConflictError as exc:
+            return payable_state_conflict_response(exc)
+        return success_response(PayableSerializer(payable).data)
+
+
+class AdminPayableSettleView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "finance.view"
+
+    @extend_schema(tags=["admin-finance"], request=PayableSettleSerializer, responses={200: PayableSerializer})
+    def post(self, request, payable_id: int):
+        serializer = PayableSettleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payable = get_object_or_404(Payable, id=payable_id)
+        try:
+            payable = settle_payable(payable=payable, operator=request.user, **serializer.validated_data)
+        except PayableStateConflictError as exc:
+            return payable_state_conflict_response(exc)
+        return success_response(PayableSerializer(payable).data)
+
+
+class AdminPayableCancelView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "finance.view"
+
+    @extend_schema(tags=["admin-finance"], request=PayableCancelSerializer, responses={200: PayableSerializer})
+    def post(self, request, payable_id: int):
+        serializer = PayableCancelSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payable = get_object_or_404(Payable, id=payable_id)
+        try:
+            payable = cancel_payable(payable=payable, operator=request.user, **serializer.validated_data)
+        except PayableStateConflictError as exc:
+            return payable_state_conflict_response(exc)
+        return success_response(PayableSerializer(payable).data)

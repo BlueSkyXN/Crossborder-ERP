@@ -806,7 +806,7 @@ export function ParcelWmsPage() {
       <Drawer
         title={detailParcel ? `${detailParcel.parcel_no} 详情` : "包裹详情"}
         open={Boolean(detailParcel)}
-        size={720}
+        size="large"
         destroyOnHidden
         onClose={() => setDetailParcel(null)}
       >
@@ -864,7 +864,7 @@ export function ParcelWmsPage() {
       <Drawer
         title={inboundParcel ? `${inboundParcel.parcel_no} 入库` : "包裹入库"}
         open={Boolean(inboundParcel)}
-        size={520}
+        size="default"
         destroyOnHidden
         onClose={() => setInboundParcel(null)}
         extra={
@@ -926,7 +926,7 @@ export function ParcelWmsPage() {
       <Drawer
         title={reviewTarget ? `${reviewTarget.tracking_no} ${reviewTitle}` : reviewTitle}
         open={Boolean(reviewTarget)}
-        size={520}
+        size="default"
         destroyOnHidden
         onClose={() => {
           setReviewTarget(null);

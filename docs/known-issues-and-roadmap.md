@@ -7,7 +7,7 @@
 - `docs/source-report-gap-map.md`
 - `docs/production-readiness-backlog.md`
 
-`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 批量预报解析，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础，`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的一条真实浏览器旅程，`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础，`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础，`GROWTH-001` 已补齐积分推广返利基础，`AUDITLOG-001` 已补齐后台关键写操作审计日志，`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令，`SECURITY-HEADERS-001` 已补齐基础应用安全响应头，`OPS-READINESS-001` 已补齐运维 readiness 检查，`OPS-SQLITE-BACKUP-001` 已补齐 SQLite 本地备份命令，`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令，`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口，`ACCOUNT-SETTINGS-001` 已补齐会员注册、账户资料设置和自助改密码基础。后续优先按生产化边界、需业务/合规确认的外部集成和测试深度增强逐项收敛。
+`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 批量预报解析，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础，`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的一条真实浏览器旅程，`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础，`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础，`GROWTH-001` 已补齐积分推广返利基础，`AUDITLOG-001` 已补齐后台关键写操作审计日志，`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令，`SECURITY-HEADERS-001` 已补齐基础应用安全响应头，`OPS-READINESS-001` 已补齐运维 readiness 检查，`OPS-SQLITE-BACKUP-001` 已补齐 SQLite 本地备份命令，`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令，`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口，`ACCOUNT-SETTINGS-001` 已补齐会员注册、账户资料设置和自助改密码基础，`ADMIN-PANELS-001` 已补齐后台 dashboard/roles 真实接口面板。后续优先按生产化边界、需业务/合规确认的外部集成和测试深度增强逐项收敛。
 
 ## 已知问题
 
@@ -61,8 +61,8 @@
 
 ### 浏览器测试深度仍需增强
 
-问题：当前 `npm run e2e:browser` 已覆盖三端 smoke，并补了一条会员预报、后台扫描入库、会员回看在库的真实浏览器旅程，但还不是覆盖全部业务路径的 Playwright/组件/视觉测试体系。
-影响：可以自动发现三端登录、关键页面加载、关键包裹表单流、console error/warning 和网络 4xx/5xx，但还不能完整覆盖所有复杂表单、批量操作、视觉回归和跨端业务旅程。
+问题：当前 `npm run e2e:browser` 已覆盖三端 smoke，并补了一条会员预报、后台扫描入库、会员回看在库的真实浏览器旅程和后台关键面板导航，但还不是覆盖全部业务路径的 Playwright/组件/视觉测试体系。
+影响：可以自动发现三端登录、关键页面加载、后台 dashboard/roles 等关键面板、关键包裹表单流、console error/warning 和网络 4xx/5xx，但还不能完整覆盖所有复杂表单、批量操作、视觉回归和跨端业务旅程。
 当前临时处理：`npm run e2e` 继续覆盖 API 级 P0 主链路；`npm run e2e:browser` 使用 `.tmp/browser-e2e/` 临时 SQLite、media、Chrome profile 和测试服务，不下载浏览器，不使用用户日常 Chrome profile。
 后续建议：在确认依赖和浏览器缓存策略后，再逐步引入 Playwright、视觉回归或组件级测试，覆盖更多真实业务旅程。
 是否阻塞 v0.1：否。

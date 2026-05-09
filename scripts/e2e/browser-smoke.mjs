@@ -264,6 +264,13 @@ async function waitForText(page, text, timeoutMs = 45_000) {
   );
 }
 
+async function verifyRouteText(page, url, texts) {
+  await navigate(page, url, texts[0]);
+  for (const text of texts.slice(1)) {
+    await waitForText(page, text);
+  }
+}
+
 async function waitForPath(page, pathName, timeoutMs = 45_000) {
   return waitFor(page, `path ${pathName}`, () =>
     evaluate(page, `window.location.pathname === ${JSON.stringify(pathName)}`),
@@ -452,6 +459,7 @@ async function runAdmin(debugPort, journey) {
   await waitForText(page, journey.trackingNo);
   await waitForText(page, "已入库");
   await clickByText(page, "在库包裹");
+  await fillByPlaceholder(page, "搜索包裹号、快递单号、会员或仓库", journey.trackingNo);
   await waitForText(page, journey.trackingNo);
   await navigate(page, `${ADMIN_URL}/waybills`, "运单处理");
   await waitForText(page, "发货批次");
@@ -469,10 +477,18 @@ async function runAdmin(debugPort, journey) {
   await waitForText(page, "admin-login");
   await waitForText(page, "导出 CSV");
   await waitForText(page, "敏感字段");
+  await verifyRouteText(page, `${ADMIN_URL}/dashboard`, ["运营控制台", "实时工作队列", "模块健康概览"]);
+  await verifyRouteText(page, `${ADMIN_URL}/warehouses`, ["基础配置", "仓库", "渠道"]);
+  await verifyRouteText(page, `${ADMIN_URL}/purchases`, ["代购处理", "待采购", "异常单"]);
+  await verifyRouteText(page, `${ADMIN_URL}/products`, ["商品管理", "启用商品", "启用 SKU"]);
+  await verifyRouteText(page, `${ADMIN_URL}/tickets`, ["客服工单", "待处理工单", "处理中"]);
+  await verifyRouteText(page, `${ADMIN_URL}/content`, ["内容管理", "已发布", "草稿"]);
+  await verifyRouteText(page, `${ADMIN_URL}/roles`, ["角色权限", "权限覆盖矩阵", "super_admin"]);
   assertNoIssues("Admin Web", page.issues);
   page.cdp.close();
   console.log("[QA-BROWSER-002] Admin Web scanned the browser-created parcel into stock");
   console.log("[QA-BROWSER-001] Admin Web login, parcels, shipping batch, finance payable, growth, and audit smoke passed");
+  console.log("[ADMIN-PANELS-001] Admin Web dashboard, roles, warehouses, purchases, products, tickets, and content panels passed");
 }
 
 async function runUser(debugPort, journey) {

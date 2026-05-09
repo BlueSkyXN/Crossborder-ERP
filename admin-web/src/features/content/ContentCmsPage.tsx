@@ -527,7 +527,7 @@ export function ContentCmsPage() {
       <Drawer
         title={editingPage ? `编辑 ${editingPage.title}` : "新建内容"}
         open={pageDrawerOpen}
-        size={680}
+        size="large"
         forceRender
         onClose={() => {
           setPageDrawerOpen(false);
@@ -586,7 +586,7 @@ export function ContentCmsPage() {
       <Drawer
         title={editingCategory ? `编辑 ${editingCategory.name}` : "新建分类"}
         open={categoryDrawerOpen}
-        size={520}
+        size="default"
         forceRender
         onClose={() => {
           setCategoryDrawerOpen(false);

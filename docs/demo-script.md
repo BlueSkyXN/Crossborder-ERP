@@ -39,7 +39,7 @@ pnpm --filter mobile-h5 dev
 
 ## 集运主链路
 
-1. 后台登录 Admin Web。
+1. 后台登录 Admin Web，进入 `/dashboard` 查看真实运营控制台，再进入 `/roles` 查看角色权限矩阵。
 2. 进入 `/warehouses`，确认至少存在 `深圳仓`、测试空运渠道、纸箱包装和加固服务。
 3. 用户注册或登录 User Web，进入 `/dashboard`，复制专属仓库地址；需要维护资料时进入 `/settings`。
 4. 用户进入 `/parcels`，提交包裹预报：

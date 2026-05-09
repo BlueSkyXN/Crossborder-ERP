@@ -4,10 +4,7 @@ export type AdminUser = {
   name: string;
   status: "ACTIVE" | "DISABLED";
   is_super_admin: boolean;
-  roles: Array<{
-    code: string;
-    name: string;
-  }>;
+  roles: string[];
 };
 
 export type LoginPayload = {
@@ -25,4 +22,20 @@ export type AdminMenuItem = {
   code: string;
   name: string;
   resource: string;
+};
+
+export type Permission = {
+  id: number;
+  code: string;
+  name: string;
+  type: "MENU" | "API" | "BUTTON";
+  resource: string;
+};
+
+export type Role = {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  permissions: Permission[];
 };

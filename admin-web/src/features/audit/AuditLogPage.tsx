@@ -221,7 +221,7 @@ export function AuditLogPage() {
         />
       </Card>
       <Drawer
-        size={720}
+        size="large"
         title="审计详情"
         open={Boolean(selectedLog)}
         onClose={() => setSelectedLog(null)}

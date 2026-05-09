@@ -221,10 +221,14 @@ export function PurchaseOpsPage() {
     () => orders.find((order) => order.id === action?.orderId) || null,
     [action?.orderId, orders],
   );
-  const warehouseOptions = warehouses.map((warehouse) => ({
-    label: `${warehouse.name} (${warehouse.code})`,
-    value: warehouse.id,
-  }));
+  const warehouseOptions = useMemo(
+    () =>
+      warehouses.map((warehouse) => ({
+        label: `${warehouse.name} (${warehouse.code})`,
+        value: warehouse.id,
+      })),
+    [warehouses],
+  );
 
   const statusCounts = useMemo(() => {
     const counts = Object.fromEntries(statusTabs.map((tab) => [tab.key, 0])) as Record<ActiveStatus, number>;
@@ -249,11 +253,14 @@ export function PurchaseOpsPage() {
   }, [activeStatus, keyword, orders]);
 
   useEffect(() => {
+    if (action?.type !== "convert") {
+      return;
+    }
     const defaultWarehouse = warehouseOptions[0]?.value;
     if (defaultWarehouse && !convertForm.getFieldValue("warehouse_id")) {
       convertForm.setFieldValue("warehouse_id", defaultWarehouse);
     }
-  }, [convertForm, warehouseOptions]);
+  }, [action?.type, convertForm, warehouseOptions]);
 
   const replaceOrderInCache = (nextOrder: PurchaseOrder) => {
     queryClient.setQueryData<PurchaseOrder[]>(purchaseOrdersQueryKey, (current = []) =>
@@ -466,7 +473,7 @@ export function PurchaseOpsPage() {
       <Drawer
         title={detailOrder ? `${detailOrder.order_no} 详情` : "代购详情"}
         open={Boolean(detailOrderId)}
-        size={920}
+        size="large"
         destroyOnHidden
         onClose={() => setDetailOrderId(null)}
         extra={detailOrder ? renderActionButtons(detailOrder) : null}

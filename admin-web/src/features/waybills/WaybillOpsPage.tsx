@@ -40,7 +40,7 @@ import {
   Typography,
 } from "antd";
 import type { TableColumnsType } from "antd";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
 import { ForbiddenPage } from "../../pages/ForbiddenPage";
@@ -414,48 +414,60 @@ export function WaybillOpsPage() {
 
   const openAction = (type: ActionType, waybill: Waybill) => {
     setAction({ type, waybillId: waybill.id });
-    if (type === "review") {
-      reviewForm.resetFields();
-      reviewForm.setFieldsValue({ review_remark: waybill.review_remark || "" });
-    }
-    if (type === "fee") {
-      feeForm.resetFields();
-      feeForm.setFieldsValue({
-        fee_total: Number(waybill.fee_total || 0) || undefined,
-        fee_remark: waybill.fee_remark || "",
-      });
-    }
-    if (type === "recharge") {
-      rechargeForm.resetFields();
-      rechargeForm.setFieldsValue({
-        amount: Number(waybill.fee_total || 0) || undefined,
-        remark: `${waybill.waybill_no} 运费充值`,
-      });
-    }
-    if (type === "ship") {
-      trackingForm.resetFields();
-      trackingForm.setFieldsValue({ status_text: "已发货", location: "", description: "" });
-    }
-    if (type === "tracking") {
-      trackingForm.resetFields();
-      trackingForm.setFieldsValue({ status_text: "运输中", location: "", description: "" });
-    }
   };
 
   const openBatchAction = (type: BatchActionType, batch?: ShippingBatch) => {
     setBatchAction({ type, batchId: batch?.id });
-    batchForm.resetFields();
-    trackingForm.resetFields();
-    if (type === "addWaybills" && batch) {
-      batchForm.setFieldsValue({ waybill_ids: [] });
+  };
+
+  useEffect(() => {
+    if (!action || !actionWaybill) {
+      return;
     }
-    if (type === "ship") {
-      trackingForm.setFieldsValue({ status_text: "批次已发货", location: "", description: "" });
+    if (action.type === "review") {
+      reviewForm.resetFields();
+      reviewForm.setFieldsValue({ review_remark: actionWaybill.review_remark || "" });
     }
-    if (type === "tracking") {
+    if (action.type === "fee") {
+      feeForm.resetFields();
+      feeForm.setFieldsValue({
+        fee_total: Number(actionWaybill.fee_total || 0) || undefined,
+        fee_remark: actionWaybill.fee_remark || "",
+      });
+    }
+    if (action.type === "recharge") {
+      rechargeForm.resetFields();
+      rechargeForm.setFieldsValue({
+        amount: Number(actionWaybill.fee_total || 0) || undefined,
+        remark: `${actionWaybill.waybill_no} 运费充值`,
+      });
+    }
+    if (action.type === "ship") {
+      trackingForm.resetFields();
+      trackingForm.setFieldsValue({ status_text: "已发货", location: "", description: "" });
+    }
+    if (action.type === "tracking") {
+      trackingForm.resetFields();
       trackingForm.setFieldsValue({ status_text: "运输中", location: "", description: "" });
     }
-  };
+  }, [action, actionWaybill, feeForm, rechargeForm, reviewForm, trackingForm]);
+
+  useEffect(() => {
+    if (!batchAction) {
+      return;
+    }
+    batchForm.resetFields();
+    trackingForm.resetFields();
+    if (batchAction.type === "addWaybills" && actionBatch) {
+      batchForm.setFieldsValue({ waybill_ids: [] });
+    }
+    if (batchAction.type === "ship") {
+      trackingForm.setFieldsValue({ status_text: "批次已发货", location: "", description: "" });
+    }
+    if (batchAction.type === "tracking") {
+      trackingForm.setFieldsValue({ status_text: "运输中", location: "", description: "" });
+    }
+  }, [actionBatch, batchAction, batchForm, trackingForm]);
 
   const reviewMutation = useMutation({
     mutationFn: ({ waybillId, payload }: { waybillId: number; payload: ReviewFormValues }) =>

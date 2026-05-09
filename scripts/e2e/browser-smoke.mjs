@@ -373,6 +373,89 @@ async function clickExactButtonText(page, text) {
   return clicked;
 }
 
+async function clickButtonByTitle(page, title) {
+  const clicked = await evaluate(
+    page,
+    `(() => {
+      const normalized = (value) => (value || "").replace(/\\s+/g, " ").trim();
+      const targetTitle = ${JSON.stringify(title)};
+      const candidates = Array.from(document.querySelectorAll("button,a,[role='button']"));
+      const element = candidates.find((candidate) => normalized(candidate.getAttribute("title")) === targetTitle);
+      if (!element) {
+        throw new Error("Button title not found: " + targetTitle);
+      }
+      element.click();
+      return normalized(element.getAttribute("title") || element.textContent);
+    })()`,
+  );
+  await delay(250);
+  return clicked;
+}
+
+async function clickButtonByTitleInRow(page, rowText, title) {
+  const clicked = await evaluate(
+    page,
+    `(() => {
+      const normalized = (value) => (value || "").replace(/\\s+/g, " ").trim();
+      const compact = (value) => normalized(value).replace(/\\s+/g, "");
+      const rowTarget = compact(${JSON.stringify(rowText)});
+      const titleTarget = compact(${JSON.stringify(title)});
+      const rowSelectors = [
+        "tr",
+        "article",
+        ".ant-table-row",
+        "[role='row']",
+        "[class*='Row']",
+        "[class*='row']"
+      ].join(",");
+      const row = Array.from(document.querySelectorAll(rowSelectors)).find((candidate) =>
+        compact(candidate.textContent).includes(rowTarget)
+      );
+      if (!row) {
+        throw new Error("Row text not found: " + ${JSON.stringify(rowText)});
+      }
+      const candidates = Array.from(row.querySelectorAll("button,a,[role='button']"));
+      const element = candidates.find((candidate) => {
+        const candidateTitle = candidate.getAttribute("title") || candidate.getAttribute("aria-label") || "";
+        return compact(candidateTitle).includes(titleTarget) || compact(candidate.textContent).includes(titleTarget);
+      });
+      if (!element) {
+        throw new Error("Button title not found: " + ${JSON.stringify(title)} + " in row " + ${JSON.stringify(rowText)});
+      }
+      element.click();
+      return {
+        row: normalized(row.textContent).slice(0, 240),
+        title: element.getAttribute("title") || element.getAttribute("aria-label") || normalized(element.textContent),
+      };
+    })()`,
+  );
+  await delay(250);
+  return clicked;
+}
+
+async function clickCheckboxNearText(page, text) {
+  const clicked = await evaluate(
+    page,
+    `(() => {
+      const normalized = (value) => (value || "").replace(/\\s+/g, " ").trim();
+      const targetText = ${JSON.stringify(text)};
+      const labels = Array.from(document.querySelectorAll("label"));
+      const label = labels.find((candidate) => normalized(candidate.textContent).includes(targetText));
+      if (!label) {
+        throw new Error("Checkbox label text not found: " + targetText);
+      }
+      const checkbox = label.querySelector("input[type='checkbox']");
+      if (!checkbox) {
+        throw new Error("Checkbox not found near: " + targetText);
+      }
+      checkbox.click();
+      return normalized(label.textContent);
+    })()`,
+  );
+  await delay(250);
+  return clicked;
+}
+
 async function clickSubmitButton(page, text) {
   const clicked = await evaluate(
     page,
@@ -558,6 +641,68 @@ async function waitForFormOption(page, labelText) {
   );
 }
 
+async function waitForRowTexts(page, rowText, texts = [], timeoutMs = 45_000) {
+  const allTexts = [rowText, ...texts];
+  return waitFor(
+    page,
+    `row containing ${allTexts.join(", ")}`,
+    () =>
+      evaluate(
+        page,
+        `(() => {
+          const compact = (input) => (input || "").replace(/\\s+/g, "").trim();
+          const targets = ${JSON.stringify(allTexts)}.map(compact);
+          const rowSelectors = [
+            "tr",
+            "article",
+            ".ant-table-row",
+            "[role='row']",
+            "[class*='Row']",
+            "[class*='row']"
+          ].join(",");
+          return Array.from(document.querySelectorAll(rowSelectors)).some((candidate) => {
+            const text = compact(candidate.textContent);
+            return targets.every((target) => text.includes(target));
+          });
+        })()`,
+      ),
+    timeoutMs,
+  );
+}
+
+async function getMemberWaybillByTracking(page, trackingNo) {
+  return evaluate(
+    page,
+    `(async () => {
+      const persisted = JSON.parse(localStorage.getItem("crossborder-user-auth") || "{}");
+      const token = persisted?.state?.token;
+      if (!token) {
+        throw new Error("Missing member auth token for waybill lookup");
+      }
+      const response = await fetch("/api/v1/waybills", {
+        headers: { Authorization: \`Bearer \${token}\` },
+      });
+      const payload = await response.json();
+      if (!response.ok || payload.code !== "OK") {
+        throw new Error("Waybill lookup failed: " + JSON.stringify(payload));
+      }
+      const waybill = payload.data.items.find((item) =>
+        item.parcels.some((parcel) => parcel.tracking_no === ${JSON.stringify(trackingNo)})
+      );
+      if (!waybill) {
+        throw new Error("Waybill not found for tracking number: " + ${JSON.stringify(trackingNo)});
+      }
+      return {
+        id: waybill.id,
+        waybill_no: waybill.waybill_no,
+        status: waybill.status,
+        fee_total: waybill.fee_total,
+        tracking_events: waybill.tracking_events.map((event) => event.status_text),
+      };
+    })()`,
+  );
+}
+
 function assertNoIssues(pageName, issues) {
   if (issues.length > 0) {
     throw new Error(`${pageName} browser issues:\n- ${issues.join("\n- ")}`);
@@ -711,6 +856,130 @@ async function verifyUserParcelInStock(debugPort, journey) {
   console.log("[QA-BROWSER-002] User Web verified the scanned parcel is in stock and packable");
 }
 
+async function createUserWaybillFromStock(debugPort, journey) {
+  const page = await createPage(debugPort);
+  await navigate(page, `${USER_URL}/waybills`, "运单中心");
+  await waitForText(page, "申请打包");
+  await waitForText(page, journey.trackingNo);
+  await clickCheckboxNearText(page, journey.trackingNo);
+  await fillByLabel(page, "收件人", "QA Browser Receiver");
+  await fillByLabel(page, "电话", "13800000005");
+  await fillByLabel(page, "收件地址", "500 Browser Smoke Way, Los Angeles, CA");
+  await fillByLabel(page, "邮编", "90001");
+  await fillByLabel(page, "备注", journey.waybillRemark);
+  await clickSubmitButton(page, "提交运单");
+  await waitForText(page, "已提交，等待后台审核计费");
+  const waybill = await getMemberWaybillByTracking(page, journey.trackingNo);
+  if (waybill.status !== "PENDING_REVIEW") {
+    throw new Error(`Expected new waybill to be PENDING_REVIEW, got ${waybill.status}`);
+  }
+  journey.waybillId = waybill.id;
+  journey.waybillNo = waybill.waybill_no;
+  assertNoIssues("User Web waybill creation", page.issues);
+  page.cdp.close();
+  console.log(`[QA-BROWSER-005] User Web created waybill ${journey.waybillNo} from the scanned parcel`);
+}
+
+async function reviewAndFeeWaybillInAdmin(debugPort, journey) {
+  const page = await createPage(debugPort);
+  await navigate(page, `${ADMIN_URL}/waybills`, "运单处理");
+  await waitForPlaceholder(page, "搜索运单号、会员、仓库、渠道或包裹");
+  await fillByPlaceholder(page, "搜索运单号、会员、仓库、渠道或包裹", journey.waybillNo);
+  await waitForRowTexts(page, journey.waybillNo, ["待审核"]);
+  await clickButtonByTitleInRow(page, journey.waybillNo, "审核");
+  await waitForText(page, "审核备注");
+  await fillByLabel(page, "审核备注", "QA-BROWSER-005 后台浏览器审核通过");
+  await clickExactButtonText(page, "审核通过");
+  await waitForText(page, `${journey.waybillNo} 已审核`);
+  await waitForRowTexts(page, journey.waybillNo, ["待打包"]);
+  await clickButtonByTitleInRow(page, journey.waybillNo, "设置费用");
+  await waitForText(page, "应收合计 CNY");
+  await fillByLabel(page, "应收合计 CNY", journey.waybillFee);
+  await fillByLabel(page, "运费", journey.waybillFee);
+  await fillByLabel(page, "包装费", "0.00");
+  await fillByLabel(page, "服务费", "0.00");
+  await fillByLabel(page, "费用说明", "QA-BROWSER-005 浏览器计费");
+  await fillByLabel(page, "内部备注", "QA-BROWSER-005 后台设置运单费用");
+  await clickExactButtonText(page, "确认计费");
+  await waitForText(page, `${journey.waybillNo} 已进入待付款`);
+  await waitForRowTexts(page, journey.waybillNo, ["待付款"]);
+  await clickButtonByTitleInRow(page, journey.waybillNo, "人工充值");
+  await waitForText(page, `${journey.waybillNo} 当前费用`);
+  await fillByLabel(page, "充值金额 CNY", journey.waybillRechargeAmount);
+  await fillByLabel(page, "备注", journey.waybillRechargeRemark);
+  await clickExactButtonText(page, "确认充值");
+  await waitForText(page, "充值完成");
+  await waitForRowTexts(page, journey.waybillNo, ["待付款"]);
+  assertNoIssues("Admin Web waybill review, fee, and recharge", page.issues);
+  page.cdp.close();
+  console.log(`[QA-BROWSER-005] Admin Web reviewed, billed, and recharged waybill ${journey.waybillNo}`);
+}
+
+async function payUserWaybill(debugPort, journey) {
+  const page = await createPage(debugPort);
+  await navigate(page, `${USER_URL}/waybills`, "运单中心");
+  await waitForPlaceholder(page, "搜索运单号或包裹号");
+  await fillByPlaceholder(page, "搜索运单号或包裹号", journey.waybillNo);
+  await waitForRowTexts(page, journey.waybillNo, ["待付款"]);
+  await clickByText(page, journey.waybillNo);
+  await waitForText(page, journey.waybillFee);
+  await clickExactButtonText(page, "余额支付");
+  await waitForText(page, "确认支付");
+  await waitForText(page, journey.waybillFee);
+  await clickExactButtonText(page, "确认支付");
+  await waitForText(page, "已余额支付");
+  const waybill = await getMemberWaybillByTracking(page, journey.trackingNo);
+  if (waybill.status !== "PENDING_SHIPMENT") {
+    throw new Error(`Expected paid waybill to be PENDING_SHIPMENT, got ${waybill.status}`);
+  }
+  await waitForRowTexts(page, journey.waybillNo, ["待发货"]);
+  assertNoIssues("User Web waybill payment", page.issues);
+  page.cdp.close();
+  console.log(`[QA-BROWSER-005] User Web paid waybill ${journey.waybillNo} with wallet balance`);
+}
+
+async function shipWaybillInAdmin(debugPort, journey) {
+  const page = await createPage(debugPort);
+  await navigate(page, `${ADMIN_URL}/waybills`, "运单处理");
+  await waitForPlaceholder(page, "搜索运单号、会员、仓库、渠道或包裹");
+  await fillByPlaceholder(page, "搜索运单号、会员、仓库、渠道或包裹", journey.waybillNo);
+  await waitForRowTexts(page, journey.waybillNo, ["待发货"]);
+  await clickButtonByTitleInRow(page, journey.waybillNo, "发货");
+  await waitForText(page, "确认发货");
+  await fillByLabel(page, "轨迹状态", journey.shipmentStatus);
+  await fillByLabel(page, "地点", "QA Browser 深圳仓");
+  await fillByLabel(page, "说明", "QA-BROWSER-005 后台浏览器发货并生成轨迹");
+  await clickExactButtonText(page, "确认发货");
+  await waitForRowTexts(page, journey.waybillNo, ["已发货"]);
+  assertNoIssues("Admin Web waybill shipment", page.issues);
+  page.cdp.close();
+  console.log(`[QA-BROWSER-005] Admin Web shipped waybill ${journey.waybillNo} and created tracking`);
+}
+
+async function verifyUserWaybillTrackingAndReceipt(debugPort, journey) {
+  const page = await createPage(debugPort);
+  await navigate(page, `${USER_URL}/waybills`, "运单中心");
+  await waitForPlaceholder(page, "搜索运单号或包裹号");
+  await fillByPlaceholder(page, "搜索运单号或包裹号", journey.waybillNo);
+  await waitForRowTexts(page, journey.waybillNo, ["已发货"]);
+  await clickByText(page, journey.waybillNo);
+  await waitForText(page, "物流轨迹");
+  await waitForText(page, journey.shipmentStatus);
+  await clickExactButtonText(page, "确认收货");
+  await waitForText(page, "已确认收货");
+  await waitForRowTexts(page, journey.waybillNo, ["已签收"]);
+  const waybill = await getMemberWaybillByTracking(page, journey.trackingNo);
+  if (waybill.status !== "SIGNED") {
+    throw new Error(`Expected received waybill to be SIGNED, got ${waybill.status}`);
+  }
+  if (!waybill.tracking_events.includes(journey.shipmentStatus)) {
+    throw new Error(`Expected tracking event ${journey.shipmentStatus}, got ${waybill.tracking_events.join(", ")}`);
+  }
+  assertNoIssues("User Web waybill tracking and receipt", page.issues);
+  page.cdp.close();
+  console.log(`[QA-BROWSER-005] User Web verified tracking and confirmed receipt for ${journey.waybillNo}`);
+}
+
 async function runMobile(debugPort) {
   const page = await createPage(debugPort, { mobile: true });
   await navigate(page, `${MOBILE_URL}/login?redirect=%2Fship`, "登录");
@@ -742,6 +1011,11 @@ try {
     ticketTitle: `QA Browser Ticket ${journeyId}`,
     ticketContent: "QA-BROWSER-004 用户端浏览器创建客服工单",
     adminTicketReply: "QA-BROWSER-004 后台客服浏览器回复",
+    waybillRemark: `QA-BROWSER-005-WB-${journeyId}`,
+    waybillFee: "9.99",
+    waybillRechargeAmount: "20.00",
+    waybillRechargeRemark: "QA-BROWSER-005 后台人工充值运费",
+    shipmentStatus: "QA-BROWSER-005 已发货",
   };
   console.log(`[QA-BROWSER-001] using Chrome: ${launched.chromePath}`);
   console.log(`[QA-BROWSER-001] using remote debugging port: ${launched.debugPort}`);
@@ -751,6 +1025,11 @@ try {
   await runAdmin(launched.debugPort, journey);
   await verifyUserTicketReply(launched.debugPort, journey);
   await verifyUserParcelInStock(launched.debugPort, journey);
+  await createUserWaybillFromStock(launched.debugPort, journey);
+  await reviewAndFeeWaybillInAdmin(launched.debugPort, journey);
+  await payUserWaybill(launched.debugPort, journey);
+  await shipWaybillInAdmin(launched.debugPort, journey);
+  await verifyUserWaybillTrackingAndReceipt(launched.debugPort, journey);
   await runMobile(launched.debugPort);
 } finally {
   if (launched?.chrome && !launched.chrome.killed) {

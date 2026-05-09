@@ -318,4 +318,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/QA-BROWSER-004.md
     depends_on: [QA-BROWSER-001, QA-BROWSER-002, QA-BROWSER-003, FIN-001, MSG-001]
+    next: QA-BROWSER-005
+  - id: QA-BROWSER-005
+    phase: P6_PRODUCTION_GAP
+    file: tasks/QA-BROWSER-005.md
+    depends_on: [QA-BROWSER-004, BE-006, BE-007, BE-008, FEA-004, FEU-001C]
     next: null

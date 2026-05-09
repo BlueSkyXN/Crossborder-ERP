@@ -31,7 +31,7 @@
 | 请求层 | Axios + TanStack Query | Axios 负责 HTTP client，TanStack Query 负责缓存/加载/错误态 |
 | 前端状态 | Zustand | 只承载登录态和轻量 UI 状态，不替代服务端缓存 |
 | 样式策略 | `packages/ui-tokens` + CSS Modules；后台和移动端使用组件库主题 | 避免复刻旧系统视觉，保证三端基础一致 |
-| 测试 | pytest、DRF APIClient、`npm run e2e`、system Chrome CDP browser smoke | 覆盖后端、API 主链路、三端浏览器基础可用性和一条包裹预报/入库/回看浏览器旅程；Vitest/Playwright/视觉回归仍属后续增强 |
+| 测试 | pytest、DRF APIClient、`npm run e2e`、system Chrome CDP browser smoke | 覆盖后端、API 主链路、三端浏览器基础可用性、包裹预报/入库/回看、财务/客服跨面板和运单后半程浏览器旅程；Vitest/Playwright/视觉回归仍属后续增强 |
 | 审计日志 | 后台 `/api/v1/admin/**` 写操作请求级审计 + 财务高风险服务层审计 | 满足源报告操作日志基础要求；敏感字段脱敏，不替代长期归档/合规审计系统 |
 | 安全响应头 | Django `SecurityMiddleware` + 项目内 `PermissionsPolicyMiddleware` | 本地可验证最小安全边界；真实 TLS/HSTS/反向代理留到 staging 任务验证 |
 | 运维 readiness | `/api/v1/health/ready` 检查当前默认数据库连接 | 区分进程存活和依赖可用；不暴露 DSN、异常堆栈或本地路径 |
@@ -164,7 +164,7 @@
 | 支付/物流/商品外部接口 | 真实接口涉及密钥、回调、签名、失败补偿 | P0 只做人工充值、线下汇款人工审核、余额支付、人工轨迹和手工代购；`PURCHASE-AUTO-001` 只做链接解析和人工确认 |
 | 应付核销 | 当前只记录人工核销凭证，不连接真实银行、自动打款或外部财务系统 | `PAYABLE-001` 已保持应付与钱包/PaymentOrder 分离；真实付款和供应商对账后续单独验证 |
 | 积分/推广/返利 | 当前只记录积分流水、邀请关系和返利统计，不接真实联盟、提现、税务或多级分销 | `GROWTH-001` 已保持返利与钱包/PaymentOrder 分离；最终规则统一标记 `TODO_CONFIRM` |
-| 浏览器测试依赖 | Playwright 浏览器二进制下载会占用磁盘，也可能写缓存 | 当前 `npm run e2e:browser` 使用系统 Chrome/Chromium 和 `.tmp/browser-e2e/` 临时 profile；不下载浏览器，不使用用户日常 profile；关键包裹预报/入库旅程和后台真实面板导航先用 CDP 覆盖 |
+| 浏览器测试依赖 | Playwright 浏览器二进制下载会占用磁盘，也可能写缓存 | 当前 `npm run e2e:browser` 使用系统 Chrome/Chromium 和 `.tmp/browser-e2e/` 临时 profile；不下载浏览器，不使用用户日常 profile；关键包裹预报/入库、财务/客服跨面板、运单后半程和后台真实面板导航先用 CDP 覆盖 |
 | 后台 dashboard/RBAC | 通用占位工作台会造成“面板已整合”的证明不足 | `/dashboard` 使用 `GET /api/v1/admin/dashboard` 的真实聚合数据，`/roles` 和 `/admin-users` 使用真实 IAM 数据；角色创建、编辑、权限分配、安全删除、管理员创建、启停、密码重置、角色分配和安全删除已完成；业务写操作已按模块级 `*.manage` / `*.export` 权限拆分，create/update/delete 子权限和审批流后续单独做 |
 | 审计日志留存 | 外部 SIEM/归档服务需要基础设施和策略确认 | 当前先提供脱敏 CSV 导出和显式 `purge_audit_logs` 本地留存命令；不自动删除生产数据，不声明外部合规归档完成 |
 | TLS/HSTS/反向代理 | HSTS 和 HTTPS redirect 需要真实域名、证书、反代头和子域策略验证 | 当前只开启本地可测的基础响应头；`SECURE_HSTS_SECONDS` 和 `SECURE_SSL_REDIRECT` 默认关闭，通过环境变量后续启用 |
@@ -174,7 +174,7 @@
 
 ## 下一步
 
-按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `ACCOUNT-RESET-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
+按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `QA-BROWSER-005`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
 
 ```text
 生产化边界 / 需业务确认的外部集成 / 测试深度增强 / 权限与审批深度增强。

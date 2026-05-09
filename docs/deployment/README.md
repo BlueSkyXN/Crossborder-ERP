@@ -43,13 +43,13 @@ pnpm lint
 pnpm build
 ```
 
-`npm run e2e:browser` 是 `QA-BROWSER-001`/`QA-BROWSER-002` 的浏览器 smoke 与真实业务旅程：
+`npm run e2e:browser` 是 `QA-BROWSER-001` 到 `QA-BROWSER-005` 的浏览器 smoke 与真实业务旅程：
 
 - 不新增 Playwright/Vitest 依赖，不下载浏览器二进制。
 - 默认查找系统 Chrome/Chromium；如不可发现，可用 `BROWSER_E2E_CHROME=/path/to/chrome` 指定。
 - 使用 `.tmp/browser-e2e/` 下的临时 SQLite、media、日志和 Chrome profile。
 - 自动启动 `127.0.0.1:8000`、`3001`、`3002`、`3003` 的测试服务。
-- 测试 Admin Web、User Web、Mobile H5 登录和关键页面，并通过真实表单完成 User Web 包裹预报、Admin Web 扫描入库、User Web 回看在库状态。
+- 测试 Admin Web、User Web、Mobile H5 登录和关键页面，并通过真实表单完成 User Web 包裹预报、Admin Web 扫描入库、User Web 回看在库状态、财务汇款审核、客服工单回复、运单创建、审核计费、余额支付、发货轨迹和确认收货。
 - 检查 console error/warning、runtime exception 和 `>=400` network response。
 - 退出时清理临时数据库、media、日志、Chrome profile 和进程，不使用用户日常 Chrome profile。
 

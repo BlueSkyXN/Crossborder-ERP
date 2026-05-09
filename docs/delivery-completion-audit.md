@@ -27,7 +27,7 @@
 - 角色与管理员账号安全删除，覆盖内置/自删/已分配保护。
 - PostgreSQL/MySQL/Redis/Celery 无连接 DSN 边界检查。
 - `npm run e2e` 自动验收主链路和最小代购链路。
-- `npm run e2e:browser` 自动验收 Admin Web、User Web、Mobile H5 登录、关键页面 smoke、包裹预报/入库/回看浏览器旅程，以及财务汇款审核和客服工单回复跨面板旅程。
+- `npm run e2e:browser` 自动验收 Admin Web、User Web、Mobile H5 登录、关键页面 smoke、包裹预报/入库/回看、财务汇款审核、客服工单回复和运单后半程跨面板浏览器旅程。
 - Browser Smoke 导航等待、失败页面快照和服务日志输出已加固，降低 CI 偶发误判并提升失败可诊断性。
 - Agent 证据 CI 门禁已纳入 PR/main，自动校验任务图、current-state 和 Agent run 摘要一致性。
 - CSV 和标准 `.xlsx` 批量预报导入。
@@ -55,6 +55,7 @@
 | 后台占位面板真实化 | Admin Web `/dashboard`、`/roles` 和 `/admin-users` 已改为真实接口面板；角色创建、编辑、权限分配、管理员角色分配和业务模块级 action 权限已补齐 | `docs/agent-runs/2026-05-09-ADMIN-PANELS-001.md`、`docs/agent-runs/2026-05-09-RBAC-ROLES-001.md`、`docs/agent-runs/2026-05-09-RBAC-ADMIN-USERS-001.md`、`docs/agent-runs/2026-05-09-RBAC-BUSINESS-ACTIONS-001.md`、`backend/apps/iam/tests/test_admin_auth.py` |
 | Browser Smoke 稳定性 | CDP 导航等待、页面快照诊断和失败服务日志输出已加固；不新增依赖或下载浏览器 | `docs/agent-runs/2026-05-09-QA-BROWSER-003.md`、`scripts/e2e/browser-smoke.mjs` |
 | 浏览器跨面板业务旅程 | Browser Smoke 已覆盖 User Web 创建线下汇款和客服工单、Admin Web 审核汇款入账和回复工单、User Web 回看客服回复，并修复工单回复前后端 URL 契约问题 | `docs/agent-runs/2026-05-09-QA-BROWSER-004.md`、`scripts/e2e/browser-smoke.mjs`、`admin-web/src/features/tickets/api.ts` |
+| 运单后半程浏览器旅程 | Browser Smoke 已覆盖 User Web 从在库包裹创建运单、Admin Web 审核计费、User Web 余额支付、Admin Web 发货并生成轨迹、User Web 回看轨迹并确认收货，并修复运单弹窗 Form 初始化 console error | `docs/agent-runs/2026-05-09-QA-BROWSER-005.md`、`scripts/e2e/browser-smoke.mjs`、`admin-web/src/features/waybills/WaybillOpsPage.tsx` |
 | Agent 证据门禁 | CI 校验任务图、current-state、任务文件、Agent run 摘要、验证结果和未验证边界说明 | `docs/agent-runs/2026-05-09-CI-EVIDENCE-001.md`、`scripts/ci/validate_agent_evidence.py` |
 | 证明纯 AI 驱动全栈 ERP | 每个正式任务留摘要证据，不记录过细过程 | `docs/ai-development-proof.md`、`docs/agent-runs/` |
 | 每轮任务 PR、更新 PR 信息并合并 main | 已按任务分支和 PR 合并推进；最后任务以 PR 合并收口 | GitHub PR 记录、`docs/agent-runs/` |
@@ -67,11 +68,11 @@
 | 用户登录并复制仓库地址 | User Web 和 Mobile H5 均有入口 | `docs/agent-runs/2026-05-08-FEU-001A.md`、`2026-05-08-FEM-001A.md` |
 | 用户提交包裹预报 | 后端、User Web、Mobile H5 已覆盖；批量预报支持 CSV 和 `.xlsx`；Browser Smoke 已真实提交包裹预报 | `docs/agent-runs/2026-05-08-BE-005.md`、`2026-05-08-FEU-001B.md`、`2026-05-08-FEM-001B.md`、`2026-05-09-IMPORT-XLSX-001.md`、`2026-05-09-QA-BROWSER-002.md` |
 | 后台扫描入库 | 后端和 Admin Web 已覆盖；Browser Smoke 已真实扫描同一快递单号入库 | `docs/agent-runs/2026-05-08-FEA-003.md`、`2026-05-09-QA-BROWSER-002.md` |
-| 用户申请打包 | 后端、User Web、Mobile H5 已覆盖 | `docs/agent-runs/2026-05-08-BE-006.md`、`2026-05-09-FEU-001C.md`、`2026-05-09-FEM-001C.md` |
-| 后台审核运单并设置费用 | Admin Web 已覆盖 | `docs/agent-runs/2026-05-08-FEA-004.md` |
-| 后台充值、用户余额支付 | 后端、Admin Web、User Web、Mobile H5 已覆盖 | `docs/agent-runs/2026-05-08-BE-007.md`、`2026-05-09-FEU-001C.md`、`2026-05-09-FEM-001C.md` |
-| 后台发货并添加轨迹 | 后端和 Admin Web 已覆盖 | `docs/agent-runs/2026-05-08-BE-008.md`、`2026-05-08-FEA-004.md` |
-| 用户查看轨迹并确认收货 | User Web 和 Mobile H5 已覆盖 | `docs/agent-runs/2026-05-09-FEU-001C.md`、`2026-05-09-FEM-001C.md` |
+| 用户申请打包 | 后端、User Web、Mobile H5 已覆盖；Browser Smoke 已真实从在库包裹创建运单 | `docs/agent-runs/2026-05-08-BE-006.md`、`2026-05-09-FEU-001C.md`、`2026-05-09-FEM-001C.md`、`2026-05-09-QA-BROWSER-005.md` |
+| 后台审核运单并设置费用 | Admin Web 已覆盖；Browser Smoke 已真实审核并计费同一运单 | `docs/agent-runs/2026-05-08-FEA-004.md`、`2026-05-09-QA-BROWSER-005.md` |
+| 后台充值、用户余额支付 | 后端、Admin Web、User Web、Mobile H5 已覆盖；Browser Smoke 已在同一浏览器旅程使用钱包余额支付运单 | `docs/agent-runs/2026-05-08-BE-007.md`、`2026-05-09-FEU-001C.md`、`2026-05-09-FEM-001C.md`、`2026-05-09-QA-BROWSER-005.md` |
+| 后台发货并添加轨迹 | 后端和 Admin Web 已覆盖；Browser Smoke 已真实发货并生成轨迹 | `docs/agent-runs/2026-05-08-BE-008.md`、`2026-05-08-FEA-004.md`、`2026-05-09-QA-BROWSER-005.md` |
+| 用户查看轨迹并确认收货 | User Web 和 Mobile H5 已覆盖；Browser Smoke 已真实回看轨迹并确认收货到 `SIGNED` | `docs/agent-runs/2026-05-09-FEU-001C.md`、`2026-05-09-FEM-001C.md`、`2026-05-09-QA-BROWSER-005.md` |
 | 用户提交手工代购 | 后端、User Web、Mobile H5 已覆盖 | `docs/agent-runs/2026-05-09-BE-009.md`、`2026-05-09-FEU-002.md`、`2026-05-09-FEM-002.md` |
 | 后台采购到货并转 Parcel | 后端和 Admin Web 已覆盖 | `docs/agent-runs/2026-05-09-FEA-005.md` |
 | Parcel 继续走集运链路 | E2E 验证转出包裹可继续申请打包 | `docs/agent-runs/2026-05-09-E2E-001.md` |
@@ -113,7 +114,7 @@ git diff --check
 - Prometheus/Sentry/外部告警和真实 staging 探针未验证；当前只完成本地 readiness endpoint。
 - PostgreSQL/MySQL 生产备份、远程备份、加密、轮转和恢复演练未验证；当前只完成 SQLite 本地显式备份命令。
 - 对象存储生命周期、CDN、缩略图、病毒扫描、EXIF 清理和远程文件归档未验证；当前只完成本地软删除文件清理命令和基础内容签名校验。
-- `npm run e2e:browser` 已纳入仓库，并覆盖包裹预报/入库/回看、财务汇款审核和客服工单回复等真实浏览器旅程；Playwright、组件级测试、视觉回归和所有复杂业务路径仍需后续增强。
+- `npm run e2e:browser` 已纳入仓库，并覆盖包裹预报/入库/回看、财务汇款审核、客服工单回复和运单后半程等真实浏览器旅程；Playwright、组件级测试、视觉回归和所有复杂业务路径仍需后续增强。
 - `npm run inspect:services` 已纳入仓库，但只做无连接 DSN 检查；PostgreSQL/MySQL/Redis/Celery 真实运行仍需后续验证。
 - 真实支付、真实自动采购下单、对象存储、外部 SIEM/审计告警、真实打印硬件、物流 API 和业务 create/update/delete 子权限后续补齐。
 - 短信/邮件验证码、真实通知送达、微信登录、多语言和复杂业务规则保持 `TODO_CONFIRM`。

@@ -188,6 +188,7 @@ class AdminPurchaseOrderReviewView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "purchases.view"
+    write_permission = "purchases.manage"
 
     @extend_schema(tags=["admin-purchases"], request=PurchaseReviewSerializer, responses={200: PurchaseOrderSerializer})
     def post(self, request, purchase_order_id: int):
@@ -205,6 +206,7 @@ class AdminPurchaseOrderProcureView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "purchases.view"
+    write_permission = "purchases.manage"
 
     @extend_schema(tags=["admin-purchases"], request=PurchaseProcureSerializer, responses={200: PurchaseOrderSerializer})
     def post(self, request, purchase_order_id: int):
@@ -222,6 +224,7 @@ class AdminPurchaseOrderMarkArrivedView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "purchases.view"
+    write_permission = "purchases.manage"
 
     @extend_schema(tags=["admin-purchases"], request=PurchaseArrivedSerializer, responses={200: PurchaseOrderSerializer})
     def post(self, request, purchase_order_id: int):
@@ -243,6 +246,7 @@ class AdminPurchaseOrderConvertToParcelView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "purchases.view"
+    write_permission = "purchases.manage"
 
     @extend_schema(
         tags=["admin-purchases"],
@@ -268,6 +272,7 @@ class AdminPurchaseOrderMarkExceptionView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "purchases.view"
+    write_permission = "purchases.manage"
 
     @extend_schema(
         tags=["admin-purchases"],
@@ -293,6 +298,7 @@ class AdminPurchaseOrderCancelView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "purchases.view"
+    write_permission = "purchases.manage"
 
     @extend_schema(
         tags=["admin-purchases"],

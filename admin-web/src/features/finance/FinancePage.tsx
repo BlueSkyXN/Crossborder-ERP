@@ -52,6 +52,7 @@ import type {
 
 type WorkspaceContext = {
   allowedCodes: Set<string>;
+  permissionCodes: Set<string>;
 };
 
 type ActiveStatus = "ALL" | RemittanceStatus;
@@ -210,7 +211,7 @@ function buildPayablePayload(values: PayableFormValues): PayablePayload {
 }
 
 export function FinancePage() {
-  const { allowedCodes } = useOutletContext<WorkspaceContext>();
+  const { allowedCodes, permissionCodes } = useOutletContext<WorkspaceContext>();
   const queryClient = useQueryClient();
   const { message } = AntdApp.useApp();
   const [reviewForm] = Form.useForm<ReviewFormValues>();
@@ -228,6 +229,7 @@ export function FinancePage() {
   const [payableAction, setPayableAction] = useState<PayableAction | null>(null);
 
   const hasPermission = allowedCodes.has("finance.view");
+  const canManage = permissionCodes.has("finance.manage");
   const remittancesQuery = useQuery({
     queryKey: remittancesQueryKey,
     queryFn: financeOpsApi.listRemittances,
@@ -554,7 +556,7 @@ export function FinancePage() {
             icon={<CheckCircleOutlined />}
             type="primary"
             size="small"
-            disabled={record.status !== "PENDING"}
+            disabled={!canManage || record.status !== "PENDING"}
             onClick={() => setReviewAction({ type: "approve", remittance: record })}
           >
             通过
@@ -563,7 +565,7 @@ export function FinancePage() {
             danger
             icon={<CloseCircleOutlined />}
             size="small"
-            disabled={record.status !== "PENDING"}
+            disabled={!canManage || record.status !== "PENDING"}
             onClick={() => setReviewAction({ type: "cancel", remittance: record })}
           >
             取消
@@ -601,14 +603,14 @@ export function FinancePage() {
           <Button
             size="small"
             icon={<EditOutlined />}
-            disabled={record.status !== "PENDING_REVIEW"}
+            disabled={!canManage || record.status !== "PENDING_REVIEW"}
             onClick={() => openPayableModal(record)}
           />
           <Button
             size="small"
             type="primary"
             icon={<CheckCircleOutlined />}
-            disabled={record.status !== "PENDING_REVIEW"}
+            disabled={!canManage || record.status !== "PENDING_REVIEW"}
             loading={confirmPayableMutation.isPending}
             onClick={() => confirmPayableMutation.mutate(record.id)}
           >
@@ -617,7 +619,7 @@ export function FinancePage() {
           <Button
             size="small"
             icon={<DollarOutlined />}
-            disabled={record.status !== "CONFIRMED"}
+            disabled={!canManage || record.status !== "CONFIRMED"}
             onClick={() => openPayableReviewModal("settle", record)}
           >
             核销
@@ -626,7 +628,7 @@ export function FinancePage() {
             size="small"
             danger
             icon={<CloseCircleOutlined />}
-            disabled={record.status === "SETTLED" || record.status === "CANCELLED"}
+            disabled={!canManage || record.status === "SETTLED" || record.status === "CANCELLED"}
             onClick={() => openPayableReviewModal("cancel", record)}
           />
         </Space>
@@ -646,7 +648,9 @@ export function FinancePage() {
       title: "操作",
       width: 90,
       fixed: "right",
-      render: (_, record) => <Button size="small" icon={<EditOutlined />} onClick={() => openSupplierModal(record)} />,
+      render: (_, record) => (
+        <Button size="small" icon={<EditOutlined />} disabled={!canManage} onClick={() => openSupplierModal(record)} />
+      ),
     },
   ];
 
@@ -660,7 +664,9 @@ export function FinancePage() {
       title: "操作",
       width: 90,
       fixed: "right",
-      render: (_, record) => <Button size="small" icon={<EditOutlined />} onClick={() => openCostTypeModal(record)} />,
+      render: (_, record) => (
+        <Button size="small" icon={<EditOutlined />} disabled={!canManage} onClick={() => openCostTypeModal(record)} />
+      ),
     },
   ];
 
@@ -701,6 +707,8 @@ export function FinancePage() {
           线下汇款审核、钱包流水、支付单、供应商和应付款。
         </Typography.Text>
       </div>
+
+      {!canManage && <Alert type="info" showIcon message="当前账号只读财务，缺少 finance.manage。" />}
 
       {(remittancesQuery.isError ||
         walletTransactionsQuery.isError ||
@@ -764,9 +772,11 @@ export function FinancePage() {
                       onChange={(event) => setPayableKeyword(event.target.value)}
                       style={{ width: 280 }}
                     />
-                    <Button icon={<PlusOutlined />} type="primary" onClick={() => openPayableModal()}>
-                      新建应付款
-                    </Button>
+                    {canManage && (
+                      <Button icon={<PlusOutlined />} type="primary" onClick={() => openPayableModal()}>
+                        新建应付款
+                      </Button>
+                    )}
                     <Button icon={<ReloadOutlined />} onClick={invalidatePayables}>
                       刷新
                     </Button>
@@ -801,9 +811,11 @@ export function FinancePage() {
                       onChange={(event) => setMasterKeyword(event.target.value)}
                       style={{ width: 260 }}
                     />
-                    <Button icon={<PlusOutlined />} type="primary" onClick={() => openSupplierModal()}>
-                      新建供应商
-                    </Button>
+                    {canManage && (
+                      <Button icon={<PlusOutlined />} type="primary" onClick={() => openSupplierModal()}>
+                        新建供应商
+                      </Button>
+                    )}
                   </Space>
                 }
               >
@@ -826,9 +838,11 @@ export function FinancePage() {
                 title="成本类型"
                 extra={
                   <Space wrap>
-                    <Button icon={<PlusOutlined />} type="primary" onClick={() => openCostTypeModal()}>
-                      新建成本类型
-                    </Button>
+                    {canManage && (
+                      <Button icon={<PlusOutlined />} type="primary" onClick={() => openCostTypeModal()}>
+                        新建成本类型
+                      </Button>
+                    )}
                   </Space>
                 }
               >

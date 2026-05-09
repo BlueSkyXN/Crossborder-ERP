@@ -28,6 +28,20 @@ MENU_PERMISSIONS = [
 ]
 
 ACTION_PERMISSIONS = [
+    ("members.manage", "会员管理操作", "members", 21, PermissionType.BUTTON),
+    ("warehouses.manage", "仓库配置管理", "warehouses", 31, PermissionType.BUTTON),
+    ("parcels.manage", "包裹管理操作", "parcels", 41, PermissionType.BUTTON),
+    ("parcels.export", "包裹导出", "parcels", 42, PermissionType.BUTTON),
+    ("waybills.manage", "运单管理操作", "waybills", 51, PermissionType.BUTTON),
+    ("finance.manage", "财务管理操作", "finance", 61, PermissionType.BUTTON),
+    ("files.manage", "后台文件管理", "files", 62, PermissionType.BUTTON),
+    ("purchases.manage", "代购管理操作", "purchases", 71, PermissionType.BUTTON),
+    ("products.manage", "商品管理操作", "products", 81, PermissionType.BUTTON),
+    ("tickets.manage", "客服工单操作", "tickets", 86, PermissionType.BUTTON),
+    ("content.manage", "内容管理操作", "content", 87, PermissionType.BUTTON),
+    ("audit.logs.export", "审计日志导出", "audit", 89, PermissionType.BUTTON),
+    ("growth.view", "积分推广查看", "members", 94, PermissionType.BUTTON),
+    ("growth.manage", "积分推广管理操作", "members", 95, PermissionType.BUTTON),
     ("iam.role.manage", "角色权限管理", "roles", 91, PermissionType.BUTTON),
     ("iam.admin.manage", "管理员账号管理", "admin-users", 93, PermissionType.BUTTON),
 ]
@@ -43,17 +57,25 @@ ROLE_DEFINITIONS = {
     "warehouse": {
         "name": "仓库人员",
         "description": "包裹、仓储和运单操作",
-        "permissions": ["dashboard.view", "parcels.view", "waybills.view"],
+        "permissions": [
+            "dashboard.view",
+            "parcels.view",
+            "parcels.manage",
+            "parcels.export",
+            "waybills.view",
+            "waybills.manage",
+            "files.manage",
+        ],
     },
     "finance": {
         "name": "财务人员",
         "description": "财务和支付查询操作",
-        "permissions": ["dashboard.view", "finance.view"],
+        "permissions": ["dashboard.view", "finance.view", "finance.manage", "files.manage"],
     },
     "buyer": {
         "name": "采购人员",
         "description": "代购订单和商品相关操作",
-        "permissions": ["dashboard.view", "purchases.view", "products.view"],
+        "permissions": ["dashboard.view", "purchases.view", "purchases.manage", "products.view", "products.manage"],
     },
     "support": {
         "name": "客服人员",
@@ -61,10 +83,13 @@ ROLE_DEFINITIONS = {
         "permissions": [
             "dashboard.view",
             "members.view",
+            "members.manage",
             "parcels.view",
             "waybills.view",
             "purchases.view",
             "tickets.view",
+            "tickets.manage",
+            "files.manage",
         ],
     },
 }

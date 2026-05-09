@@ -12,12 +12,18 @@ class IsAdminAuthenticated(permissions.BasePermission):
 
 class HasAdminPermission(IsAdminAuthenticated):
     permission_code = ""
+    safe_methods = {"GET", "HEAD", "OPTIONS"}
 
     def has_permission(self, request, view) -> bool:
         if not super().has_permission(request, view):
             return False
 
         required_permission = getattr(view, "required_permission", self.permission_code)
+        method_permissions = getattr(view, "method_permissions", {})
+        if request.method in method_permissions:
+            required_permission = method_permissions[request.method]
+        elif request.method not in self.safe_methods:
+            required_permission = getattr(view, "write_permission", None) or required_permission
         if not required_permission:
             return True
         return admin_has_permission(request.user, required_permission)

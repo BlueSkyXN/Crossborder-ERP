@@ -174,7 +174,7 @@ uv run python manage.py backup_sqlite --database default --force
 - 批量导入使用 `IMPORT_FILE` 文件用途，支持 CSV 和标准 `.xlsx` parser；导入模板/导出 CSV 是即时响应，不持久化到 git 或 media，上传的源 CSV/Excel 按本地 `MEDIA_ROOT` 文件策略保存。
 - 外部商品链接解析只识别 host、商品 ID 和规范化 URL，结果进入手工代购商品行；当前不抓取真实第三方页面、不自动下单、不保存平台账号或凭证。
 - 会员注册、账户资料设置和登录态内改密码已完成；短信/邮件验证码、找回密码和微信登录仍需真实通道确认后单独接入。
-- 后台 `/dashboard` 使用 `GET /api/v1/admin/dashboard` 返回当前管理员可见模块的真实聚合数据；`/roles` 读取真实角色权限列表。角色编辑和细粒度 RBAC 后续单独增强。
+- 后台 `/dashboard` 使用 `GET /api/v1/admin/dashboard` 返回当前管理员可见模块的真实聚合数据；`/roles` 和 `/admin-users` 读取真实 IAM 数据。业务写操作按模块级 `*.manage` / `*.export` 权限控制，角色/管理员删除和 create/update/delete 子权限后续单独增强。
 - 软删除文件可用 `purge_deleted_files --older-than-days N --dry-run` 预演清理，再显式执行真实清理。该命令只删除已软删除且超过保留期的本地物理文件，不删除数据库记录。
 
 本地软删除文件清理：

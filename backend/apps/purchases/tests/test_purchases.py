@@ -369,6 +369,30 @@ def test_admin_purchase_list_requires_permission(client, seeded_purchases):
     assert response.json()["code"] == "FORBIDDEN"
 
 
+def test_purchase_viewer_without_manage_cannot_review(client, seeded_purchases):
+    order = create_paid_purchase_order()
+    client.post(
+        reverse("purchase-order-pay", kwargs={"purchase_order_id": order.id}),
+        {"idempotency_key": "pay-purchase-view-only"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {member_token(client)}",
+    )
+    token = admin_token(client, email="support@example.com")
+
+    list_response = client.get(reverse("admin-purchase-order-list"), HTTP_AUTHORIZATION=f"Bearer {token}")
+    review_response = client.post(
+        reverse("admin-purchase-order-review", kwargs={"purchase_order_id": order.id}),
+        {"review_remark": "view only"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert list_response.status_code == 200
+    assert review_response.status_code == 403
+    order.refresh_from_db()
+    assert order.status == PurchaseOrderStatus.PENDING_REVIEW
+
+
 def test_purchase_warehouse_options_require_purchase_permission(client, seeded_purchases):
     allowed = client.get(
         reverse("admin-purchase-warehouse-options"),

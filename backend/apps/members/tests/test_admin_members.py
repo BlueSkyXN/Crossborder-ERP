@@ -2,7 +2,7 @@ import pytest
 from django.contrib.auth.hashers import make_password
 from django.urls import reverse
 
-from apps.iam.models import AdminUser
+from apps.iam.models import AdminUser, Permission, Role
 from apps.iam.services import seed_iam_demo_data
 from apps.members.models import MemberProfile, User, UserStatus
 from apps.members.services import seed_member_demo_data
@@ -33,6 +33,18 @@ def member_login(client, email="user@example.com", password="password123"):
 
 def admin_token(client, email="admin@example.com"):
     return admin_login(client, email=email).json()["data"]["access_token"]
+
+
+def create_admin_with_permissions(email: str, permission_codes: list[str]) -> AdminUser:
+    role = Role.objects.create(code=email.split("@", maxsplit=1)[0].replace(".", "_"), name=email)
+    role.permissions.set(Permission.objects.filter(code__in=permission_codes))
+    admin = AdminUser.objects.create(
+        email=email,
+        name=email,
+        password_hash=make_password("password123"),
+    )
+    admin.roles.set([role])
+    return admin
 
 
 def test_admin_can_list_filter_and_read_member_detail(client, seeded_admin_members):
@@ -120,6 +132,31 @@ def test_member_management_requires_members_permission(client, seeded_admin_memb
 
     assert response.status_code == 403
     assert response.json()["code"] == "FORBIDDEN"
+
+
+def test_member_viewer_without_manage_cannot_mutate_member(client, seeded_admin_members):
+    user = User.objects.get(email="user@example.com")
+    create_admin_with_permissions("member-viewer@example.com", ["dashboard.view", "members.view"])
+    token = admin_token(client, email="member-viewer@example.com")
+
+    list_response = client.get(reverse("admin-members"), HTTP_AUTHORIZATION=f"Bearer {token}")
+    freeze_response = client.post(
+        reverse("admin-member-freeze", kwargs={"user_id": user.id}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    update_response = client.patch(
+        reverse("admin-member-detail", kwargs={"user_id": user.id}),
+        {"level": "vip"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert list_response.status_code == 200
+    assert freeze_response.status_code == 403
+    assert update_response.status_code == 403
+    user.refresh_from_db()
+    assert user.status == UserStatus.ACTIVE
+    assert user.profile.level == "basic"
 
 
 def test_freeze_blocks_existing_member_token_and_unfreeze_restores_access(client, seeded_admin_members):

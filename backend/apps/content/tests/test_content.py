@@ -1,8 +1,10 @@
 import pytest
+from django.contrib.auth.hashers import make_password
 from django.urls import reverse
 
 from apps.content.models import ContentCategory, ContentCategoryStatus, ContentPage, ContentStatus
 from apps.content.services import seed_content_demo_data
+from apps.iam.models import AdminUser, Permission, Role
 from apps.iam.services import seed_iam_demo_data
 
 
@@ -19,6 +21,18 @@ def admin_token(client, email="admin@example.com"):
         content_type="application/json",
     )
     return response.json()["data"]["access_token"]
+
+
+def create_admin_with_permissions(email: str, permission_codes: list[str]) -> AdminUser:
+    role = Role.objects.create(code=email.split("@", maxsplit=1)[0].replace(".", "_"), name=email)
+    role.permissions.set(Permission.objects.filter(code__in=permission_codes))
+    admin = AdminUser.objects.create(
+        email=email,
+        name=email,
+        password_hash=make_password("password123"),
+    )
+    admin.roles.set([role])
+    return admin
 
 
 def test_public_content_lists_only_published_pages(client, seeded_content):
@@ -130,6 +144,34 @@ def test_content_admin_requires_content_permission(client, seeded_content):
 
     assert response.status_code == 403
     assert response.json()["code"] == "FORBIDDEN"
+
+
+def test_content_viewer_without_manage_cannot_write(client, seeded_content):
+    create_admin_with_permissions("content-viewer@example.com", ["dashboard.view", "content.view"])
+    token = admin_token(client, email="content-viewer@example.com")
+    page = ContentPage.objects.get(slug="how-to-forecast-parcel")
+
+    list_response = client.get(reverse("admin-content-page-list"), HTTP_AUTHORIZATION=f"Bearer {token}")
+    create_response = client.post(
+        reverse("admin-content-page-list"),
+        {
+            "type": "HELP",
+            "slug": "view-only-content",
+            "title": "只读内容",
+            "body": "不应创建",
+        },
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    publish_response = client.post(
+        reverse("admin-content-page-publish", kwargs={"page_id": page.id}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert list_response.status_code == 200
+    assert create_response.status_code == 403
+    assert publish_response.status_code == 403
+    assert not ContentPage.objects.filter(slug="view-only-content").exists()
 
 
 def test_public_categories_hide_disabled_categories(client, seeded_content):

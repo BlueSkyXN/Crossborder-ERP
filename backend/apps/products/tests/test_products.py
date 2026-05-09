@@ -1,6 +1,8 @@
 import pytest
+from django.contrib.auth.hashers import make_password
 from django.urls import reverse
 
+from apps.iam.models import AdminUser, Permission, Role
 from apps.iam.services import seed_iam_demo_data
 from apps.members.services import register_user, seed_member_demo_data
 from apps.products.models import CartItem, CatalogStatus, Product, ProductSku
@@ -30,6 +32,18 @@ def admin_token(client, email="buyer@example.com"):
         content_type="application/json",
     )
     return response.json()["data"]["access_token"]
+
+
+def create_admin_with_permissions(email: str, permission_codes: list[str]) -> AdminUser:
+    role = Role.objects.create(code=email.split("@", maxsplit=1)[0].replace(".", "_"), name=email)
+    role.permissions.set(Permission.objects.filter(code__in=permission_codes))
+    admin = AdminUser.objects.create(
+        email=email,
+        name=email,
+        password_hash=make_password("password123"),
+    )
+    admin.roles.set([role])
+    return admin
 
 
 def first_sku():
@@ -200,3 +214,19 @@ def test_admin_product_catalog_crud_and_permission(client, seeded_products):
     )
     assert denied.status_code == 403
     assert denied.json()["code"] == "FORBIDDEN"
+
+
+def test_product_viewer_without_manage_cannot_write_catalog(client, seeded_products):
+    create_admin_with_permissions("product-viewer@example.com", ["dashboard.view", "products.view"])
+    token = admin_token(client, email="product-viewer@example.com")
+
+    list_response = client.get(reverse("admin-product-list"), HTTP_AUTHORIZATION=f"Bearer {token}")
+    create_response = client.post(
+        reverse("admin-product-category-list"),
+        {"name": "只读分类", "status": CatalogStatus.ACTIVE},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert list_response.status_code == 200
+    assert create_response.status_code == 403

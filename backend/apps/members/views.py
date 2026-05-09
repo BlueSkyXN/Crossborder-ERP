@@ -193,6 +193,7 @@ class AdminMemberDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "members.view"
+    write_permission = "members.manage"
 
     @extend_schema(tags=["admin-members"], responses={200: AdminMemberSerializer})
     def get(self, request, user_id: int):
@@ -213,6 +214,7 @@ class AdminMemberFreezeView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "members.view"
+    write_permission = "members.manage"
 
     @extend_schema(tags=["admin-members"], request=None, responses={200: AdminMemberSerializer})
     def post(self, request, user_id: int):
@@ -224,6 +226,7 @@ class AdminMemberUnfreezeView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "members.view"
+    write_permission = "members.manage"
 
     @extend_schema(tags=["admin-members"], request=None, responses={200: AdminMemberSerializer})
     def post(self, request, user_id: int):
@@ -235,6 +238,7 @@ class AdminMemberResetPasswordView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "members.view"
+    write_permission = "members.manage"
 
     @extend_schema(
         tags=["admin-members"],
@@ -305,6 +309,7 @@ class AdminUserPointAdjustView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "growth.view"
+    write_permission = "growth.manage"
 
     @extend_schema(tags=["admin-growth"], request=AdminPointAdjustmentSerializer, responses={201: PointLedgerSerializer})
     def post(self, request, user_id: int):
@@ -319,6 +324,7 @@ class AdminReferralRelationListCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "growth.view"
+    write_permission = "growth.manage"
 
     @extend_schema(tags=["admin-growth"], responses={200: ReferralRelationSerializer(many=True)})
     def get(self, request):
@@ -360,6 +366,7 @@ class AdminRebateRecordListCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "growth.view"
+    write_permission = "growth.manage"
 
     @extend_schema(tags=["admin-growth"], responses={200: RebateRecordSerializer(many=True)})
     def get(self, request):

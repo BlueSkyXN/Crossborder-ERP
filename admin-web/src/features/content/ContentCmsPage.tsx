@@ -45,6 +45,7 @@ import type {
 
 type WorkspaceContext = {
   allowedCodes: Set<string>;
+  permissionCodes: Set<string>;
 };
 
 type ActiveTab = "pages" | "categories";
@@ -135,7 +136,7 @@ function buildPagePayload(values: ContentPagePayload): ContentPagePayload {
 }
 
 export function ContentCmsPage() {
-  const { allowedCodes } = useOutletContext<WorkspaceContext>();
+  const { allowedCodes, permissionCodes } = useOutletContext<WorkspaceContext>();
   const queryClient = useQueryClient();
   const { message } = AntdApp.useApp();
   const [pageForm] = Form.useForm<ContentPagePayload>();
@@ -149,6 +150,7 @@ export function ContentCmsPage() {
   const [categoryDrawerOpen, setCategoryDrawerOpen] = useState(false);
 
   const hasPermission = allowedCodes.has("content.view");
+  const canManage = permissionCodes.has("content.manage");
   const pagesQuery = useQuery({
     queryKey: pagesQueryKey,
     queryFn: contentCmsApi.listPages,
@@ -304,6 +306,9 @@ export function ContentCmsPage() {
   };
 
   const submitPage = () => {
+    if (!canManage) {
+      return;
+    }
     pageForm.validateFields().then((values) => {
       const payload = buildPagePayload(values);
       if (editingPage) {
@@ -315,6 +320,9 @@ export function ContentCmsPage() {
   };
 
   const submitCategory = () => {
+    if (!canManage) {
+      return;
+    }
     categoryForm.validateFields().then((values) => {
       const payload = buildCategoryPayload(values);
       if (editingCategory) {
@@ -364,13 +372,13 @@ export function ContentCmsPage() {
       fixed: "right",
       render: (_, record) => (
         <Space size={4}>
-          <Button size="small" icon={<EditOutlined />} onClick={() => openPageDrawer(record)}>
+          <Button size="small" icon={<EditOutlined />} disabled={!canManage} onClick={() => openPageDrawer(record)}>
             编辑
           </Button>
           <Button
             size="small"
             type="primary"
-            disabled={record.status === "PUBLISHED"}
+            disabled={!canManage || record.status === "PUBLISHED"}
             loading={publishPageMutation.isPending}
             icon={<SendOutlined />}
             onClick={() => publishPageMutation.mutate(record.id)}
@@ -380,7 +388,7 @@ export function ContentCmsPage() {
           <Button
             size="small"
             danger
-            disabled={record.status === "HIDDEN"}
+            disabled={!canManage || record.status === "HIDDEN"}
             loading={hidePageMutation.isPending}
             icon={<EyeInvisibleOutlined />}
             onClick={() => hidePageMutation.mutate(record.id)}
@@ -413,13 +421,13 @@ export function ContentCmsPage() {
       fixed: "right",
       render: (_, record) => (
         <Space>
-          <Button size="small" icon={<EditOutlined />} onClick={() => openCategoryDrawer(record)}>
+          <Button size="small" icon={<EditOutlined />} disabled={!canManage} onClick={() => openCategoryDrawer(record)}>
             编辑
           </Button>
           <Button
             size="small"
             danger
-            disabled={record.status === "DISABLED"}
+            disabled={!canManage || record.status === "DISABLED"}
             loading={disableCategoryMutation.isPending}
             onClick={() => disableCategoryMutation.mutate(record.id)}
           >
@@ -447,14 +455,19 @@ export function ContentCmsPage() {
           <Button icon={<ReloadOutlined />} onClick={invalidateContent}>
             刷新
           </Button>
-          <Button icon={<PlusOutlined />} onClick={() => openCategoryDrawer()}>
-            新建分类
-          </Button>
-          <Button type="primary" icon={<FileTextOutlined />} onClick={() => openPageDrawer()}>
-            新建内容
-          </Button>
+          {canManage && (
+            <Button icon={<PlusOutlined />} onClick={() => openCategoryDrawer()}>
+              新建分类
+            </Button>
+          )}
+          {canManage && (
+            <Button type="primary" icon={<FileTextOutlined />} onClick={() => openPageDrawer()}>
+              新建内容
+            </Button>
+          )}
         </Space>
       </div>
+      {!canManage && <Alert type="info" showIcon message="当前账号只读内容，缺少 content.manage。" />}
 
       <Row gutter={[16, 16]}>
         <Col xs={24} md={8}>
@@ -534,12 +547,14 @@ export function ContentCmsPage() {
           setEditingPage(null);
         }}
         extra={
-          <Button type="primary" loading={isPageSaving} onClick={submitPage}>
-            保存
-          </Button>
+          canManage ? (
+            <Button type="primary" loading={isPageSaving} onClick={submitPage}>
+              保存
+            </Button>
+          ) : null
         }
       >
-        <Form form={pageForm} layout="vertical" requiredMark={false}>
+        <Form form={pageForm} layout="vertical" requiredMark={false} disabled={!canManage}>
           <Row gutter={12}>
             <Col xs={24} md={12}>
               <Form.Item name="type" label="内容类型" rules={[{ required: true }]}>
@@ -593,12 +608,14 @@ export function ContentCmsPage() {
           setEditingCategory(null);
         }}
         extra={
-          <Button type="primary" loading={isCategorySaving} onClick={submitCategory}>
-            保存
-          </Button>
+          canManage ? (
+            <Button type="primary" loading={isCategorySaving} onClick={submitCategory}>
+              保存
+            </Button>
+          ) : null
         }
       >
-        <Form form={categoryForm} layout="vertical" requiredMark={false}>
+        <Form form={categoryForm} layout="vertical" requiredMark={false} disabled={!canManage}>
           <Form.Item name="type" label="内容类型" rules={[{ required: true }]}>
             <Select options={contentTypes} />
           </Form.Item>

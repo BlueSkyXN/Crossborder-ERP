@@ -219,6 +219,7 @@ class AdminParcelExportView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "parcels.view"
+    method_permissions = {"GET": "parcels.export"}
 
     @extend_schema(tags=["admin-parcels"], responses={200: OpenApiTypes.BINARY})
     def get(self, request):
@@ -229,6 +230,7 @@ class AdminParcelInboundView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "parcels.view"
+    write_permission = "parcels.manage"
 
     @extend_schema(tags=["admin-parcels"], request=InboundRequestSerializer, responses={200: ParcelSerializer})
     def post(self, request, parcel_id: int):
@@ -246,6 +248,7 @@ class AdminParcelScanInboundView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "parcels.view"
+    write_permission = "parcels.manage"
 
     @extend_schema(
         tags=["admin-parcels"],
@@ -276,6 +279,7 @@ class AdminUnclaimedParcelListCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "parcels.view"
+    write_permission = "parcels.manage"
 
     @extend_schema(tags=["admin-parcels"], responses={200: UnclaimedParcelSerializer(many=True)})
     def get(self, request):
@@ -305,6 +309,7 @@ class AdminUnclaimedParcelApproveView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "parcels.view"
+    write_permission = "parcels.manage"
 
     @extend_schema(
         tags=["admin-parcels"],
@@ -336,6 +341,7 @@ class AdminUnclaimedParcelRejectView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "parcels.view"
+    write_permission = "parcels.manage"
 
     @extend_schema(
         tags=["admin-parcels"],

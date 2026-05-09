@@ -58,6 +58,7 @@ import type {
 
 type WorkspaceContext = {
   allowedCodes: Set<string>;
+  permissionCodes: Set<string>;
 };
 
 type ActiveStatus = "ALL" | WaybillStatus;
@@ -288,7 +289,7 @@ function buildOperationTimeline(waybill: Waybill) {
 }
 
 export function WaybillOpsPage() {
-  const { allowedCodes } = useOutletContext<WorkspaceContext>();
+  const { allowedCodes, permissionCodes } = useOutletContext<WorkspaceContext>();
   const queryClient = useQueryClient();
   const { message } = AntdApp.useApp();
   const [reviewForm] = Form.useForm<ReviewFormValues>();
@@ -304,7 +305,9 @@ export function WaybillOpsPage() {
   const [batchAction, setBatchAction] = useState<BatchActionState | null>(null);
   const [printTemplate, setPrintTemplate] = useState<ShippingBatchPrintTemplate>("label");
   const [printPreview, setPrintPreview] = useState<ShippingBatchPrintPreview | null>(null);
+  const canManage = permissionCodes.has("waybills.manage");
   const hasFinancePermission = allowedCodes.has("finance.view");
+  const canManageFinance = permissionCodes.has("finance.manage");
 
   const waybillsQuery = useQuery({
     queryKey: waybillsQueryKey,
@@ -596,7 +599,7 @@ export function WaybillOpsPage() {
   const renderActionButtons = (waybill: Waybill) => (
     <Space size={4} wrap>
       <Button size="small" title="查看详情" icon={<EyeOutlined />} onClick={() => setDetailWaybillId(waybill.id)} />
-      {waybill.status === "PENDING_REVIEW" && (
+      {canManage && waybill.status === "PENDING_REVIEW" && (
         <Button
           size="small"
           type="primary"
@@ -605,7 +608,7 @@ export function WaybillOpsPage() {
           onClick={() => openAction("review", waybill)}
         />
       )}
-      {waybill.status === "PENDING_PACKING" && (
+      {canManage && waybill.status === "PENDING_PACKING" && (
         <Button
           size="small"
           type="primary"
@@ -617,13 +620,13 @@ export function WaybillOpsPage() {
       {waybill.status === "PENDING_PAYMENT" && (
         <Button
           size="small"
-          title={hasFinancePermission ? "人工充值" : "需要 finance.view 权限"}
+          title={canManageFinance ? "人工充值" : "需要 finance.manage 权限"}
           icon={<WalletOutlined />}
-          disabled={!hasFinancePermission}
+          disabled={!canManageFinance}
           onClick={() => openAction("recharge", waybill)}
         />
       )}
-      {waybill.status === "PENDING_SHIPMENT" && (
+      {canManage && waybill.status === "PENDING_SHIPMENT" && (
         <Button
           size="small"
           type="primary"
@@ -632,7 +635,7 @@ export function WaybillOpsPage() {
           onClick={() => openAction("ship", waybill)}
         />
       )}
-      {waybill.status === "SHIPPED" && (
+      {canManage && waybill.status === "SHIPPED" && (
         <Button
           size="small"
           title="添加轨迹"
@@ -697,7 +700,7 @@ export function WaybillOpsPage() {
       render: (_, record) => (
         <Space size={4} wrap>
           <Button size="small" title="查看详情" icon={<EyeOutlined />} onClick={() => setDetailBatchId(record.id)} />
-          {record.status === "DRAFT" && (
+          {canManage && record.status === "DRAFT" && (
             <>
               <Button
                 size="small"
@@ -715,7 +718,7 @@ export function WaybillOpsPage() {
               />
             </>
           )}
-          {record.status === "LOCKED" && (
+          {canManage && record.status === "LOCKED" && (
             <Button
               size="small"
               type="primary"
@@ -724,7 +727,7 @@ export function WaybillOpsPage() {
               onClick={() => openBatchAction("ship", record)}
             />
           )}
-          {(record.status === "LOCKED" || record.status === "SHIPPED") && (
+          {canManage && (record.status === "LOCKED" || record.status === "SHIPPED") && (
             <Button
               size="small"
               title="批量轨迹"
@@ -765,9 +768,11 @@ export function WaybillOpsPage() {
           <Typography.Paragraph>审核、计费、人工充值、发货批次和物流轨迹录入。</Typography.Paragraph>
         </div>
         <Space wrap>
-          <Button type="primary" icon={<InboxOutlined />} onClick={() => openBatchAction("create")}>
-            创建批次
-          </Button>
+          {canManage && (
+            <Button type="primary" icon={<InboxOutlined />} onClick={() => openBatchAction("create")}>
+              创建批次
+            </Button>
+          )}
           <Button
             icon={<ReloadOutlined />}
             onClick={() => {
@@ -783,6 +788,7 @@ export function WaybillOpsPage() {
           </Button>
         </Space>
       </div>
+      {!canManage && <Alert type="info" showIcon message="当前账号只读运单，缺少 waybills.manage。" />}
 
       <Row gutter={[16, 16]}>
         <Col xs={24} md={6}>
@@ -856,9 +862,11 @@ export function WaybillOpsPage() {
       <Card
         title="发货批次"
         extra={
-          <Button type="primary" icon={<InboxOutlined />} onClick={() => openBatchAction("create")}>
-            创建批次
-          </Button>
+          canManage ? (
+            <Button type="primary" icon={<InboxOutlined />} onClick={() => openBatchAction("create")}>
+              创建批次
+            </Button>
+          ) : null
         }
       >
         <Table
@@ -1037,7 +1045,7 @@ export function WaybillOpsPage() {
         extra={
           detailBatch ? (
             <Space wrap>
-              {detailBatch.status === "DRAFT" && (
+              {canManage && detailBatch.status === "DRAFT" && (
                 <>
                   <Button icon={<LinkOutlined />} onClick={() => openBatchAction("addWaybills", detailBatch)}>
                     归批
@@ -1052,12 +1060,12 @@ export function WaybillOpsPage() {
                   </Button>
                 </>
               )}
-              {detailBatch.status === "LOCKED" && (
+              {canManage && detailBatch.status === "LOCKED" && (
                 <Button type="primary" icon={<SendOutlined />} onClick={() => openBatchAction("ship", detailBatch)}>
                   批量发货
                 </Button>
               )}
-              {(detailBatch.status === "LOCKED" || detailBatch.status === "SHIPPED") && (
+              {canManage && (detailBatch.status === "LOCKED" || detailBatch.status === "SHIPPED") && (
                 <Button icon={<PlusOutlined />} onClick={() => openBatchAction("tracking", detailBatch)}>
                   批量轨迹
                 </Button>
@@ -1109,7 +1117,7 @@ export function WaybillOpsPage() {
                     title: "操作",
                     width: 90,
                     render: (_, record) =>
-                      detailBatch.status === "DRAFT" ? (
+                      canManage && detailBatch.status === "DRAFT" ? (
                         <Popconfirm
                           title="移出批次"
                           description={`确认将 ${record.waybill_no} 移出当前批次？`}

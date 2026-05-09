@@ -48,6 +48,7 @@ import type {
 
 type WorkspaceContext = {
   allowedCodes: Set<string>;
+  permissionCodes: Set<string>;
 };
 
 type ResourceKey =
@@ -195,7 +196,8 @@ function buildRatePlanPayload(values: FormValues): RatePlanPayload {
 }
 
 export function WarehouseConfigPage() {
-  const { allowedCodes } = useOutletContext<WorkspaceContext>();
+  const { allowedCodes, permissionCodes } = useOutletContext<WorkspaceContext>();
+  const canManage = permissionCodes.has("warehouses.manage");
   const queryClient = useQueryClient();
   const { message } = AntdApp.useApp();
   const [form] = Form.useForm<FormValues>();
@@ -371,6 +373,9 @@ export function WarehouseConfigPage() {
     resource: ResourceKey,
     record: T,
   ) => {
+    if (!canManage) {
+      return "-";
+    }
     const nextStatus = record.status === "ACTIVE" ? "DISABLED" : "ACTIVE";
     return (
       <Space size={4}>
@@ -664,13 +669,16 @@ export function WarehouseConfigPage() {
           <Typography.Title level={2}>基础配置</Typography.Title>
           <Typography.Paragraph>仓库、渠道、包装、增值服务和简版费率。</Typography.Paragraph>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreate(activeResource)}>
-          新建{resourceLabels[activeResource]}
-        </Button>
+        {canManage && (
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreate(activeResource)}>
+            新建{resourceLabels[activeResource]}
+          </Button>
+        )}
       </div>
 
       <Card>
         <Space orientation="vertical" size={16} className="config-page">
+          {!canManage && <Alert type="info" showIcon message="当前账号只读基础配置，缺少 warehouses.manage。" />}
           <Tabs
             activeKey={activeResource}
             onChange={(key) => {

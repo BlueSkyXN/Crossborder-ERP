@@ -128,3 +128,16 @@ def test_admin_file_api_uses_admin_download_url(client, seeded_files):
     data = response.json()["data"]
     assert data["download_url"] == f"/api/v1/admin/files/{data['file_id']}/download"
     assert data["owner_type"] == "ADMIN"
+
+
+def test_admin_file_api_requires_file_manage_permission(client, seeded_files):
+    token = admin_token(client, email="buyer@example.com")
+
+    response = client.post(
+        reverse("admin-file-list"),
+        {"usage": FileUsage.PRODUCT_IMAGE, "file": image_upload("product.jpg", b"product", "image/jpeg")},
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 403
+    assert response.json()["code"] == "FORBIDDEN"

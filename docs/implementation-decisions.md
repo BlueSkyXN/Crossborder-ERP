@@ -159,7 +159,7 @@
 | 应付核销 | 当前只记录人工核销凭证，不连接真实银行、自动打款或外部财务系统 | `PAYABLE-001` 已保持应付与钱包/PaymentOrder 分离；真实付款和供应商对账后续单独验证 |
 | 积分/推广/返利 | 当前只记录积分流水、邀请关系和返利统计，不接真实联盟、提现、税务或多级分销 | `GROWTH-001` 已保持返利与钱包/PaymentOrder 分离；最终规则统一标记 `TODO_CONFIRM` |
 | 浏览器测试依赖 | Playwright 浏览器二进制下载会占用磁盘，也可能写缓存 | 当前 `npm run e2e:browser` 使用系统 Chrome/Chromium 和 `.tmp/browser-e2e/` 临时 profile；不下载浏览器，不使用用户日常 profile；关键包裹预报/入库旅程和后台真实面板导航先用 CDP 覆盖 |
-| 后台 dashboard/RBAC | 通用占位工作台会造成“面板已整合”的证明不足 | `/dashboard` 使用 `GET /api/v1/admin/dashboard` 的真实聚合数据，`/roles` 和 `/admin-users` 使用真实 IAM 数据；角色创建、编辑、权限分配、管理员创建、启停、密码重置和角色分配已完成，删除和业务按钮级更细分权后续单独做 |
+| 后台 dashboard/RBAC | 通用占位工作台会造成“面板已整合”的证明不足 | `/dashboard` 使用 `GET /api/v1/admin/dashboard` 的真实聚合数据，`/roles` 和 `/admin-users` 使用真实 IAM 数据；角色创建、编辑、权限分配、管理员创建、启停、密码重置和角色分配已完成；业务写操作已按模块级 `*.manage` / `*.export` 权限拆分，删除和 create/update/delete 子权限后续单独做 |
 | 审计日志留存 | 外部 SIEM/归档服务需要基础设施和策略确认 | 当前先提供脱敏 CSV 导出和显式 `purge_audit_logs` 本地留存命令；不自动删除生产数据，不声明外部合规归档完成 |
 | TLS/HSTS/反向代理 | HSTS 和 HTTPS redirect 需要真实域名、证书、反代头和子域策略验证 | 当前只开启本地可测的基础响应头；`SECURE_HSTS_SECONDS` 和 `SECURE_SSL_REDIRECT` 默认关闭，通过环境变量后续启用 |
 | 外部监控/告警 | 需要真实 staging、监控平台和告警接收策略 | 当前仅提供本地可测 readiness endpoint；Prometheus/Sentry/日志聚合后续接入 |
@@ -168,7 +168,7 @@
 
 ## 下一步
 
-按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `RBAC-ADMIN-USERS-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
+按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `RBAC-BUSINESS-ACTIONS-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
 
 ```text
 生产化边界 / 需业务确认的外部集成 / 测试深度增强。

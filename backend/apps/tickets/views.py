@@ -112,6 +112,7 @@ class AdminTicketMarkProcessingView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "tickets.view"
+    write_permission = "tickets.manage"
 
     @extend_schema(tags=["admin-tickets"], request=None, responses={200: TicketSerializer})
     def post(self, request, ticket_id: int):
@@ -127,6 +128,7 @@ class AdminTicketReplyView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "tickets.view"
+    write_permission = "tickets.manage"
 
     @extend_schema(tags=["admin-tickets"], request=TicketMessageCreateSerializer, responses={200: TicketSerializer})
     def post(self, request, ticket_id: int):
@@ -144,6 +146,7 @@ class AdminTicketCloseView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "tickets.view"
+    write_permission = "tickets.manage"
 
     @extend_schema(tags=["admin-tickets"], request=TicketCloseSerializer, responses={200: TicketSerializer})
     def post(self, request, ticket_id: int):

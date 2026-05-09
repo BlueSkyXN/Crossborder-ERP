@@ -1,9 +1,11 @@
 from decimal import Decimal
 
 import pytest
+from django.contrib.auth.hashers import make_password
 from django.urls import reverse
 
 from apps.finance.models import WalletTransaction
+from apps.iam.models import AdminUser, Permission, Role
 from apps.iam.services import seed_iam_demo_data
 from apps.members.models import PointLedger, RebateRecord, ReferralRelation, User
 from apps.members.services import register_user, seed_member_demo_data
@@ -41,6 +43,18 @@ def member_token(client, email="user@example.com"):
 
 def auth(token: str) -> dict[str, str]:
     return {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+
+
+def create_admin_with_permissions(email: str, permission_codes: list[str]) -> AdminUser:
+    role = Role.objects.create(code=email.split("@", maxsplit=1)[0].replace(".", "_"), name=email)
+    role.permissions.set(Permission.objects.filter(code__in=permission_codes))
+    admin = AdminUser.objects.create(
+        email=email,
+        name=email,
+        password_hash=make_password("password123"),
+    )
+    admin.roles.set([role])
+    return admin
 
 
 def test_admin_can_adjust_points_and_member_can_read_summary(client, seeded_growth):
@@ -188,6 +202,24 @@ def test_growth_admin_endpoints_require_member_permission(client, seeded_growth)
     response = client.get(reverse("admin-member-growth-detail", kwargs={"user_id": user.id}), **auth(finance_token))
 
     assert response.status_code == 403
+
+
+def test_growth_viewer_without_manage_cannot_adjust_points(client, seeded_growth):
+    user = User.objects.get(email="user@example.com")
+    create_admin_with_permissions("growth-viewer@example.com", ["dashboard.view", "growth.view"])
+    token = admin_token(client, email="growth-viewer@example.com")
+
+    detail_response = client.get(reverse("admin-member-growth-detail", kwargs={"user_id": user.id}), **auth(token))
+    adjust_response = client.post(
+        reverse("admin-member-point-adjust", kwargs={"user_id": user.id}),
+        {"points_delta": 20},
+        content_type="application/json",
+        **auth(token),
+    )
+
+    assert detail_response.status_code == 200
+    assert adjust_response.status_code == 403
+    assert not PointLedger.objects.filter(user=user, points=20).exists()
 
 
 def test_member_growth_lists_are_scoped_to_current_member(client, seeded_growth):

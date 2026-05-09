@@ -79,6 +79,7 @@ class AdminRolesView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "iam.role.view"
+    write_permission = "iam.role.manage"
 
     @extend_schema(tags=["admin-auth"], responses={200: RoleSerializer(many=True)})
     def get(self, request):
@@ -102,6 +103,7 @@ class AdminRoleDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "iam.role.view"
+    write_permission = "iam.role.manage"
 
     def get_role(self, role_id: int) -> Role:
         try:
@@ -138,6 +140,7 @@ class AdminAccountsView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "iam.admin.view"
+    write_permission = "iam.admin.manage"
 
     @extend_schema(tags=["admin-auth"], responses={200: AdminAccountSerializer(many=True)})
     def get(self, request):
@@ -157,6 +160,7 @@ class AdminAccountDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "iam.admin.view"
+    write_permission = "iam.admin.manage"
 
     def get_admin_account(self, admin_id: int) -> AdminUser:
         try:

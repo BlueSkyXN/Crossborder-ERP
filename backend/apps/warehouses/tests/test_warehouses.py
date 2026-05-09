@@ -1,6 +1,8 @@
 import pytest
+from django.contrib.auth.hashers import make_password
 from django.urls import reverse
 
+from apps.iam.models import AdminUser, Permission, Role
 from apps.iam.services import seed_iam_demo_data
 from apps.members.services import seed_member_demo_data
 from apps.warehouses.models import ConfigStatus, ShippingChannel, Warehouse
@@ -21,6 +23,18 @@ def admin_token(client, email="admin@example.com"):
         content_type="application/json",
     )
     return response.json()["data"]["access_token"]
+
+
+def create_admin_with_permissions(email: str, permission_codes: list[str]) -> AdminUser:
+    role = Role.objects.create(code=email.split("@", maxsplit=1)[0].replace(".", "_"), name=email)
+    role.permissions.set(Permission.objects.filter(code__in=permission_codes))
+    admin = AdminUser.objects.create(
+        email=email,
+        name=email,
+        password_hash=make_password("password123"),
+    )
+    admin.roles.set([role])
+    return admin
 
 
 def member_token(client):
@@ -88,6 +102,23 @@ def test_non_permitted_admin_cannot_manage_config(client, seeded_config):
 
     assert response.status_code == 403
     assert response.json()["code"] == "FORBIDDEN"
+
+
+def test_warehouse_viewer_without_manage_cannot_create_config(client, seeded_config):
+    create_admin_with_permissions("warehouse-viewer@example.com", ["dashboard.view", "warehouses.view"])
+    token = admin_token(client, email="warehouse-viewer@example.com")
+
+    list_response = client.get(reverse("admin-warehouses-list"), HTTP_AUTHORIZATION=f"Bearer {token}")
+    create_response = client.post(
+        reverse("admin-shipping-channels-list"),
+        {"code": "VIEWER_CHANNEL", "name": "只读渠道", "billing_method": "weight"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert list_response.status_code == 200
+    assert create_response.status_code == 403
+    assert not ShippingChannel.objects.filter(code="VIEWER_CHANNEL").exists()
 
 
 def test_inactive_shipping_channel_not_returned_by_active_selector(client, seeded_config):

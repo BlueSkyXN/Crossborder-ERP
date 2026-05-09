@@ -146,6 +146,7 @@ class AdminWaybillReviewView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "waybills.view"
+    write_permission = "waybills.manage"
 
     @extend_schema(tags=["admin-waybills"], request=WaybillReviewSerializer, responses={200: WaybillSerializer})
     def post(self, request, waybill_id: int):
@@ -163,6 +164,7 @@ class AdminWaybillSetFeeView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "waybills.view"
+    write_permission = "waybills.manage"
 
     @extend_schema(tags=["admin-waybills"], request=WaybillFeeSerializer, responses={200: WaybillSerializer})
     def post(self, request, waybill_id: int):
@@ -180,6 +182,7 @@ class AdminWaybillShipView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "waybills.view"
+    write_permission = "waybills.manage"
 
     @extend_schema(tags=["admin-waybills"], request=WaybillShipSerializer, responses={200: WaybillSerializer})
     def post(self, request, waybill_id: int):
@@ -197,6 +200,7 @@ class AdminWaybillTrackingEventCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "waybills.view"
+    write_permission = "waybills.manage"
 
     @extend_schema(
         tags=["admin-waybills"],
@@ -223,6 +227,7 @@ class AdminShippingBatchListCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "waybills.view"
+    write_permission = "waybills.manage"
 
     @extend_schema(tags=["admin-shipping-batches"], responses={200: ShippingBatchSerializer(many=True)})
     def get(self, request):
@@ -248,6 +253,7 @@ class AdminShippingBatchDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "waybills.view"
+    write_permission = "waybills.manage"
 
     @extend_schema(tags=["admin-shipping-batches"], responses={200: ShippingBatchSerializer})
     def get(self, request, batch_id: int):
@@ -276,6 +282,7 @@ class AdminShippingBatchWaybillListView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "waybills.view"
+    write_permission = "waybills.manage"
 
     @extend_schema(
         tags=["admin-shipping-batches"],
@@ -297,6 +304,7 @@ class AdminShippingBatchWaybillDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "waybills.view"
+    write_permission = "waybills.manage"
 
     @extend_schema(tags=["admin-shipping-batches"], responses={200: ShippingBatchSerializer})
     def delete(self, request, batch_id: int, waybill_id: int):
@@ -312,6 +320,7 @@ class AdminShippingBatchLockView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "waybills.view"
+    write_permission = "waybills.manage"
 
     @extend_schema(tags=["admin-shipping-batches"], request=None, responses={200: ShippingBatchSerializer})
     def post(self, request, batch_id: int):
@@ -327,6 +336,7 @@ class AdminShippingBatchShipView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "waybills.view"
+    write_permission = "waybills.manage"
 
     @extend_schema(tags=["admin-shipping-batches"], request=WaybillShipSerializer, responses={200: ShippingBatchSerializer})
     def post(self, request, batch_id: int):
@@ -344,6 +354,7 @@ class AdminShippingBatchTrackingEventCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "waybills.view"
+    write_permission = "waybills.manage"
 
     @extend_schema(
         tags=["admin-shipping-batches"],

@@ -376,3 +376,22 @@ def test_non_permitted_admin_cannot_list_parcels(client, seeded_parcels):
 
     assert response.status_code == 403
     assert response.json()["code"] == "FORBIDDEN"
+
+
+def test_parcel_viewer_without_manage_or_export_cannot_write_or_export(client, seeded_parcels):
+    warehouse = Warehouse.objects.get(code="SZ")
+    token = admin_token(client, email="support@example.com")
+
+    list_response = client.get(reverse("admin-parcel-list"), HTTP_AUTHORIZATION=f"Bearer {token}")
+    export_response = client.get(reverse("admin-parcel-export"), HTTP_AUTHORIZATION=f"Bearer {token}")
+    scan_response = client.post(
+        reverse("admin-parcel-scan-inbound"),
+        {"warehouse_id": warehouse.id, "tracking_no": "VIEWER-NO-WRITE-001", "weight_kg": "0.800"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert list_response.status_code == 200
+    assert export_response.status_code == 403
+    assert scan_response.status_code == 403
+    assert not UnclaimedParcel.objects.filter(tracking_no="VIEWER-NO-WRITE-001").exists()

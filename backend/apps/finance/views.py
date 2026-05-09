@@ -174,6 +174,7 @@ class AdminOfflineRemittanceApproveView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "finance.view"
+    write_permission = "finance.manage"
 
     @extend_schema(
         tags=["admin-finance"],
@@ -199,6 +200,7 @@ class AdminOfflineRemittanceCancelView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "finance.view"
+    write_permission = "finance.manage"
 
     @extend_schema(
         tags=["admin-finance"],
@@ -224,6 +226,7 @@ class AdminUserWalletRechargeView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "finance.view"
+    write_permission = "finance.manage"
 
     @extend_schema(tags=["admin-finance"], request=WalletAdjustmentSerializer, responses={201: WalletTransactionSerializer})
     def post(self, request, user_id: int):
@@ -238,6 +241,7 @@ class AdminUserWalletDeductView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "finance.view"
+    write_permission = "finance.manage"
 
     @extend_schema(tags=["admin-finance"], request=WalletAdjustmentSerializer, responses={201: WalletTransactionSerializer})
     def post(self, request, user_id: int):
@@ -266,6 +270,7 @@ class AdminSupplierListCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "finance.view"
+    write_permission = "finance.manage"
 
     @extend_schema(tags=["admin-finance"], responses={200: SupplierSerializer(many=True)})
     def get(self, request):
@@ -284,6 +289,7 @@ class AdminSupplierDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "finance.view"
+    write_permission = "finance.manage"
 
     @extend_schema(tags=["admin-finance"], responses={200: SupplierSerializer})
     def get(self, request, supplier_id: int):
@@ -303,6 +309,7 @@ class AdminCostTypeListCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "finance.view"
+    write_permission = "finance.manage"
 
     @extend_schema(tags=["admin-finance"], responses={200: CostTypeSerializer(many=True)})
     def get(self, request):
@@ -321,6 +328,7 @@ class AdminCostTypeDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "finance.view"
+    write_permission = "finance.manage"
 
     @extend_schema(tags=["admin-finance"], responses={200: CostTypeSerializer})
     def get(self, request, cost_type_id: int):
@@ -340,6 +348,7 @@ class AdminPayableListCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "finance.view"
+    write_permission = "finance.manage"
 
     @extend_schema(tags=["admin-finance"], responses={200: PayableSerializer(many=True)})
     def get(self, request):
@@ -364,6 +373,7 @@ class AdminPayableDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "finance.view"
+    write_permission = "finance.manage"
 
     @extend_schema(tags=["admin-finance"], responses={200: PayableSerializer})
     def get(self, request, payable_id: int):
@@ -394,6 +404,7 @@ class AdminPayableConfirmView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "finance.view"
+    write_permission = "finance.manage"
 
     @extend_schema(tags=["admin-finance"], request=None, responses={200: PayableSerializer})
     def post(self, request, payable_id: int):
@@ -409,6 +420,7 @@ class AdminPayableSettleView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "finance.view"
+    write_permission = "finance.manage"
 
     @extend_schema(tags=["admin-finance"], request=PayableSettleSerializer, responses={200: PayableSerializer})
     def post(self, request, payable_id: int):
@@ -426,6 +438,7 @@ class AdminPayableCancelView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "finance.view"
+    write_permission = "finance.manage"
 
     @extend_schema(tags=["admin-finance"], request=PayableCancelSerializer, responses={200: PayableSerializer})
     def post(self, request, payable_id: int):

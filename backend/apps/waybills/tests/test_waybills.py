@@ -289,6 +289,31 @@ def test_admin_waybill_list_requires_permission(client, seeded_waybills):
     assert response.json()["code"] == "FORBIDDEN"
 
 
+def test_waybill_viewer_without_manage_cannot_review(client, seeded_waybills):
+    parcel = create_in_stock_parcel("WB-VIEW-ONLY-001")
+    waybill = create_waybill(
+        user=User.objects.get(email="user@example.com"),
+        parcel_ids=[parcel.id],
+        channel=ShippingChannel.objects.get(code="TEST_AIR"),
+        destination_country="US",
+        recipient_snapshot={"name": "Viewer Receiver"},
+    )
+    token = admin_token(client, email="support@example.com")
+
+    list_response = client.get(reverse("admin-waybill-list"), HTTP_AUTHORIZATION=f"Bearer {token}")
+    review_response = client.post(
+        reverse("admin-waybill-review", kwargs={"waybill_id": waybill.id}),
+        {"review_remark": "view only"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert list_response.status_code == 200
+    assert review_response.status_code == 403
+    waybill.refresh_from_db()
+    assert waybill.status == WaybillStatus.PENDING_REVIEW
+
+
 def test_cancel_waybill_restores_requested_parcels(seeded_waybills):
     parcel = create_in_stock_parcel("WB10005")
     user = User.objects.get(email="user@example.com")

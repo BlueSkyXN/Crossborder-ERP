@@ -52,6 +52,7 @@ import type {
 
 type WorkspaceContext = {
   allowedCodes: Set<string>;
+  permissionCodes: Set<string>;
 };
 
 type ActiveTab = "pending" | "scan" | "stock" | "unclaimed";
@@ -199,7 +200,10 @@ function buildUnclaimedPayload(values: UnclaimedFormValues): UnclaimedParcelCrea
 }
 
 export function ParcelWmsPage() {
-  const { allowedCodes } = useOutletContext<WorkspaceContext>();
+  const { allowedCodes, permissionCodes } = useOutletContext<WorkspaceContext>();
+  const canManage = permissionCodes.has("parcels.manage");
+  const canExport = permissionCodes.has("parcels.export");
+  const canManageFiles = permissionCodes.has("files.manage");
   const queryClient = useQueryClient();
   const { message } = AntdApp.useApp();
   const [scanForm] = Form.useForm<InboundFormValues>();
@@ -271,6 +275,9 @@ export function ParcelWmsPage() {
   };
 
   const uploadParcelPhoto = (form: FormInstance<InboundFormValues>, file: File) => {
+    if (!canManage || !canManageFiles) {
+      return false;
+    }
     setPhotoUploading(true);
     adminFilesApi
       .uploadFile(file, "PARCEL_PHOTO")
@@ -292,11 +299,11 @@ export function ParcelWmsPage() {
         <Upload
           accept="image/jpeg,image/png,image/webp,image/gif"
           beforeUpload={(file) => uploadParcelPhoto(form, file)}
-          disabled={photoUploading}
+          disabled={!canManage || !canManageFiles || photoUploading}
           maxCount={1}
           showUploadList={false}
         >
-          <Button icon={<UploadOutlined />} loading={photoUploading}>
+          <Button icon={<UploadOutlined />} disabled={!canManage || !canManageFiles} loading={photoUploading}>
             上传图片
           </Button>
         </Upload>
@@ -445,7 +452,7 @@ export function ParcelWmsPage() {
             icon={<EyeOutlined />}
             onClick={() => setDetailParcel(record)}
           />
-          {record.status === "PENDING_INBOUND" && (
+          {canManage && record.status === "PENDING_INBOUND" && (
             <Button
               size="small"
               type="primary"
@@ -499,7 +506,7 @@ export function ParcelWmsPage() {
       width: 170,
       fixed: "right",
       render: (_, record) =>
-        record.status === "CLAIM_PENDING" ? (
+        canManage && record.status === "CLAIM_PENDING" ? (
           <Space size={4}>
             <Button
               size="small"
@@ -574,6 +581,7 @@ export function ParcelWmsPage() {
         <Space wrap>
           <Button
             icon={<DownloadOutlined />}
+            disabled={!canExport}
             loading={exportMutation.isPending}
             onClick={() => exportMutation.mutate()}
           >
@@ -588,11 +596,14 @@ export function ParcelWmsPage() {
           >
             刷新
           </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setActiveTab("unclaimed")}>
-            登记无主包裹
-          </Button>
+          {canManage && (
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setActiveTab("unclaimed")}>
+              登记无主包裹
+            </Button>
+          )}
         </Space>
       </div>
+      {!canManage && <Alert type="info" showIcon message="当前账号只读包裹，缺少 parcels.manage。" />}
 
       <Row gutter={[16, 16]}>
         <Col xs={24} md={8}>
@@ -704,7 +715,13 @@ export function ParcelWmsPage() {
                     <Form.Item name="remark" label="备注">
                       <Input.TextArea rows={3} />
                     </Form.Item>
-                    <Button type="primary" htmlType="submit" loading={scanMutation.isPending} icon={<SearchOutlined />}>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      disabled={!canManage}
+                      loading={scanMutation.isPending}
+                      icon={<SearchOutlined />}
+                    >
                       搜索并入库
                     </Button>
                   </Form>
@@ -790,6 +807,7 @@ export function ParcelWmsPage() {
                     <Button
                       type="primary"
                       htmlType="submit"
+                      disabled={!canManage}
                       loading={unclaimedCreateMutation.isPending}
                       icon={<PlusOutlined />}
                     >
@@ -870,6 +888,7 @@ export function ParcelWmsPage() {
         extra={
           <Button
             type="primary"
+            disabled={!canManage}
             loading={inboundMutation.isPending}
             onClick={() => {
               inboundForm.validateFields().then((values) => {
@@ -945,6 +964,7 @@ export function ParcelWmsPage() {
             <Button
               type="primary"
               danger={reviewAction === "reject"}
+              disabled={!canManage}
               loading={reviewLoading}
               onClick={submitUnclaimedReview}
             >

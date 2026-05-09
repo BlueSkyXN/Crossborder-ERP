@@ -283,4 +283,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/RBAC-ADMIN-USERS-001.md
     depends_on: [RBAC-ROLES-001]
+    next: RBAC-BUSINESS-ACTIONS-001
+  - id: RBAC-BUSINESS-ACTIONS-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/RBAC-BUSINESS-ACTIONS-001.md
+    depends_on: [RBAC-ROLES-001, RBAC-ADMIN-USERS-001]
     next: null

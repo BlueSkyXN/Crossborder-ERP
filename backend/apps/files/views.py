@@ -89,6 +89,7 @@ class MemberFileDownloadView(APIView):
 class AdminFileListCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
+    required_permission = "files.manage"
     parser_classes = [MultiPartParser, FormParser]
 
     @extend_schema(tags=["admin-files"], responses={200: StoredFileSerializer(many=True)})
@@ -116,6 +117,7 @@ class AdminFileListCreateView(APIView):
 class AdminFileDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
+    required_permission = "files.manage"
 
     @extend_schema(tags=["admin-files"], responses={200: StoredFileSerializer})
     def get(self, request, file_id: str):
@@ -130,6 +132,7 @@ class AdminFileDetailView(APIView):
 class AdminFileDownloadView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
+    required_permission = "files.manage"
 
     @extend_schema(tags=["admin-files"], responses={200: OpenApiTypes.BINARY})
     def get(self, request, file_id: str):

@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 import pytest
+from django.contrib.auth.hashers import make_password
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
@@ -20,7 +21,7 @@ from apps.finance.models import (
     WalletTransaction,
     WalletTransactionType,
 )
-from apps.iam.models import AdminUser
+from apps.iam.models import AdminUser, Permission, Role
 from apps.iam.services import seed_iam_demo_data
 from apps.members.models import User
 from apps.members.services import issue_member_access_token, register_user, seed_member_demo_data
@@ -67,6 +68,18 @@ def admin_token(client, email="finance@example.com"):
         content_type="application/json",
     )
     return response.json()["data"]["access_token"]
+
+
+def create_admin_with_permissions(email: str, permission_codes: list[str]) -> AdminUser:
+    role = Role.objects.create(code=email.split("@", maxsplit=1)[0].replace(".", "_"), name=email)
+    role.permissions.set(Permission.objects.filter(code__in=permission_codes))
+    admin = AdminUser.objects.create(
+        email=email,
+        name=email,
+        password_hash=make_password("password123"),
+    )
+    admin.roles.set([role])
+    return admin
 
 
 def payable_waybill(tracking_no="FIN10001", fee_total=Decimal("25.80")):
@@ -380,6 +393,32 @@ def test_admin_finance_lists_require_permission(client, seeded_finance):
 
     assert response.status_code == 403
     assert response.json()["code"] == "FORBIDDEN"
+
+
+def test_finance_viewer_without_manage_cannot_write(client, seeded_finance):
+    user = User.objects.get(email="user@example.com")
+    create_admin_with_permissions("finance-viewer@example.com", ["dashboard.view", "finance.view"])
+    token = admin_token(client, email="finance-viewer@example.com")
+
+    list_response = client.get(reverse("admin-remittance-list"), HTTP_AUTHORIZATION=f"Bearer {token}")
+    recharge_response = client.post(
+        reverse("admin-wallet-recharge", kwargs={"user_id": user.id}),
+        {"amount": "10.00", "remark": "view only"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    supplier_response = client.post(
+        reverse("admin-supplier-list"),
+        {"code": "view-only", "name": "只读供应商"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert list_response.status_code == 200
+    assert recharge_response.status_code == 403
+    assert supplier_response.status_code == 403
+    assert Wallet.objects.filter(user=user).exists() is False
+    assert not Supplier.objects.filter(code="VIEW-ONLY").exists()
 
 
 def test_admin_payment_order_list(client, seeded_finance):

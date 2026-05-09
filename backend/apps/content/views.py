@@ -72,6 +72,7 @@ class AdminContentCategoryListCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "content.view"
+    write_permission = "content.manage"
 
     @extend_schema(tags=["admin-content"], responses={200: ContentCategorySerializer(many=True)})
     def get(self, request):
@@ -89,6 +90,7 @@ class AdminContentCategoryDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "content.view"
+    write_permission = "content.manage"
 
     @extend_schema(tags=["admin-content"], request=ContentCategoryInputSerializer, responses={200: ContentCategorySerializer})
     def patch(self, request, category_id: int):
@@ -112,6 +114,7 @@ class AdminContentPageListCreateView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "content.view"
+    write_permission = "content.manage"
 
     @extend_schema(tags=["admin-content"], responses={200: ContentPageSerializer(many=True)})
     def get(self, request):
@@ -129,6 +132,7 @@ class AdminContentPageDetailView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "content.view"
+    write_permission = "content.manage"
 
     @extend_schema(tags=["admin-content"], request=ContentPageInputSerializer, responses={200: ContentPageSerializer})
     def patch(self, request, page_id: int):
@@ -149,6 +153,7 @@ class AdminContentPagePublishView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "content.view"
+    write_permission = "content.manage"
 
     @extend_schema(tags=["admin-content"], request=None, responses={200: ContentPageSerializer})
     def post(self, request, page_id: int):
@@ -161,6 +166,7 @@ class AdminContentPageHideView(APIView):
     authentication_classes = [AdminTokenAuthentication]
     permission_classes = [HasAdminPermission]
     required_permission = "content.view"
+    write_permission = "content.manage"
 
     @extend_schema(tags=["admin-content"], request=None, responses={200: ContentPageSerializer})
     def post(self, request, page_id: int):

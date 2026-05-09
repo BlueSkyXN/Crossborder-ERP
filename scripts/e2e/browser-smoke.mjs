@@ -324,7 +324,7 @@ async function runUser(debugPort) {
 
 async function runMobile(debugPort) {
   const page = await createPage(debugPort, { mobile: true });
-  await navigate(page, `${MOBILE_URL}/login?redirect=%2Fship`, "移动寄件中心");
+  await navigate(page, `${MOBILE_URL}/login?redirect=%2Fship`, "登录");
   await clickByText(page, "登录");
   await waitForPath(page, "/ship");
   await waitForText(page, "复制地址");

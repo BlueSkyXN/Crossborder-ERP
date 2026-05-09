@@ -10,12 +10,21 @@ CHROME_PROFILE="$TMP_DIR/chrome-profile"
 
 PIDS=()
 
+kill_tree() {
+  local pid="$1"
+  local child
+  for child in $(pgrep -P "$pid" 2>/dev/null || true); do
+    kill_tree "$child"
+  done
+  if kill -0 "$pid" 2>/dev/null; then
+    kill "$pid" 2>/dev/null || true
+  fi
+}
+
 cleanup() {
   local status=$?
   for pid in "${PIDS[@]:-}"; do
-    if kill -0 "$pid" 2>/dev/null; then
-      kill "$pid" 2>/dev/null || true
-    fi
+    kill_tree "$pid"
   done
   for pid in "${PIDS[@]:-}"; do
     wait "$pid" 2>/dev/null || true

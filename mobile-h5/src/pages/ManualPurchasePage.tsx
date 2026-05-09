@@ -7,9 +7,10 @@ import {
   fetchPurchaseOrders,
   fetchPurchaseWallet,
   fetchPurchaseWalletTransactions,
+  parsePurchaseLink,
   payPurchaseOrder,
 } from "../features/purchases/api";
-import type { ManualPurchaseOrderCreatePayload, PurchaseOrder } from "../features/purchases/types";
+import type { ManualPurchaseOrderCreatePayload, ParsedPurchaseLink, PurchaseOrder } from "../features/purchases/types";
 import { PurchasePaymentModal } from "./PurchasePaymentModal";
 import styles from "./PurchaseMobile.module.css";
 
@@ -60,6 +61,8 @@ export function ManualPurchasePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [lines, setLines] = useState<ManualLine[]>(() => [manualLine(Date.now())]);
+  const [linkInput, setLinkInput] = useState("");
+  const [parsedLink, setParsedLink] = useState<ParsedPurchaseLink | null>(null);
   const [serviceFee, setServiceFee] = useState("0.00");
   const [payOrderId, setPayOrderId] = useState<number | null>(null);
   const [notice, setNotice] = useState("");
@@ -107,6 +110,28 @@ export function ManualPurchasePage() {
       showNotice(`${order.order_no} 已提交，请完成余额支付`);
     },
   });
+  const parseLinkMutation = useMutation({
+    mutationFn: parsePurchaseLink,
+    onSuccess: (result) => {
+      const nextLine: ManualLine = {
+        id: Date.now(),
+        name: result.name,
+        product_url: result.product_url,
+        unit_price: "",
+        quantity: String(result.quantity || 1),
+        remark: result.remark,
+      };
+      setParsedLink(result);
+      setLines((current) => {
+        const emptyIndex = current.findIndex((line) => !line.name.trim() && !line.product_url.trim());
+        if (emptyIndex === -1) {
+          return [...current, nextLine];
+        }
+        return current.map((line, index) => (index === emptyIndex ? nextLine : line));
+      });
+      showNotice(`${result.provider_label} 链接已填入商品行`);
+    },
+  });
   const payMutation = useMutation({
     mutationFn: ({ orderId, idempotencyKey }: { orderId: number; idempotencyKey: string }) =>
       payPurchaseOrder(orderId, { idempotency_key: idempotencyKey }),
@@ -139,6 +164,15 @@ export function ManualPurchasePage() {
     createMutation.mutate(payload);
   };
 
+  const handleParseLink = () => {
+    const sourceUrl = linkInput.trim();
+    if (!sourceUrl) {
+      showNotice("请输入商品链接");
+      return;
+    }
+    parseLinkMutation.mutate({ source_url: sourceUrl });
+  };
+
   return (
     <main className={styles.page}>
       <header className={styles.top}>
@@ -163,9 +197,31 @@ export function ManualPurchasePage() {
       {createMutation.isError && (
         <div className={styles.error}>{createMutation.error instanceof Error ? createMutation.error.message : "提交失败"}</div>
       )}
+      {parseLinkMutation.isError && (
+        <div className={styles.error}>{parseLinkMutation.error instanceof Error ? parseLinkMutation.error.message : "解析失败"}</div>
+      )}
       {payMutation.isError && <div className={styles.error}>{payMutation.error instanceof Error ? payMutation.error.message : "支付失败"}</div>}
 
       <form className={styles.form} onSubmit={handleSubmit}>
+        <section className={styles.linkParser}>
+          <label>
+            <span>外部商品链接</span>
+            <input
+              value={linkInput}
+              placeholder="https://item.taobao.com/..."
+              onChange={(event) => setLinkInput(event.target.value)}
+            />
+          </label>
+          <button className={styles.secondaryButton} type="button" onClick={handleParseLink} disabled={parseLinkMutation.isPending}>
+            {parseLinkMutation.isPending ? "解析中" : "解析链接"}
+          </button>
+          {parsedLink && (
+            <div className={styles.parsePreview}>
+              <strong>{parsedLink.provider_label}</strong>
+              <span>{parsedLink.external_item_id || parsedLink.provider}</span>
+            </div>
+          )}
+        </section>
         <div className={styles.manualList}>
           {lines.map((line, index) => (
             <article key={line.id} className={styles.manualLine}>

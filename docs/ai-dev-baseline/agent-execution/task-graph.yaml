@@ -248,4 +248,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/STORAGE-CLEANUP-001.md
     depends_on: [OPS-SQLITE-BACKUP-001]
+    next: PURCHASE-AUTO-001
+  - id: PURCHASE-AUTO-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/PURCHASE-AUTO-001.md
+    depends_on: [STORAGE-CLEANUP-001]
     next: null

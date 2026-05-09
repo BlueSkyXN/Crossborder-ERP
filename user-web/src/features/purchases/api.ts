@@ -3,7 +3,9 @@ import type {
   AddCartItemPayload,
   CartItem,
   ManualPurchaseOrderCreatePayload,
+  ParsedPurchaseLink,
   Product,
+  PurchaseLinkParsePayload,
   PurchaseOrder,
   PurchaseOrderCreatePayload,
   PurchasePayPayload,
@@ -54,6 +56,10 @@ export function createPurchaseOrder(payload: PurchaseOrderCreatePayload) {
 
 export function createManualPurchaseOrder(payload: ManualPurchaseOrderCreatePayload) {
   return requestData<PurchaseOrder>({ method: "POST", url: "/purchase-orders/manual", data: payload });
+}
+
+export function parsePurchaseLink(payload: PurchaseLinkParsePayload) {
+  return requestData<ParsedPurchaseLink>({ method: "POST", url: "/purchase-links/parse", data: payload });
 }
 
 export function fetchPurchaseOrders() {

@@ -10,7 +10,7 @@
 - Admin Web、User Web、Mobile H5 已覆盖登录、仓库地址、包裹预报、扫描入库、申请打包、审核计费、余额支付、发货轨迹、确认收货、商品/购物车/手工代购最小链路。
 - `npm run e2e` 已覆盖 API 级 P0 主流程，并已把线下汇款审核入账纳入主链路资金来源。
 
-但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 模板下载和批量预报解析；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础；`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础；`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础；`GROWTH-001` 已补齐积分流水、邀请关系、返利记录统计和三端入口基础；`AUDITLOG-001` 已补齐后台关键写操作审计日志和查询面板；`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令；`SECURITY-HEADERS-001` 已补齐基础应用安全响应头配置和测试；`OPS-READINESS-001` 已补齐默认数据库 readiness 检查；`OPS-SQLITE-BACKUP-001` 已补齐 SQLite-first 本地备份命令；`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令。剩余差距集中在真实生产部署/TLS/HSTS/监控/告警/远程备份/对象存储等运维边界、需要业务/合规确认的外部集成，以及视觉回归/组件级测试/更大范围浏览器流。
+但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 模板下载和批量预报解析；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础；`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础；`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础；`GROWTH-001` 已补齐积分流水、邀请关系、返利记录统计和三端入口基础；`AUDITLOG-001` 已补齐后台关键写操作审计日志和查询面板；`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令；`SECURITY-HEADERS-001` 已补齐基础应用安全响应头配置和测试；`OPS-READINESS-001` 已补齐默认数据库 readiness 检查；`OPS-SQLITE-BACKUP-001` 已补齐 SQLite-first 本地备份命令；`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令；`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口。剩余差距集中在真实生产部署/TLS/HSTS/监控/告警/远程备份/对象存储等运维边界、需要业务/合规确认的真实外部下单/支付/物流集成，以及视觉回归/组件级测试/更大范围浏览器流。
 
 ## Source Scope
 
@@ -83,7 +83,7 @@
 | 运维 readiness | 生产化 ERP 需要可供反向代理/监控判断依赖可用的轻量 endpoint | `OPS-READINESS-001` 已补 `/api/v1/health/ready` 默认数据库检查和 503 脱敏失败响应；外部监控/告警和真实 staging 未验证 | `OPS-READINESS-001` 已完成基础 |
 | SQLite 本地备份 | 当前 SQLite-first 验收需要显式数据备份手段，避免只靠手工复制 `db.sqlite3` | `OPS-SQLITE-BACKUP-001` 已补 `backup_sqlite` 命令、dry-run、覆盖保护和边界测试；生产数据库/远程备份未验证 | `OPS-SQLITE-BACKUP-001` 已完成基础 |
 | 本地文件生命周期 | 本地 `MEDIA_ROOT` 需要显式清理软删除文件，避免只增不减 | `STORAGE-CLEANUP-001` 已补 `purge_deleted_files` 命令、dry-run、保留期、missing/unsafe 统计和路径保护；对象存储生命周期仍后续 | `STORAGE-CLEANUP-001` 已完成基础 |
-| 外链解析/自动采购 | User Web/Mobile 要求关键词/链接搜索，Admin 二阶段提到外部平台对接 | 当前支持自营商品和手工代购；不支持稳定外部抓取/自动采购 | `PURCHASE-AUTO-001`，需业务确认和合规确认 |
+| 外链解析/自动采购 | User Web/Mobile 要求关键词/链接搜索，Admin 二阶段提到外部平台对接 | `PURCHASE-AUTO-001` 已补外部链接解析 provider、URL 规范化、商品 ID 提取和三端人工代购入口；真实第三方抓取、自动下单和外部订单同步仍未接 | `PURCHASE-AUTO-001` 已完成基础；真实自动采购需业务/合规确认 |
 | 浏览器级 E2E | 源报告要求三端具备可实际操作产品形态；API E2E 不能发现真实浏览器运行时问题 | `QA-BROWSER-001` 已补 system Chrome CDP smoke，覆盖 Admin Web/User Web/Mobile H5 登录和关键页面，并纳入 CI；`QA-BROWSER-002` 已补会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；视觉回归、组件级测试和更多复杂浏览器流仍可增强 | `QA-BROWSER-001`/`QA-BROWSER-002` 已完成；更深测试后续 |
 | PostgreSQL/MySQL/Redis | 用户已确认先 SQLite，后续补但不真实验证 | 当前只验证 SQLite，Redis/Celery 未真实验证 | 保持 `configured_unverified`，不进入当前验证 gate |
 
@@ -92,7 +92,7 @@
 后续不应一次性做超大 PR，建议按依赖顺序拆小任务：
 
 1. 生产化运维边界：补 PostgreSQL/MySQL/Redis 真实验证计划、对象存储、告警和部署验证。
-2. 需要业务/合规确认的外部集成：真实支付、真实物流 API、自动采购和外部商品抓取。
+2. 需要业务/合规确认的外部集成：真实支付、真实物流 API、真实自动采购下单和外部商品抓取。
 3. 测试深度增强：在现有 `npm run e2e:browser` 基础上，逐步覆盖视觉回归、组件级测试和更多复杂浏览器流。
 
 每个任务仍需独立分支、PR、更新 PR 信息、CI 通过后合并回 `main`。

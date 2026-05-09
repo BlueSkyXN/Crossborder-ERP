@@ -887,6 +887,16 @@ def _run_purchase_flow(
     channel: dict,
     run_id: str,
 ) -> dict:
+    parsed_link = _api_data(
+        member_client.post(
+            "/api/v1/purchase-links/parse",
+            {"source_url": f"https://item.taobao.com/item.htm?id={run_id}&title=E2E%E4%BB%A3%E8%B4%AD%E5%95%86%E5%93%81"},
+            format="json",
+        )
+    )
+    assert parsed_link["provider"] == "TAOBAO"
+    assert parsed_link["external_item_id"] == run_id
+
     order = _api_data(
         member_client.post(
             "/api/v1/purchase-orders/manual",
@@ -894,12 +904,12 @@ def _run_purchase_flow(
                 "service_fee": "1.10",
                 "items": [
                     {
-                        "name": "E2E 手工代购商品",
+                        "name": parsed_link["name"],
                         "quantity": 2,
                         "unit_price": "9.90",
                         "actual_price": "9.90",
-                        "product_url": "https://example.com/e2e-purchase",
-                        "remark": "E2E manual purchase",
+                        "product_url": parsed_link["product_url"],
+                        "remark": parsed_link["remark"],
                     }
                 ],
             },

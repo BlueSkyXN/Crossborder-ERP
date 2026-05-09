@@ -15,6 +15,7 @@
 - 后端提供 `/api/v1/health/ready` readiness endpoint，当前检查 SQLite/default database 连接。
 - 后端提供 `backup_sqlite` 显式 SQLite 本地备份命令，默认输出到 ignored 的 `backend/backups/`。
 - 后端提供 `purge_deleted_files` 显式本地软删除文件清理命令。
+- 后端提供 `purchase-links/parse` 外部商品链接解析入口，当前仅做本地 URL 解析和人工代购 fallback。
 
 启动命令：
 
@@ -171,6 +172,7 @@ uv run python manage.py backup_sqlite --database default --force
 - 无主包裹认领只向用户返回脱敏快递单号；后台审核通过后才创建会员在库包裹，认领凭证和通知外呼仍是后续业务规则。
 - 内容 CMS 当前使用数据库文本内容，不接外部富文本上传；公开接口只返回已发布内容，正式条款/隐私/帮助文案仍需业务或法务确认。
 - 批量导入使用 `IMPORT_FILE` 文件用途，支持 CSV 和标准 `.xlsx` parser；导入模板/导出 CSV 是即时响应，不持久化到 git 或 media，上传的源 CSV/Excel 按本地 `MEDIA_ROOT` 文件策略保存。
+- 外部商品链接解析只识别 host、商品 ID 和规范化 URL，结果进入手工代购商品行；当前不抓取真实第三方页面、不自动下单、不保存平台账号或凭证。
 - 软删除文件可用 `purge_deleted_files --older-than-days N --dry-run` 预演清理，再显式执行真实清理。该命令只删除已软删除且超过保留期的本地物理文件，不删除数据库记录。
 
 本地软删除文件清理：

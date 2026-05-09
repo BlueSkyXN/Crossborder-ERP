@@ -37,6 +37,7 @@
 | 运维 readiness | `/api/v1/health/ready` 检查当前默认数据库连接 | 区分进程存活和依赖可用；不暴露 DSN、异常堆栈或本地路径 |
 | SQLite 本地备份 | `backup_sqlite` management command，默认输出到 ignored 的 `backend/backups/` | 当前 SQLite-first 阶段的显式备份手段；不替代生产数据库备份策略 |
 | 本地文件清理 | `purge_deleted_files` 只清理超过保留期的 `StoredFile.DELETED` 本地物理文件 | 控制 `MEDIA_ROOT` 增长；不替代对象存储生命周期、病毒扫描或远程归档 |
+| 外链解析 | `purchase-links/parse` 只做本地 URL 解析和人工代购 fallback | 满足源报告链接代购入口基础；不抓取第三方页面、不自动下单、不接平台账号 |
 | 本地部署 | 当前暂不考虑 Docker；先做 no-Docker local-first | 用户明确要求暂不考虑 Docker，避免拉镜像和启动容器 |
 
 ## 路由约定
@@ -154,7 +155,7 @@
 | 本地文件清理 | 过早删除软删除文件可能影响人工恢复和审计 | 当前清理命令必须显式传入保留天数，默认支持 dry-run，不删除数据库记录 |
 | 邮件/短信/验证码 | 真实通道需要账号、回调和风控 | 当前用 no-op/console backend；验证码规则保持 `TODO_CONFIRM` |
 | Excel 导入 | `.xlsx` 可用标准 ZIP/XML 结构解析，但旧 `.xls` 需要额外依赖 | 当前不新增依赖，支持标准 `.xlsx` 和 CSV；旧 `.xls` 要求另存 |
-| 支付/物流/商品外部接口 | 真实接口涉及密钥、回调、签名、失败补偿 | P0 只做人工充值、线下汇款人工审核、余额支付、人工轨迹和手工代购 |
+| 支付/物流/商品外部接口 | 真实接口涉及密钥、回调、签名、失败补偿 | P0 只做人工充值、线下汇款人工审核、余额支付、人工轨迹和手工代购；`PURCHASE-AUTO-001` 只做链接解析和人工确认 |
 | 应付核销 | 当前只记录人工核销凭证，不连接真实银行、自动打款或外部财务系统 | `PAYABLE-001` 已保持应付与钱包/PaymentOrder 分离；真实付款和供应商对账后续单独验证 |
 | 积分/推广/返利 | 当前只记录积分流水、邀请关系和返利统计，不接真实联盟、提现、税务或多级分销 | `GROWTH-001` 已保持返利与钱包/PaymentOrder 分离；最终规则统一标记 `TODO_CONFIRM` |
 | 浏览器测试依赖 | Playwright 浏览器二进制下载会占用磁盘，也可能写缓存 | 当前 `npm run e2e:browser` 使用系统 Chrome/Chromium 和 `.tmp/browser-e2e/` 临时 profile；不下载浏览器，不使用用户日常 profile；关键包裹预报/入库旅程先用 CDP 覆盖 |
@@ -166,7 +167,7 @@
 
 ## 下一步
 
-按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `STORAGE-CLEANUP-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
+按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `PURCHASE-AUTO-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
 
 ```text
 生产化边界 / 需业务确认的外部集成 / 测试深度增强。

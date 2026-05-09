@@ -119,6 +119,60 @@ def test_manual_purchase_order_create_and_list_detail(client, seeded_purchases):
     assert detail_response.json()["data"]["id"] == data["id"]
 
 
+def test_purchase_link_parse_prefills_manual_item(client, seeded_purchases):
+    token = member_token(client)
+
+    response = client.post(
+        reverse("purchase-link-parse"),
+        {"source_url": "https://item.taobao.com/item.htm?id=1001&title=%E8%93%9D%E8%89%B2%E6%89%8B%E8%A1%A8#detail"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["provider"] == "TAOBAO"
+    assert data["provider_label"] == "淘宝"
+    assert data["external_item_id"] == "1001"
+    assert data["name"] == "蓝色手表"
+    assert data["product_url"] == "https://item.taobao.com/item.htm?id=1001&title=%E8%93%9D%E8%89%B2%E6%89%8B%E8%A1%A8"
+    assert data["unit_price"] == "0.00"
+    assert "人工确认" in data["remark"]
+
+
+def test_purchase_link_parse_unknown_provider_falls_back_to_manual(client, seeded_purchases):
+    token = member_token(client)
+
+    response = client.post(
+        reverse("purchase-link-parse"),
+        {"source_url": "https://example.com/products/external-1001"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["provider"] == "UNKNOWN"
+    assert data["provider_label"] == "未知平台"
+    assert data["external_item_id"] == "external-1001"
+    assert data["name"] == "外部链接代购商品"
+    assert "未抓取真实第三方页面" in data["remark"]
+
+
+def test_purchase_link_parse_rejects_credentials_in_url(client, seeded_purchases):
+    token = member_token(client)
+
+    response = client.post(
+        reverse("purchase-link-parse"),
+        {"source_url": "https://user:secret@example.com/item/1001"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 400
+    assert "secret" not in response.content.decode()
+
+
 def test_product_purchase_order_from_cart_clears_selected_cart_items(client, seeded_purchases):
     user = User.objects.get(email="user@example.com")
     sku = ProductSku.objects.select_related("product").filter(status=CatalogStatus.ACTIVE).first()

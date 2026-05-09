@@ -3,7 +3,7 @@ baseline_version: v0.3
 status: task_graph_complete_needs_scope_review
 current_task: null
 current_phase: P6_PRODUCTION_GAP
-last_completed_task: STORAGE-CLEANUP-001
+last_completed_task: PURCHASE-AUTO-001
 blocked_reason: null
 rules:
   - "Agent must read agent-execution/README.md before choosing tasks."
@@ -58,4 +58,5 @@ done_tasks:
   - OPS-READINESS-001
   - OPS-SQLITE-BACKUP-001
   - STORAGE-CLEANUP-001
+  - PURCHASE-AUTO-001
 pending_tasks: []

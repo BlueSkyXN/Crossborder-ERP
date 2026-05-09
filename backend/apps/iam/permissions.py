@@ -1,6 +1,6 @@
 from rest_framework import exceptions, permissions
 
-from .services import admin_has_permission
+from .services import admin_has_permission, has_any_permission
 
 
 class IsAdminAuthenticated(permissions.BasePermission):
@@ -26,4 +26,6 @@ class HasAdminPermission(IsAdminAuthenticated):
             required_permission = getattr(view, "write_permission", None) or required_permission
         if not required_permission:
             return True
-        return admin_has_permission(request.user, required_permission)
+        if isinstance(required_permission, str):
+            return admin_has_permission(request.user, required_permission)
+        return has_any_permission(request.user, required_permission)

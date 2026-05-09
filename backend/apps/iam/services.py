@@ -43,7 +43,13 @@ ACTION_PERMISSIONS = [
     ("growth.view", "积分推广查看", "members", 94, PermissionType.BUTTON),
     ("growth.manage", "积分推广管理操作", "members", 95, PermissionType.BUTTON),
     ("iam.role.manage", "角色权限管理", "roles", 91, PermissionType.BUTTON),
+    ("iam.role.create", "新增角色", "roles", 911, PermissionType.BUTTON),
+    ("iam.role.update", "编辑角色", "roles", 912, PermissionType.BUTTON),
+    ("iam.role.delete", "删除角色", "roles", 913, PermissionType.BUTTON),
     ("iam.admin.manage", "管理员账号管理", "admin-users", 93, PermissionType.BUTTON),
+    ("iam.admin.create", "新增管理员账号", "admin-users", 931, PermissionType.BUTTON),
+    ("iam.admin.update", "编辑管理员账号", "admin-users", 932, PermissionType.BUTTON),
+    ("iam.admin.delete", "删除管理员账号", "admin-users", 933, PermissionType.BUTTON),
 ]
 
 ALL_PERMISSION_CODES = [item[0] for item in MENU_PERMISSIONS] + [item[0] for item in ACTION_PERMISSIONS]

@@ -60,6 +60,10 @@ function permissionTag(permission: Permission) {
   );
 }
 
+function hasAnyPermission(permissionCodes: Set<string>, codes: string[]) {
+  return codes.some((code) => permissionCodes.has(code));
+}
+
 export function RolePermissionPage() {
   const { allowedCodes, permissionCodes } = useOutletContext<WorkspaceContext>();
   const queryClient = useQueryClient();
@@ -69,6 +73,9 @@ export function RolePermissionPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const hasPermission = allowedCodes.has("iam.role.view");
   const canManage = permissionCodes.has("iam.role.manage");
+  const canCreate = hasAnyPermission(permissionCodes, ["iam.role.create", "iam.role.manage"]);
+  const canUpdate = hasAnyPermission(permissionCodes, ["iam.role.update", "iam.role.manage"]);
+  const canDelete = hasAnyPermission(permissionCodes, ["iam.role.delete", "iam.role.manage"]);
   const rolesQuery = useQuery({
     queryKey: ["admin-roles"],
     queryFn: fetchAdminRoles,
@@ -174,7 +181,7 @@ export function RolePermissionPage() {
             <Button
               size="small"
               icon={<EditOutlined />}
-              disabled={!canManage || role.code === "super_admin"}
+              disabled={!canUpdate || role.code === "super_admin"}
               onClick={() => openEditModal(role)}
             >
               编辑
@@ -191,7 +198,7 @@ export function RolePermissionPage() {
                 size="small"
                 danger
                 icon={<DeleteOutlined />}
-                disabled={!canManage || role.code === "super_admin"}
+                disabled={!canDelete || role.code === "super_admin"}
               >
                 删除
               </Button>
@@ -200,7 +207,7 @@ export function RolePermissionPage() {
         ),
       },
     ],
-    [canManage, deleteRoleMutation, openEditModal],
+    [canDelete, canUpdate, deleteRoleMutation, openEditModal],
   );
   const matrixColumns = useMemo<ColumnsType<{ code: string; label: string; resource: string }>>(
     () => [
@@ -246,7 +253,7 @@ export function RolePermissionPage() {
         <Button icon={<ReloadOutlined />} onClick={() => rolesQuery.refetch()} loading={rolesQuery.isFetching}>
           刷新
         </Button>
-        {canManage && (
+        {canCreate && (
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
             新增角色
           </Button>
@@ -256,7 +263,13 @@ export function RolePermissionPage() {
       {rolesQuery.isError && (
         <Alert type="error" showIcon message="角色权限加载失败" description={getErrorMessage(rolesQuery.error)} />
       )}
-      {!canManage && <Alert type="info" showIcon message="当前账号只读角色权限，缺少 iam.role.manage。" />}
+      {!canManage && (
+        <Alert
+          type="info"
+          showIcon
+          message="当前账号未持有角色总管理权限，新增、编辑、删除会分别按 iam.role.create / update / delete 控制。"
+        />
+      )}
 
       <Row gutter={[16, 16]}>
         <Col xs={24} md={8}>

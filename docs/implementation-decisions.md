@@ -41,6 +41,7 @@
 | CSV 导出安全 | CSV 导出字段统一做公式样式前缀转义 | 降低导出文件被 Excel/表格软件解释为公式的风险；不替代导出审批、DLP、水印或外部归档 |
 | 会员找回密码 | reset token 只保存 hash，默认 30 分钟有效且一次性消费；本地/demo/test 可返回 `dev_reset_token` | 满足源报告找回密码基础闭环，同时避免伪装真实短信/邮件通道已完成 |
 | 外链解析 | `purchase-links/parse` 只做本地 URL 解析和人工代购 fallback | 满足源报告链接代购入口基础；不抓取第三方页面、不自动下单、不接平台账号 |
+| IAM 细权限 | `iam.role.create/update/delete` 和 `iam.admin.create/update/delete`，兼容 `iam.role.manage` / `iam.admin.manage` | 高风险角色和管理员账号操作先拆细，减少总管理权限误授权面 |
 | 本地部署 | 当前暂不考虑 Docker；先做 no-Docker local-first | 用户明确要求暂不考虑 Docker，避免拉镜像和启动容器 |
 
 ## 路由约定
@@ -165,7 +166,7 @@
 | 应付核销 | 当前只记录人工核销凭证，不连接真实银行、自动打款或外部财务系统 | `PAYABLE-001` 已保持应付与钱包/PaymentOrder 分离；真实付款和供应商对账后续单独验证 |
 | 积分/推广/返利 | 当前只记录积分流水、邀请关系和返利统计，不接真实联盟、提现、税务或多级分销 | `GROWTH-001` 已保持返利与钱包/PaymentOrder 分离；最终规则统一标记 `TODO_CONFIRM` |
 | 浏览器测试依赖 | Playwright 浏览器二进制下载会占用磁盘，也可能写缓存 | 当前 `npm run e2e:browser` 使用系统 Chrome/Chromium 和 `.tmp/browser-e2e/` 临时 profile；不下载浏览器，不使用用户日常 profile；关键包裹预报/入库、财务/客服跨面板、运单后半程和后台真实面板导航先用 CDP 覆盖 |
-| 后台 dashboard/RBAC | 通用占位工作台会造成“面板已整合”的证明不足 | `/dashboard` 使用 `GET /api/v1/admin/dashboard` 的真实聚合数据，`/roles` 和 `/admin-users` 使用真实 IAM 数据；角色创建、编辑、权限分配、安全删除、管理员创建、启停、密码重置、角色分配和安全删除已完成；业务写操作已按模块级 `*.manage` / `*.export` 权限拆分，create/update/delete 子权限和审批流后续单独做 |
+| 后台 dashboard/RBAC | 通用占位工作台会造成“面板已整合”的证明不足 | `/dashboard` 使用 `GET /api/v1/admin/dashboard` 的真实聚合数据，`/roles` 和 `/admin-users` 使用真实 IAM 数据；角色/管理员账号新增、编辑、删除已拆为细权限并保留总管理权限兼容；业务写操作已按模块级 `*.manage` / `*.export` 权限拆分，其他业务 create/update/delete 子权限和审批流后续单独做 |
 | 审计日志留存 | 外部 SIEM/归档服务需要基础设施和策略确认 | 当前先提供脱敏 CSV 导出和显式 `purge_audit_logs` 本地留存命令；不自动删除生产数据，不声明外部合规归档完成 |
 | TLS/HSTS/反向代理 | HSTS 和 HTTPS redirect 需要真实域名、证书、反代头和子域策略验证 | 当前只开启本地可测的基础响应头；`SECURE_HSTS_SECONDS` 和 `SECURE_SSL_REDIRECT` 默认关闭，通过环境变量后续启用 |
 | 外部监控/告警 | 需要真实 staging、监控平台和告警接收策略 | 当前仅提供本地可测 readiness endpoint；Prometheus/Sentry/日志聚合后续接入 |
@@ -174,7 +175,7 @@
 
 ## 下一步
 
-按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `QA-BROWSER-005`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
+按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `RBAC-IAM-ACTIONS-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
 
 ```text
 生产化边界 / 需业务确认的外部集成 / 测试深度增强 / 权限与审批深度增强。

@@ -67,6 +67,10 @@ function formatDateTime(value: string | null) {
   return value ? new Date(value).toLocaleString() : "-";
 }
 
+function hasAnyPermission(permissionCodes: Set<string>, codes: string[]) {
+  return codes.some((code) => permissionCodes.has(code));
+}
+
 export function AdminUserManagementPage() {
   const { allowedCodes, permissionCodes } = useOutletContext<WorkspaceContext>();
   const currentAdmin = useAuthStore((state) => state.adminUser);
@@ -77,6 +81,9 @@ export function AdminUserManagementPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const hasPermission = allowedCodes.has("iam.admin.view");
   const canManage = permissionCodes.has("iam.admin.manage");
+  const canCreate = hasAnyPermission(permissionCodes, ["iam.admin.create", "iam.admin.manage"]);
+  const canUpdate = hasAnyPermission(permissionCodes, ["iam.admin.update", "iam.admin.manage"]);
+  const canDelete = hasAnyPermission(permissionCodes, ["iam.admin.delete", "iam.admin.manage"]);
   const accountsQuery = useQuery({
     queryKey: ["admin-accounts"],
     queryFn: fetchAdminAccounts,
@@ -206,7 +213,7 @@ export function AdminUserManagementPage() {
               <Button
                 size="small"
                 icon={<EditOutlined />}
-                disabled={!canManage || locked}
+                disabled={!canUpdate || locked}
                 onClick={() => openEditModal(account)}
               >
                 编辑
@@ -219,7 +226,7 @@ export function AdminUserManagementPage() {
                 okButtonProps={{ danger: true, loading: deleteAccountMutation.isPending }}
                 onConfirm={() => deleteAccountMutation.mutate(account.id)}
               >
-                <Button size="small" danger icon={<DeleteOutlined />} disabled={!canManage || locked}>
+                <Button size="small" danger icon={<DeleteOutlined />} disabled={!canDelete || locked}>
                   删除
                 </Button>
               </Popconfirm>
@@ -228,7 +235,7 @@ export function AdminUserManagementPage() {
         },
       },
     ],
-    [canManage, currentAdmin?.id, deleteAccountMutation, openEditModal, roles],
+    [canDelete, canUpdate, currentAdmin?.id, deleteAccountMutation, openEditModal, roles],
   );
 
   if (!hasPermission) {
@@ -245,7 +252,7 @@ export function AdminUserManagementPage() {
         <Button icon={<ReloadOutlined />} onClick={refreshAll} loading={accountsQuery.isFetching || rolesQuery.isFetching}>
           刷新
         </Button>
-        {canManage && (
+        {canCreate && (
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
             新增管理员
           </Button>
@@ -258,7 +265,13 @@ export function AdminUserManagementPage() {
       {rolesQuery.isError && (
         <Alert type="error" showIcon message="角色列表加载失败" description={getErrorMessage(rolesQuery.error)} />
       )}
-      {!canManage && <Alert type="info" showIcon message="当前账号只读管理员账号，缺少 iam.admin.manage。" />}
+      {!canManage && (
+        <Alert
+          type="info"
+          showIcon
+          message="当前账号未持有管理员总管理权限，新增、编辑、删除会分别按 iam.admin.create / update / delete 控制。"
+        />
+      )}
 
       <Row gutter={[16, 16]}>
         <Col xs={24} md={8}>

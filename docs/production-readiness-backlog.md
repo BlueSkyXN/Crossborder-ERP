@@ -44,6 +44,7 @@
 | `RBAC-ADMIN-USERS-001` | P3 | 管理员账号与角色分配 | 管理员账号列表、新增、启停、密码重置、角色分配、独立 manage 权限 | 已完成基础；账号删除和外部 IAM 由后续任务处理 |
 | `RBAC-BUSINESS-ACTIONS-001` | P3 | 业务写操作权限拆分 | 后台业务写接口、Admin Web 写按钮和导出入口按 `*.manage` / `*.export` 权限控制 | 已完成模块级拆分；create/update/delete 子权限和审批流后续 |
 | `CONFIG-EXTERNAL-SERVICES-001` | P3 | 外部服务 DSN 边界检查 | `DATABASE_URL`/`REDIS_URL`/Celery eager 的无连接检查脚本、settings helper 和测试 | 已完成配置解析；不安装驱动、不连接 PostgreSQL/MySQL/Redis |
+| `RBAC-DELETE-001` | P3 | 角色与管理员安全删除 | 角色删除、管理员账号删除、内置/自删/已分配保护、Admin Web 删除入口 | 已完成基础；外部 IAM 和审批流后续 |
 
 ## Completed Production Gap Tasks
 
@@ -76,10 +77,11 @@
 - `RBAC-ADMIN-USERS-001`：已补 `iam.admin.view` / `iam.admin.manage`，新增后台管理员账号 API 和 Admin Web `/admin-users` 页面，支持创建普通管理员、启停账号、重置密码和分配角色；内置超级管理员账号不可编辑，当前登录管理员不可修改自己的状态、角色或密码。账号删除和外部 IAM/SSO/MFA 仍后续补齐。
 - `RBAC-BUSINESS-ACTIONS-001`：已补 `members.manage`、`warehouses.manage`、`parcels.manage`、`parcels.export`、`waybills.manage`、`finance.manage`、`files.manage`、`purchases.manage`、`products.manage`、`tickets.manage`、`content.manage`、`audit.logs.export`、`growth.view` 和 `growth.manage`；后台业务写接口和 Admin Web 写入口已按模块级 action 权限控制。每个 create/update/delete 子动作和审批流仍后续补齐。
 - `CONFIG-EXTERNAL-SERVICES-001`：已补 `npm run inspect:services` 和 `inspect_configured_services`，可在不执行 Django setup、不安装数据库驱动、不连接外部服务的情况下检查 SQLite/PostgreSQL/MySQL/Redis/Celery 配置边界；PostgreSQL/MySQL/Redis/Celery 仍为 `configured_unverified`。
+- `RBAC-DELETE-001`：已补 `DELETE /api/v1/admin/roles/{id}` 和 `DELETE /api/v1/admin/admin-users/{id}`，Admin Web `/roles` 和 `/admin-users` 已显示删除入口；内置超级管理员角色/账号、当前登录管理员和已分配角色受保护。
 
 ## Current Next Task
 
-任务图中的 `CONFIG-EXTERNAL-SERVICES-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
+任务图中的 `RBAC-DELETE-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
 
 - 生产化边界：补对象存储、PostgreSQL/MySQL/Redis 真实连接/迁移验证计划、告警和部署验证。
 - 需业务/合规确认的外部集成：真实支付、真实物流 API、真实自动采购下单和外部商品抓取。

@@ -1,4 +1,11 @@
-import { CheckCircleOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SafetyOutlined } from "@ant-design/icons";
+import {
+  CheckCircleOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  SafetyOutlined,
+} from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -11,6 +18,7 @@ import {
   Form,
   Input,
   Modal,
+  Popconfirm,
   Row,
   Space,
   Statistic,
@@ -23,7 +31,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
 import { ForbiddenPage } from "../../pages/ForbiddenPage";
-import { createAdminRole, fetchAdminPermissions, fetchAdminRoles, updateAdminRole } from "./api";
+import { createAdminRole, deleteAdminRole, fetchAdminPermissions, fetchAdminRoles, updateAdminRole } from "./api";
 import { adminRouteMeta } from "./menu";
 import type { Permission, Role, RolePayload } from "./types";
 
@@ -94,6 +102,18 @@ export function RolePermissionPage() {
       message.error(getErrorMessage(error));
     },
   });
+  const deleteRoleMutation = useMutation({
+    mutationFn: deleteAdminRole,
+    onSuccess: () => {
+      message.success("角色已删除");
+      queryClient.invalidateQueries({ queryKey: ["admin-roles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "menus"] });
+    },
+    onError: (error) => {
+      message.error(getErrorMessage(error));
+    },
+  });
 
   const roles = useMemo(() => rolesQuery.data || [], [rolesQuery.data]);
   const permissions = useMemo(() => permissionsQuery.data || [], [permissionsQuery.data]);
@@ -148,20 +168,39 @@ export function RolePermissionPage() {
       },
       {
         title: "操作",
-        width: 120,
+        width: 190,
         render: (_, role) => (
-          <Button
-            size="small"
-            icon={<EditOutlined />}
-            disabled={!canManage || role.code === "super_admin"}
-            onClick={() => openEditModal(role)}
-          >
-            编辑
-          </Button>
+          <Space>
+            <Button
+              size="small"
+              icon={<EditOutlined />}
+              disabled={!canManage || role.code === "super_admin"}
+              onClick={() => openEditModal(role)}
+            >
+              编辑
+            </Button>
+            <Popconfirm
+              title="删除角色"
+              description="仅未分配给管理员的角色可以删除。"
+              okText="删除"
+              cancelText="取消"
+              okButtonProps={{ danger: true, loading: deleteRoleMutation.isPending }}
+              onConfirm={() => deleteRoleMutation.mutate(role.id)}
+            >
+              <Button
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                disabled={!canManage || role.code === "super_admin"}
+              >
+                删除
+              </Button>
+            </Popconfirm>
+          </Space>
         ),
       },
     ],
-    [canManage, openEditModal],
+    [canManage, deleteRoleMutation, openEditModal],
   );
   const matrixColumns = useMemo<ColumnsType<{ code: string; label: string; resource: string }>>(
     () => [

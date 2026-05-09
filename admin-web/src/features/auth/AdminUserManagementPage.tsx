@@ -1,4 +1,4 @@
-import { EditOutlined, PlusOutlined, ReloadOutlined, UserSwitchOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, UserSwitchOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -11,6 +11,7 @@ import {
   Form,
   Input,
   Modal,
+  Popconfirm,
   Row,
   Select,
   Space,
@@ -24,7 +25,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
 import { ForbiddenPage } from "../../pages/ForbiddenPage";
-import { createAdminAccount, fetchAdminAccounts, fetchAdminRoles, updateAdminAccount } from "./api";
+import { createAdminAccount, deleteAdminAccount, fetchAdminAccounts, fetchAdminRoles, updateAdminAccount } from "./api";
 import { useAuthStore } from "./store";
 import type { AdminAccount, AdminAccountPayload, Role } from "./types";
 
@@ -126,6 +127,18 @@ export function AdminUserManagementPage() {
       message.error(getErrorMessage(error));
     },
   });
+  const deleteAccountMutation = useMutation({
+    mutationFn: deleteAdminAccount,
+    onSuccess: () => {
+      message.success("管理员账号已删除");
+      queryClient.invalidateQueries({ queryKey: ["admin-accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "menus"] });
+    },
+    onError: (error) => {
+      message.error(getErrorMessage(error));
+    },
+  });
   const openCreateModal = useCallback(() => {
     setEditingAccount(null);
     form.setFieldsValue({
@@ -185,23 +198,37 @@ export function AdminUserManagementPage() {
       },
       {
         title: "操作",
-        width: 120,
+        width: 190,
         render: (_, account) => {
           const locked = account.is_super_admin || account.id === currentAdmin?.id;
           return (
-            <Button
-              size="small"
-              icon={<EditOutlined />}
-              disabled={!canManage || locked}
-              onClick={() => openEditModal(account)}
-            >
-              编辑
-            </Button>
+            <Space>
+              <Button
+                size="small"
+                icon={<EditOutlined />}
+                disabled={!canManage || locked}
+                onClick={() => openEditModal(account)}
+              >
+                编辑
+              </Button>
+              <Popconfirm
+                title="删除管理员"
+                description="删除后该管理员将无法继续登录。"
+                okText="删除"
+                cancelText="取消"
+                okButtonProps={{ danger: true, loading: deleteAccountMutation.isPending }}
+                onConfirm={() => deleteAccountMutation.mutate(account.id)}
+              >
+                <Button size="small" danger icon={<DeleteOutlined />} disabled={!canManage || locked}>
+                  删除
+                </Button>
+              </Popconfirm>
+            </Space>
           );
         },
       },
     ],
-    [canManage, currentAdmin?.id, openEditModal, roles],
+    [canManage, currentAdmin?.id, deleteAccountMutation, openEditModal, roles],
   );
 
   if (!hasPermission) {

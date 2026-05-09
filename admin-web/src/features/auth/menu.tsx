@@ -11,6 +11,7 @@ import {
   ShoppingCartOutlined,
   ShoppingOutlined,
   TeamOutlined,
+  UserSwitchOutlined,
 } from "@ant-design/icons";
 import type { ReactNode } from "react";
 
@@ -119,6 +120,14 @@ export const adminRouteMeta: AdminRouteMeta[] = [
     label: "角色权限",
     icon: <SafetyOutlined />,
     description: "后台角色、权限菜单和访问控制。",
+  },
+  {
+    permission: "iam.admin.view",
+    resource: "admin-users",
+    path: "/admin-users",
+    label: "管理员账号",
+    icon: <UserSwitchOutlined />,
+    description: "后台账号、角色分配和启停状态。",
   },
 ];
 

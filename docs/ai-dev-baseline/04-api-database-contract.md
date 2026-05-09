@@ -203,6 +203,10 @@ POST /api/v1/admin/roles
 GET  /api/v1/admin/roles/{id}
 PATCH /api/v1/admin/roles/{id}
 GET  /api/v1/admin/permissions
+GET  /api/v1/admin/admin-users
+POST /api/v1/admin/admin-users
+GET  /api/v1/admin/admin-users/{id}
+PATCH /api/v1/admin/admin-users/{id}
 ```
 
 ### 会员

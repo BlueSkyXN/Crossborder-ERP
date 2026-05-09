@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "apps.common",
+    "apps.audit",
     "apps.iam",
     "apps.members",
     "apps.addresses",
@@ -56,6 +57,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.audit.middleware.AdminAuditLogMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -118,6 +120,7 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "ENUM_NAME_OVERRIDES": {
         "ActiveDisabledStatusEnum": "apps.warehouses.models.ConfigStatus",
+        "AuditOperatorTypeEnum": "apps.audit.models.AuditOperatorType",
         "UserStatusEnum": "apps.members.models.UserStatus",
         "PointTransactionTypeEnum": "apps.members.models.PointTransactionType",
         "PointTransactionDirectionEnum": "apps.members.models.PointTransactionDirection",

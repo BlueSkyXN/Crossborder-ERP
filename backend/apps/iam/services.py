@@ -22,6 +22,7 @@ MENU_PERMISSIONS = [
     ("products.view", "商品管理", "products", 80),
     ("tickets.view", "客服工单", "tickets", 85),
     ("content.view", "内容管理", "content", 88),
+    ("audit.logs.view", "审计日志", "audit", 89),
     ("iam.role.view", "角色权限", "roles", 90),
 ]
 

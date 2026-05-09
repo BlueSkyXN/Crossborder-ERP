@@ -7,8 +7,8 @@
 ## 当前状态
 
 - 项目阶段：`P6_PRODUCTION_GAP`
-- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`QA-BROWSER-001` 三端浏览器 smoke、`SHIP-BATCH-001` 发货批次/转单/打印模板数据、`PAYABLE-001` 供应商/成本/应付基础、`GROWTH-001` 积分/推广/返利基础
-- 下一任务：任务图暂无自动下一项；后续建议按 Excel 原生解析增强、完整浏览器旅程、审计日志和生产化边界单独开任务
+- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`QA-BROWSER-001` 三端浏览器 smoke、`SHIP-BATCH-001` 发货批次/转单/打印模板数据、`PAYABLE-001` 供应商/成本/应付基础、`GROWTH-001` 积分/推广/返利基础、`AUDITLOG-001` 后台操作审计日志
+- 下一任务：任务图暂无自动下一项；后续建议按 Excel 原生解析增强、完整浏览器旅程和生产化边界单独开任务
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`
@@ -170,6 +170,7 @@ npm run e2e
 - 用户提交消息工单和附件，后台客服回复后用户端可读取。
 - 后台会员管理可筛选会员、维护等级/客服备注、冻结/解冻并重置测试密码。
 - 后台可登记邀请关系、返利记录和积分调整；用户端可读取积分、邀请码、邀请数和返利统计。
+- 后台关键写操作会进入审计日志，后台可查询操作人、动作、对象、请求、状态和脱敏后的请求/响应数据。
 - 后台扫描未知单号生成无主包裹，用户端只看到脱敏单号并提交认领，后台审核通过后转为会员在库包裹。
 - 后台创建内容草稿，发布后用户端可读取帮助/公告/条款，隐藏后公开接口不可再读取。
 - 用户上传 CSV 批量导入包裹预报，并验证用户/后台 CSV 导出。
@@ -208,7 +209,7 @@ npm run e2e:browser
 - 使用系统 Chrome/Chromium；如系统路径不可发现，可设置 `BROWSER_E2E_CHROME`。
 - 在 `.tmp/browser-e2e/` 下创建临时 SQLite、media、日志和 Chrome profile。
 - 自动启动后端、Admin Web、User Web、Mobile H5 的测试服务。
-- 通过 Chrome DevTools Protocol 覆盖 Admin Web、User Web、Mobile H5 登录和关键页面 smoke；Admin Web 额外覆盖财务应付款和会员积分推广入口，User Web/Mobile H5 额外覆盖个人中心积分推广入口。
+- 通过 Chrome DevTools Protocol 覆盖 Admin Web、User Web、Mobile H5 登录和关键页面 smoke；Admin Web 额外覆盖财务应付款、会员积分推广和审计日志入口，User Web/Mobile H5 额外覆盖个人中心积分推广入口。
 - 检查浏览器 console error/warning、runtime exception 和 `>=400` network response。
 - 退出时清理临时 profile、数据库、media、日志和测试进程，不使用用户日常 Chrome profile。
 
@@ -246,4 +247,5 @@ npm run e2e:browser
 - 无主包裹认领已支持脱敏列表、用户认领和后台人工审核；认领凭证规则、争议处理和通知外呼仍需业务确认。
 - 内容 CMS 已支持后台分类/内容、发布/隐藏和三端公开展示；正式服务条款、隐私政策和帮助文案仍需业务/法务确认。
 - 复杂运费公式、首发国家/渠道、验证码、找回密码、多语言等保留 `TODO_CONFIRM`。
+- 后台关键写操作审计日志已完成基础覆盖；更细粒度 RBAC create/update/delete 拆分和长期日志归档仍属后续生产化增强。
 - 浏览器级 smoke 已覆盖三端登录和关键页面基础可用性；复杂业务旅程、视觉回归、组件级测试仍需后续增强。

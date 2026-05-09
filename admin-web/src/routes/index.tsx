@@ -5,6 +5,7 @@ import { WorkspacePage } from "../components/layout/WorkspacePage";
 import { ForbiddenPage } from "../pages/ForbiddenPage";
 import { LoginPage } from "../pages/LoginPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
+import { AuditLogPage } from "../features/audit/AuditLogPage";
 import { adminRouteMeta } from "../features/auth/menu";
 import { ContentCmsPage } from "../features/content/ContentCmsPage";
 import { FinancePage } from "../features/finance/FinancePage";
@@ -50,6 +51,8 @@ export const router = createBrowserRouter([
                 <TicketOpsPage />
               ) : route.resource === "content" ? (
                 <ContentCmsPage />
+              ) : route.resource === "audit" ? (
+                <AuditLogPage />
               ) : (
                 <WorkspacePage route={route} />
               ),

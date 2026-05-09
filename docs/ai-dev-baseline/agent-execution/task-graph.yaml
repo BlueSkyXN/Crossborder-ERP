@@ -208,4 +208,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/GROWTH-001.md
     depends_on: [PAYABLE-001]
+    next: AUDITLOG-001
+  - id: AUDITLOG-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/AUDITLOG-001.md
+    depends_on: [GROWTH-001]
     next: null

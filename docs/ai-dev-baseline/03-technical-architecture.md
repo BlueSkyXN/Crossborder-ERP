@@ -8,9 +8,10 @@
 三端前端
   -> REST API
   -> Django/DRF 模块化单体
-  -> PostgreSQL
-  -> Redis/Celery
-  -> 文件存储
+  -> SQLite（当前唯一真实验证）
+  -> PostgreSQL/MySQL（目标数据库配置边界，configured_unverified）
+  -> Redis/Celery（目标缓存/任务配置边界，configured_unverified）
+  -> 本地文件存储（对象存储后续）
 ```
 
 选择模块化单体的原因：
@@ -26,9 +27,9 @@
 | --- | --- | --- |
 | 后端语言 | Python 3.12+ | 用户常用 Python，新手友好 |
 | 后端框架 | Django + Django REST Framework | 适合 ERP、RBAC、后台、事务、管理型系统 |
-| 数据库 | PostgreSQL 16+ | 事务、JSON、索引能力强 |
-| 缓存/队列 | Redis | 登录缓存、任务队列 |
-| 异步任务 | Celery | 后续处理导入、通知、轨迹同步 |
+| 数据库 | SQLite first；PostgreSQL/MySQL target | 当前只真实验证 SQLite；PostgreSQL/MySQL 先做 DSN 配置边界检查 |
+| 缓存/队列 | 本地内存 first；Redis target | 当前不启动 Redis，后续真实验证后再启用 |
+| 异步任务 | 同步 eager first；Celery target | 当前关键链路不依赖异步任务，Celery/Redis 只标记 `configured_unverified` |
 | API 文档 | drf-spectacular / OpenAPI | 方便前端和 Agent 接力 |
 | 后台前端 | React + Vite + Ant Design | 后台表格/筛选/表单效率高 |
 | 用户 Web | React + Vite | 第一版无需强 SEO，可快速开发 |
@@ -36,8 +37,8 @@
 | 表单 | React Hook Form + Zod | 表单复杂、校验清晰 |
 | 请求 | TanStack Query + Axios/fetch wrapper | 缓存、加载态、错误态统一 |
 | 状态管理 | Zustand | 轻量，适合登录态和 UI 状态 |
-| 测试 | pytest、DRF APIClient、Vitest、Playwright | 覆盖后端、前端、端到端 |
-| 部署 | Docker Compose | 新手可一键启动 |
+| 测试 | pytest、DRF APIClient、system Chrome CDP smoke | 当前不下载浏览器；Playwright/视觉回归后续 |
+| 部署 | no-Docker local-first；Docker 后续 | 当前用户明确暂不考虑 Docker |
 
 ## 备选但不推荐第一版使用
 
@@ -256,14 +257,20 @@ src/
 
 ```text
 DJANGO_SECRET_KEY=dev-secret
-DATABASE_URL=postgres://erp:erp@localhost:5432/erp
-REDIS_URL=redis://localhost:6379/0
+DATABASE_URL=sqlite:///./backend/db.sqlite3
+# DATABASE_URL=postgres://erp:erp@localhost:5432/erp
+# DATABASE_URL=mysql://erp:erp@localhost:3306/erp
+REDIS_URL=
+# REDIS_URL=redis://localhost:6379/0
+CELERY_TASK_ALWAYS_EAGER=true
 MEDIA_ROOT=/app/media
 PUBLIC_BASE_URL=http://localhost:8000
 ADMIN_WEB_URL=http://localhost:3001
 USER_WEB_URL=http://localhost:3002
 MOBILE_H5_URL=http://localhost:3003
 ```
+
+可用 `npm run inspect:services` 检查 SQLite/PostgreSQL/MySQL/Redis/Celery 的 DSN 配置边界。该命令不执行 Django setup，不安装驱动，不打开外部连接；PostgreSQL/MySQL/Redis/Celery 在真实验证前只能标记为 `configured_unverified`。
 
 ## 种子数据要求
 

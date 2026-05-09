@@ -8,6 +8,7 @@
     "build": "pnpm -r --if-present build",
     "test": "pnpm -r --if-present test",
     "evidence": "python3 scripts/ci/validate_agent_evidence.py",
+    "inspect:services": "python3 scripts/config/inspect_configured_services.py",
     "e2e": "bash scripts/e2e/p0-e2e.sh",
     "e2e:browser": "bash scripts/e2e/browser-smoke.sh"
   }

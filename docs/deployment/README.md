@@ -92,8 +92,8 @@ staging 至少需要以下环境变量：
 | `DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS` | 仅确认所有子域 HTTPS 后启用 | `configured_unverified` |
 | `DJANGO_SECURE_HSTS_PRELOAD` | 仅确认 preload 要求后启用 | `configured_unverified` |
 | `DJANGO_SECURE_SSL_REDIRECT` | 反向代理 HTTPS 头配置确认后启用 | `configured_unverified` |
-| `DATABASE_URL` | PostgreSQL DSN | `configured_unverified` |
-| `REDIS_URL` | Redis DSN | `configured_unverified` |
+| `DATABASE_URL` | PostgreSQL 或 MySQL DSN | `configured_unverified`，仅做 DSN 解析边界检查 |
+| `REDIS_URL` | Redis DSN | `configured_unverified`，仅做 DSN 解析边界检查 |
 | `CELERY_TASK_ALWAYS_EAGER` | `false` | `configured_unverified` |
 | `MEDIA_ROOT` | 持久化挂载目录 | 本地文件模式已验证 |
 | `PUBLIC_BASE_URL` | staging API base URL | 未在真实 staging 验证 |
@@ -108,6 +108,22 @@ staging 发布顺序建议：
 3. 执行数据库迁移。
 4. 执行 `seed_demo` 或导入初始化配置。
 5. 构建三端前端。
+
+配置边界检查：
+
+```bash
+npm run inspect:services
+DATABASE_URL='postgres://erp:secret@localhost:5432/crossborder' \
+REDIS_URL='redis://localhost:6379/0' \
+CELERY_TASK_ALWAYS_EAGER=false \
+npm run inspect:services
+DATABASE_URL='mysql://erp:secret@localhost:3306/crossborder' \
+REDIS_URL='rediss://cache.example.test:6380/0' \
+CELERY_TASK_ALWAYS_EAGER=false \
+npm run inspect:services
+```
+
+`inspect:services` 使用独立 Python 脚本，只解析 `DATABASE_URL`、`REDIS_URL` 和 `CELERY_TASK_ALWAYS_EAGER`。它不会执行 Django setup、不会导入 PostgreSQL/MySQL 驱动、不会打开外部连接，因此只能证明配置语法边界，不能证明迁移、事务、锁、缓存、broker 或异步任务在真实服务中可用。
 6. 配置反向代理和静态资源。
 7. 执行 `npm run e2e`、`npm run e2e:browser` 或等价 staging E2E。
 
@@ -253,7 +269,7 @@ uv run python manage.py purge_audit_logs --older-than-days 180
 
 ### PostgreSQL/MySQL/Redis 是否可用？
 
-当前没有真实验证。SQLite 是当前唯一验证数据库；Redis/Celery 当前以本地内存和同步任务模式承接。
+当前没有真实验证。SQLite 是当前唯一验证数据库；Redis/Celery 当前以本地内存和同步任务模式承接。`DATABASE_URL` 的 PostgreSQL/MySQL DSN 和 `REDIS_URL` 可通过 `npm run inspect:services` 做无连接配置检查，但实际 Django runtime 仍需要目标环境安装相应数据库驱动并完成真实迁移/连接验证。
 
 ### 线上支付和自动采购是否可演示？
 

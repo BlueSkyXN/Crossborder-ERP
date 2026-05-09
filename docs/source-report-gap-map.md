@@ -10,7 +10,7 @@
 - Admin Web、User Web、Mobile H5 已覆盖登录、仓库地址、包裹预报、扫描入库、申请打包、审核计费、余额支付、发货轨迹、确认收货、商品/购物车/手工代购最小链路。
 - `npm run e2e` 已覆盖 API 级 P0 主流程，并已把线下汇款审核入账纳入主链路资金来源。
 
-但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 模板下载和批量预报解析；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础；`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`QA-BROWSER-003` 已加固 Browser Smoke 导航等待和失败诊断；`CI-EVIDENCE-001` 已补齐 Agent 证据 CI 门禁；`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础；`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础；`GROWTH-001` 已补齐积分流水、邀请关系、返利记录统计和三端入口基础；`AUDITLOG-001` 已补齐后台关键写操作审计日志和查询面板；`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令；`SECURITY-HEADERS-001` 已补齐基础应用安全响应头配置和测试；`OPS-READINESS-001` 已补齐默认数据库 readiness 检查；`OPS-SQLITE-BACKUP-001` 已补齐 SQLite-first 本地备份命令；`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令；`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口；`ACCOUNT-SETTINGS-001` 已补齐前台注册、账户设置和会员自助改密码基础；`ADMIN-PANELS-001` 已把后台 dashboard/roles 从固定假数据占位面板替换为真实接口面板；`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环；`RBAC-ADMIN-USERS-001` 已补齐管理员账号创建、启停、密码重置和角色分配闭环；`RBAC-BUSINESS-ACTIONS-001` 已补齐后台业务写操作的模块级 action 权限拆分。剩余差距集中在真实生产部署/TLS/HSTS/监控/告警/远程备份/对象存储等运维边界、需要业务/合规确认的真实外部下单/支付/物流集成、角色/管理员删除和业务 create/update/delete 子权限/审批流，以及视觉回归/组件级测试/更大范围浏览器流。
+但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 模板下载和批量预报解析；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础；`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`QA-BROWSER-003` 已加固 Browser Smoke 导航等待和失败诊断；`CI-EVIDENCE-001` 已补齐 Agent 证据 CI 门禁；`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础；`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础；`GROWTH-001` 已补齐积分流水、邀请关系、返利记录统计和三端入口基础；`AUDITLOG-001` 已补齐后台关键写操作审计日志和查询面板；`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令；`SECURITY-HEADERS-001` 已补齐基础应用安全响应头配置和测试；`OPS-READINESS-001` 已补齐默认数据库 readiness 检查；`OPS-SQLITE-BACKUP-001` 已补齐 SQLite-first 本地备份命令；`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令；`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口；`ACCOUNT-SETTINGS-001` 已补齐前台注册、账户设置和会员自助改密码基础；`ADMIN-PANELS-001` 已把后台 dashboard/roles 从固定假数据占位面板替换为真实接口面板；`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环；`RBAC-ADMIN-USERS-001` 已补齐管理员账号创建、启停、密码重置和角色分配闭环；`RBAC-BUSINESS-ACTIONS-001` 已补齐后台业务写操作的模块级 action 权限拆分；`CONFIG-EXTERNAL-SERVICES-001` 已补齐 PostgreSQL/MySQL/Redis/Celery 的无连接 DSN 边界检查。剩余差距集中在真实生产部署/TLS/HSTS/监控/告警/远程备份/对象存储等运维边界、需要业务/合规确认的真实外部下单/支付/物流集成、角色/管理员删除和业务 create/update/delete 子权限/审批流，以及视觉回归/组件级测试/更大范围浏览器流。
 
 ## Source Scope
 
@@ -87,13 +87,13 @@
 | 账户注册和设置 | User Web/Mobile 均要求登录/注册、我的和账户设置 | `ACCOUNT-SETTINGS-001` 已补前台注册并自动登录、会员资料设置和自助改密码；短信/邮件验证码、找回密码和微信登录不接 | `ACCOUNT-SETTINGS-001` 已完成基础；外部通道需业务确认 |
 | 后台 dashboard/RBAC 占位 | 源报告要求后台基础框架、RBAC、操作管理和运营面板具备真实产品形态 | `ADMIN-PANELS-001` 已补 `GET /api/v1/admin/dashboard`、Admin Web `/dashboard` 真实聚合面板和 `/roles` 真实角色权限矩阵；`RBAC-ROLES-001` 已补角色创建、编辑和权限分配；`RBAC-ADMIN-USERS-001` 已补管理员账号创建、启停、密码重置和角色分配；`RBAC-BUSINESS-ACTIONS-001` 已补业务写操作模块级 `*.manage` / `*.export` 权限；角色/管理员删除和 create/update/delete 子权限后续 | `ADMIN-PANELS-001`/`RBAC-ROLES-001`/`RBAC-ADMIN-USERS-001`/`RBAC-BUSINESS-ACTIONS-001` 已完成基础 |
 | 浏览器级 E2E | 源报告要求三端具备可实际操作产品形态；API E2E 不能发现真实浏览器运行时问题 | `QA-BROWSER-001` 已补 system Chrome CDP smoke，覆盖 Admin Web/User Web/Mobile H5 登录和关键页面，并纳入 CI；`QA-BROWSER-002` 已补会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`QA-BROWSER-003` 已补导航等待重试、页面快照和失败服务日志，降低 main CI 偶发等待误判；视觉回归、组件级测试和更多复杂浏览器流仍可增强 | `QA-BROWSER-001`/`QA-BROWSER-002`/`QA-BROWSER-003` 已完成；更深测试后续 |
-| PostgreSQL/MySQL/Redis | 用户已确认先 SQLite，后续补但不真实验证 | 当前只验证 SQLite，Redis/Celery 未真实验证 | 保持 `configured_unverified`，不进入当前验证 gate |
+| PostgreSQL/MySQL/Redis | 用户已确认先 SQLite，后续补但不真实验证 | `CONFIG-EXTERNAL-SERVICES-001` 已补 `DATABASE_URL`/`REDIS_URL`/Celery eager 的无连接配置检查；当前仍只验证 SQLite，Redis/Celery 未真实运行 | 保持 `configured_unverified`，不进入当前连接/迁移验证 gate |
 
 ## Immediate Next Order
 
 后续不应一次性做超大 PR，建议按依赖顺序拆小任务：
 
-1. 生产化运维边界：补 PostgreSQL/MySQL/Redis 真实验证计划、对象存储、告警和部署验证。
+1. 生产化运维边界：补 PostgreSQL/MySQL/Redis 真实连接/迁移验证计划、对象存储、告警和部署验证。
 2. 需要业务/合规确认的外部集成：真实支付、真实物流 API、真实自动采购下单和外部商品抓取。
 3. 测试深度增强：在现有 `npm run e2e:browser` 基础上，逐步覆盖视觉回归、组件级测试和更多复杂浏览器流。
 4. 权限深度增强：在现有模块级业务 action 权限基础上，按业务需要继续拆 create/update/delete 子权限和审批流。

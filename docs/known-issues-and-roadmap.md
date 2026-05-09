@@ -7,7 +7,7 @@
 - `docs/source-report-gap-map.md`
 - `docs/production-readiness-backlog.md`
 
-`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 批量预报解析，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础，`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的一条真实浏览器旅程，`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础，`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础，`GROWTH-001` 已补齐积分推广返利基础，`AUDITLOG-001` 已补齐后台关键写操作审计日志，`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令，`SECURITY-HEADERS-001` 已补齐基础应用安全响应头，`OPS-READINESS-001` 已补齐运维 readiness 检查，`OPS-SQLITE-BACKUP-001` 已补齐 SQLite 本地备份命令，`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令，`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口，`ACCOUNT-SETTINGS-001` 已补齐会员注册、账户资料设置和自助改密码基础，`ADMIN-PANELS-001` 已补齐后台 dashboard/roles 真实接口面板，`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环，`RBAC-ADMIN-USERS-001` 已补齐管理员账号与角色分配闭环，`RBAC-BUSINESS-ACTIONS-001` 已补齐后台业务写操作的模块级 action 权限拆分。后续优先按生产化边界、需业务/合规确认的外部集成和测试深度增强逐项收敛。
+`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 批量预报解析，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础，`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的一条真实浏览器旅程，`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础，`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础，`GROWTH-001` 已补齐积分推广返利基础，`AUDITLOG-001` 已补齐后台关键写操作审计日志，`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令，`SECURITY-HEADERS-001` 已补齐基础应用安全响应头，`OPS-READINESS-001` 已补齐运维 readiness 检查，`OPS-SQLITE-BACKUP-001` 已补齐 SQLite 本地备份命令，`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令，`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口，`ACCOUNT-SETTINGS-001` 已补齐会员注册、账户资料设置和自助改密码基础，`ADMIN-PANELS-001` 已补齐后台 dashboard/roles 真实接口面板，`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环，`RBAC-ADMIN-USERS-001` 已补齐管理员账号与角色分配闭环，`RBAC-BUSINESS-ACTIONS-001` 已补齐后台业务写操作的模块级 action 权限拆分，`CONFIG-EXTERNAL-SERVICES-001` 已补齐 PostgreSQL/MySQL/Redis/Celery 的无连接 DSN 边界检查。后续优先按生产化边界、需业务/合规确认的外部集成和测试深度增强逐项收敛。
 
 ## 已知问题
 
@@ -15,7 +15,7 @@
 
 问题：当前唯一真实验证数据库是 SQLite。
 影响：事务隔离、行级锁、JSON 字段、大小写和索引行为可能与生产数据库不同。
-当前临时处理：服务层已使用事务和幂等结构，文档标记跨库能力为 `configured_unverified`。
+当前临时处理：服务层已使用事务和幂等结构；`DATABASE_URL` 可解析 PostgreSQL/MySQL DSN 并由 `npm run inspect:services` 标记为 `configured_unverified`，该脚本不执行 Django setup、不连接数据库。
 后续建议：单独建立 PostgreSQL/MySQL 验证任务，覆盖迁移、并发钱包扣款和关键查询。
 是否阻塞 v0.1：否，当前 v0.1 按 SQLite-first 验收。
 
@@ -23,7 +23,7 @@
 
 问题：当前使用本地内存缓存和同步任务模式。
 影响：无法覆盖真实 broker、重试、序列化、并发和失败补偿。
-当前临时处理：`CELERY_TASK_ALWAYS_EAGER=true`，P0 关键流程不依赖异步任务完成。
+当前临时处理：`CELERY_TASK_ALWAYS_EAGER=true`，P0 关键流程不依赖异步任务完成；`REDIS_URL` 可由 `npm run inspect:services` 做无连接 DSN 检查并标记为 `configured_unverified`。
 后续建议：接入 Redis/Celery 后增加异步任务测试和可观测性。
 是否阻塞 v0.1：否。
 

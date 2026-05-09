@@ -7,6 +7,7 @@
     "lint": "pnpm -r --if-present lint",
     "build": "pnpm -r --if-present build",
     "test": "pnpm -r --if-present test",
-    "e2e": "bash scripts/e2e/p0-e2e.sh"
+    "e2e": "bash scripts/e2e/p0-e2e.sh",
+    "e2e:browser": "bash scripts/e2e/browser-smoke.sh"
   }
 }

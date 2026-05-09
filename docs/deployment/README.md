@@ -29,10 +29,20 @@ pnpm --filter mobile-h5 dev
 
 ```bash
 npm run e2e
+npm run e2e:browser
 (cd backend && uv run pytest)
 pnpm lint
 pnpm build
 ```
+
+`npm run e2e:browser` 是 `QA-BROWSER-001` 的浏览器 smoke：
+
+- 不新增 Playwright/Vitest 依赖，不下载浏览器二进制。
+- 默认查找系统 Chrome/Chromium；如不可发现，可用 `BROWSER_E2E_CHROME=/path/to/chrome` 指定。
+- 使用 `.tmp/browser-e2e/` 下的临时 SQLite、media、日志和 Chrome profile。
+- 自动启动 `127.0.0.1:8000`、`3001`、`3002`、`3003` 的测试服务。
+- 测试 Admin Web、User Web、Mobile H5 登录和关键页面，检查 console error/warning、runtime exception 和 `>=400` network response。
+- 退出时清理临时数据库、media、日志、Chrome profile 和进程，不使用用户日常 Chrome profile。
 
 ## Docker Compose
 
@@ -82,7 +92,7 @@ staging 发布顺序建议：
 4. 执行 `seed_demo` 或导入初始化配置。
 5. 构建三端前端。
 6. 配置反向代理和静态资源。
-7. 执行 `npm run e2e` 或等价 staging E2E。
+7. 执行 `npm run e2e`、`npm run e2e:browser` 或等价 staging E2E。
 
 回滚策略：
 
@@ -120,6 +130,10 @@ staging 发布顺序建议：
 ### `npm run e2e` 会污染本地 SQLite 吗？
 
 不会。该命令通过 pytest 使用 `config.settings.test` 的 in-memory SQLite test database。
+
+### `npm run e2e:browser` 会污染本机 Chrome 或 SQLite 吗？
+
+不会。该命令使用 `.tmp/browser-e2e/` 下的临时 SQLite、media 和 Chrome profile，退出时会清理该目录和启动的测试进程。它会调用系统 Chrome/Chromium 二进制，但不使用用户日常 Chrome profile，也不下载新的浏览器。
 
 ### 为什么没有直接交付 Docker Compose？
 

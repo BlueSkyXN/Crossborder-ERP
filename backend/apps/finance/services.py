@@ -6,6 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework import exceptions
 
+from apps.audit.services import log_audit_event
 from apps.files.models import FileOwnerType, FileStatus, FileUsage, StoredFile
 from apps.iam.models import AdminUser
 from apps.members.models import User
@@ -73,6 +74,26 @@ def _build_pending_recharge_request_no() -> str:
 
 def _build_pending_payable_no() -> str:
     return f"PENDING-{uuid4().hex[:22]}"
+
+
+def _log_finance_audit(
+    *,
+    action: str,
+    operator: AdminUser,
+    target_type: str,
+    target_id: int | None,
+    target_repr: str = "",
+    metadata: dict | None = None,
+) -> None:
+    log_audit_event(
+        action=action,
+        module="finance",
+        actor_admin=operator,
+        target_type=target_type,
+        target_id=target_id,
+        target_repr=target_repr,
+        metadata=metadata or {},
+    )
 
 
 def _assert_positive_amount(amount: Decimal, field: str = "amount") -> None:
@@ -285,6 +306,22 @@ def create_payable(
     )
     payable.payable_no = _build_payable_no(payable.id)
     payable.save(update_fields=["payable_no", "updated_at"])
+    _log_finance_audit(
+        action="finance.payable.create",
+        operator=operator,
+        target_type="Payable",
+        target_id=payable.id,
+        target_repr=payable.payable_no,
+        metadata={
+            "amount": str(payable.amount),
+            "currency": payable.currency,
+            "status": payable.status,
+            "supplier_id": supplier.id,
+            "cost_type_id": cost_type.id,
+            "source_type": payable.source_type,
+            "source_id": payable.source_id,
+        },
+    )
     return payable_queryset().get(id=payable.id)
 
 
@@ -292,6 +329,7 @@ def create_payable(
 def update_payable(
     *,
     payable: Payable,
+    operator: AdminUser | None = None,
     supplier: Supplier,
     cost_type: CostType,
     amount: Decimal,
@@ -307,6 +345,15 @@ def update_payable(
     locked = Payable.objects.select_for_update().get(id=payable.id)
     if locked.status != PayableStatus.PENDING_REVIEW:
         raise PayableStateConflictError("应付款当前状态不允许修改")
+    previous = {
+        "supplier_id": locked.supplier_id,
+        "cost_type_id": locked.cost_type_id,
+        "amount": str(locked.amount),
+        "currency": locked.currency,
+        "source_type": locked.source_type,
+        "source_id": locked.source_id,
+        "due_date": locked.due_date.isoformat() if locked.due_date else None,
+    }
     locked.supplier = supplier
     locked.cost_type = cost_type
     locked.amount = amount
@@ -328,6 +375,26 @@ def update_payable(
             "updated_at",
         ]
     )
+    if operator:
+        _log_finance_audit(
+            action="finance.payable.update",
+            operator=operator,
+            target_type="Payable",
+            target_id=locked.id,
+            target_repr=locked.payable_no,
+            metadata={
+                "previous": previous,
+                "current": {
+                    "supplier_id": locked.supplier_id,
+                    "cost_type_id": locked.cost_type_id,
+                    "amount": str(locked.amount),
+                    "currency": locked.currency,
+                    "source_type": locked.source_type,
+                    "source_id": locked.source_id,
+                    "due_date": locked.due_date.isoformat() if locked.due_date else None,
+                },
+            },
+        )
     return payable_queryset().get(id=locked.id)
 
 
@@ -338,10 +405,24 @@ def confirm_payable(*, payable: Payable, operator: AdminUser) -> Payable:
         return payable_queryset().get(id=locked.id)
     if locked.status != PayableStatus.PENDING_REVIEW:
         raise PayableStateConflictError("应付款当前状态不允许确认")
+    previous_status = locked.status
     locked.status = PayableStatus.CONFIRMED
     locked.confirmed_by = operator
     locked.confirmed_at = timezone.now()
     locked.save(update_fields=["status", "confirmed_by", "confirmed_at", "updated_at"])
+    _log_finance_audit(
+        action="finance.payable.confirm",
+        operator=operator,
+        target_type="Payable",
+        target_id=locked.id,
+        target_repr=locked.payable_no,
+        metadata={
+            "old_status": previous_status,
+            "new_status": locked.status,
+            "amount": str(locked.amount),
+            "currency": locked.currency,
+        },
+    )
     return payable_queryset().get(id=locked.id)
 
 
@@ -358,6 +439,7 @@ def settle_payable(
         raise PayableStateConflictError("应付款已核销，不能重复核销")
     if locked.status != PayableStatus.CONFIRMED:
         raise PayableStateConflictError("应付款需要确认后才能核销")
+    previous_status = locked.status
     locked.status = PayableStatus.SETTLED
     locked.settled_by = operator
     locked.settled_at = timezone.now()
@@ -373,6 +455,20 @@ def settle_payable(
             "updated_at",
         ]
     )
+    _log_finance_audit(
+        action="finance.payable.settle",
+        operator=operator,
+        target_type="Payable",
+        target_id=locked.id,
+        target_repr=locked.payable_no,
+        metadata={
+            "old_status": previous_status,
+            "new_status": locked.status,
+            "amount": str(locked.amount),
+            "currency": locked.currency,
+            "settlement_reference": locked.settlement_reference,
+        },
+    )
     return payable_queryset().get(id=locked.id)
 
 
@@ -383,11 +479,26 @@ def cancel_payable(*, payable: Payable, operator: AdminUser, cancel_reason: str 
         return payable_queryset().get(id=locked.id)
     if locked.status == PayableStatus.SETTLED:
         raise PayableStateConflictError("已核销应付款不允许取消")
+    previous_status = locked.status
     locked.status = PayableStatus.CANCELLED
     locked.cancelled_by = operator
     locked.cancelled_at = timezone.now()
     locked.cancel_reason = cancel_reason.strip()
     locked.save(update_fields=["status", "cancelled_by", "cancelled_at", "cancel_reason", "updated_at"])
+    _log_finance_audit(
+        action="finance.payable.cancel",
+        operator=operator,
+        target_type="Payable",
+        target_id=locked.id,
+        target_repr=locked.payable_no,
+        metadata={
+            "old_status": previous_status,
+            "new_status": locked.status,
+            "amount": str(locked.amount),
+            "currency": locked.currency,
+            "cancel_reason": locked.cancel_reason,
+        },
+    )
     return payable_queryset().get(id=locked.id)
 
 
@@ -417,7 +528,7 @@ def admin_recharge(
     )
     recharge.request_no = _build_recharge_request_no(recharge.id)
     recharge.save(update_fields=["request_no"])
-    return WalletTransaction.objects.create(
+    wallet_transaction = WalletTransaction.objects.create(
         wallet=wallet,
         user=user,
         operator=operator,
@@ -429,6 +540,22 @@ def admin_recharge(
         business_id=recharge.id,
         remark=remark,
     )
+    _log_finance_audit(
+        action="finance.wallet.admin_recharge",
+        operator=operator,
+        target_type="WalletTransaction",
+        target_id=wallet_transaction.id,
+        target_repr=wallet_transaction.type,
+        metadata={
+            "user_id": user.id,
+            "wallet_id": wallet.id,
+            "amount": str(amount),
+            "currency": currency,
+            "balance_after": str(wallet.balance),
+            "recharge_request_id": recharge.id,
+        },
+    )
+    return wallet_transaction
 
 
 @transaction.atomic
@@ -487,7 +614,7 @@ def approve_offline_remittance(
     locked_request.completed_at = now
     locked_request.save(update_fields=["status", "operator", "review_remark", "reviewed_at", "completed_at"])
 
-    return WalletTransaction.objects.create(
+    wallet_transaction = WalletTransaction.objects.create(
         wallet=wallet,
         user=locked_request.user,
         operator=operator,
@@ -499,6 +626,23 @@ def approve_offline_remittance(
         business_id=locked_request.id,
         remark=review_remark or locked_request.remark,
     )
+    _log_finance_audit(
+        action="finance.remittance.approve",
+        operator=operator,
+        target_type="RechargeRequest",
+        target_id=locked_request.id,
+        target_repr=locked_request.request_no,
+        metadata={
+            "user_id": locked_request.user_id,
+            "wallet_id": wallet.id,
+            "wallet_transaction_id": wallet_transaction.id,
+            "amount": str(locked_request.amount),
+            "currency": locked_request.currency,
+            "new_status": locked_request.status,
+            "balance_after": str(wallet.balance),
+        },
+    )
+    return wallet_transaction
 
 
 @transaction.atomic
@@ -523,6 +667,21 @@ def cancel_offline_remittance(
     locked_request.review_remark = review_remark
     locked_request.reviewed_at = timezone.now()
     locked_request.save(update_fields=["status", "operator", "review_remark", "reviewed_at"])
+    _log_finance_audit(
+        action="finance.remittance.cancel",
+        operator=operator,
+        target_type="RechargeRequest",
+        target_id=locked_request.id,
+        target_repr=locked_request.request_no,
+        metadata={
+            "user_id": locked_request.user_id,
+            "wallet_id": locked_request.wallet_id,
+            "amount": str(locked_request.amount),
+            "currency": locked_request.currency,
+            "new_status": locked_request.status,
+            "review_remark": locked_request.review_remark,
+        },
+    )
     return locked_request
 
 
@@ -541,7 +700,7 @@ def admin_deduct(
         raise InsufficientBalanceError("钱包余额不足")
     wallet.balance -= amount
     wallet.save(update_fields=["balance", "updated_at"])
-    return WalletTransaction.objects.create(
+    wallet_transaction = WalletTransaction.objects.create(
         wallet=wallet,
         user=user,
         operator=operator,
@@ -553,6 +712,21 @@ def admin_deduct(
         business_id=None,
         remark=remark,
     )
+    _log_finance_audit(
+        action="finance.wallet.admin_deduct",
+        operator=operator,
+        target_type="WalletTransaction",
+        target_id=wallet_transaction.id,
+        target_repr=wallet_transaction.type,
+        metadata={
+            "user_id": user.id,
+            "wallet_id": wallet.id,
+            "amount": str(amount),
+            "currency": currency,
+            "balance_after": str(wallet.balance),
+        },
+    )
+    return wallet_transaction
 
 
 @transaction.atomic

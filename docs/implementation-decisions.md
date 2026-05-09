@@ -32,6 +32,7 @@
 | 前端状态 | Zustand | 只承载登录态和轻量 UI 状态，不替代服务端缓存 |
 | 样式策略 | `packages/ui-tokens` + CSS Modules；后台和移动端使用组件库主题 | 避免复刻旧系统视觉，保证三端基础一致 |
 | 测试 | pytest、DRF APIClient、`npm run e2e`、system Chrome CDP browser smoke | 覆盖后端、API 主链路和三端浏览器基础可用性；Vitest/Playwright 仍属后续增强 |
+| 审计日志 | 后台 `/api/v1/admin/**` 写操作请求级审计 + 财务高风险服务层审计 | 满足源报告操作日志基础要求；敏感字段脱敏，不替代长期归档/合规审计系统 |
 | 本地部署 | 当前暂不考虑 Docker；先做 no-Docker local-first | 用户明确要求暂不考虑 Docker，避免拉镜像和启动容器 |
 
 ## 路由约定
@@ -59,7 +60,7 @@
 /finance
 /purchases
 /products
-/audit
+/audit-logs
 ```
 
 用户 Web：
@@ -155,10 +156,10 @@
 
 ## 下一步
 
-按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `GROWTH-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
+按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `AUDITLOG-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
 
 ```text
-Excel 原生解析增强 / 完整浏览器旅程增强 / 审计日志与生产化边界。
+Excel 原生解析增强 / 完整浏览器旅程增强 / 生产化边界。
 ```
 
 当前执行约束：不使用 Docker，不启动 PostgreSQL/MySQL/Redis；验证以本地 `.venv`、SQLite、pytest、API E2E 和 system Chrome browser smoke 为主。PostgreSQL/MySQL/Redis 只做配置兼容，不做真实验证。

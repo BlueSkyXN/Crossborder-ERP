@@ -614,6 +614,25 @@ def _run_payable_flow(*, admin_client: APIClient, run_id: str) -> dict:
     }
 
 
+def _run_audit_log_flow(*, admin_client: APIClient) -> dict:
+    logs = _api_data(admin_client.get("/api/v1/admin/audit-logs?page_size=100"))["items"]
+    actions = {log["action"] for log in logs}
+    for expected_action in [
+        "admin-login",
+        "admin-remittance-approve",
+        "admin-member-point-adjust",
+        "admin-payable-settle",
+    ]:
+        matched_logs = _api_data(
+            admin_client.get(f"/api/v1/admin/audit-logs?page_size=100&action={expected_action}")
+        )["items"]
+        assert any(log["action"] == expected_action for log in matched_logs)
+    assert any(log["target_id"] for log in logs)
+    assert "password123" not in str(logs)
+    assert "access_token" not in str(logs)
+    return {"count": len(logs), "actions": sorted(actions)[:8]}
+
+
 def _run_forwarding_flow(
     *,
     admin_client: APIClient,
@@ -1050,6 +1069,7 @@ def test_p0_forwarding_and_purchase_e2e():
         run_id=run_id,
     )
     payable_result = _run_payable_flow(admin_client=admin_client, run_id=run_id)
+    audit_result = _run_audit_log_flow(admin_client=admin_client)
 
     print("[E2E-001] 主链路完成:", main_result)
     print("[SHIP-BATCH-001] 发货批次链路完成:", {"batch_no": main_result["batch_no"]})
@@ -1061,6 +1081,7 @@ def test_p0_forwarding_and_purchase_e2e():
     print("[GROWTH-001] 积分推广返利链路完成:", growth_result)
     print("[CONTENT-001] 内容 CMS 链路完成:", content_result)
     print("[PAYABLE-001] 应付链路完成:", payable_result)
+    print("[AUDITLOG-001] 后台操作审计链路完成:", audit_result)
     assert main_result["status"] == "SIGNED"
     assert import_result["job_no"].startswith("IMP")
     assert unclaimed_result["status"] == "CLAIMED"
@@ -1070,3 +1091,4 @@ def test_p0_forwarding_and_purchase_e2e():
     assert member_admin_result["status"] == "ACTIVE"
     assert content_result["status"] == "HIDDEN"
     assert payable_result["status"] == "SETTLED"
+    assert audit_result["count"] >= 4

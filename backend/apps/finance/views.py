@@ -380,6 +380,7 @@ class AdminPayableDetailView(APIView):
         try:
             payable = update_payable(
                 payable=payable,
+                operator=request.user,
                 supplier=supplier,
                 cost_type=cost_type,
                 **serializer.validated_data,

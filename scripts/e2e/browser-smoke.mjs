@@ -317,9 +317,12 @@ async function runAdmin(debugPort) {
   await clickByText(page, "详情");
   await waitForText(page, "积分推广");
   await waitForText(page, "当前积分");
+  await navigate(page, `${ADMIN_URL}/audit-logs`, "操作审计");
+  await waitForText(page, "admin-login");
+  await waitForText(page, "敏感字段");
   assertNoIssues("Admin Web", page.issues);
   page.cdp.close();
-  console.log("[QA-BROWSER-001] Admin Web login, parcels, shipping batch, finance payable, and growth smoke passed");
+  console.log("[QA-BROWSER-001] Admin Web login, parcels, shipping batch, finance payable, growth, and audit smoke passed");
 }
 
 async function runUser(debugPort) {

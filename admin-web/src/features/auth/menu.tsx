@@ -3,6 +3,7 @@ import {
   DatabaseOutlined,
   DeploymentUnitOutlined,
   DollarOutlined,
+  FileSearchOutlined,
   FileTextOutlined,
   InboxOutlined,
   MessageOutlined,
@@ -102,6 +103,14 @@ export const adminRouteMeta: AdminRouteMeta[] = [
     label: "内容管理",
     icon: <FileTextOutlined />,
     description: "帮助、公告、条款和基础页面。",
+  },
+  {
+    permission: "audit.logs.view",
+    resource: "audit",
+    path: "/audit-logs",
+    label: "审计日志",
+    icon: <FileSearchOutlined />,
+    description: "后台关键操作、状态变化和敏感动作追踪。",
   },
   {
     permission: "iam.role.view",

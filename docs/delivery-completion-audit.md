@@ -9,6 +9,7 @@
 - Django/DRF 后端。
 - Admin Web、User Web、Mobile H5 三端入口。
 - 仓库配置、会员、包裹、运单、钱包、商品、购物车、代购等 P0 模块。
+- 后台关键写操作审计日志和 Admin Web 查询面板。
 - `npm run e2e` 自动验收主链路和最小代购链路。
 - `npm run e2e:browser` 自动验收 Admin Web、User Web、Mobile H5 登录和关键页面 smoke。
 - README、部署说明、演示脚本、已知问题和下一阶段计划。
@@ -42,6 +43,7 @@
 | 用户提交手工代购 | 后端、User Web、Mobile H5 已覆盖 | `docs/agent-runs/2026-05-09-BE-009.md`、`2026-05-09-FEU-002.md`、`2026-05-09-FEM-002.md` |
 | 后台采购到货并转 Parcel | 后端和 Admin Web 已覆盖 | `docs/agent-runs/2026-05-09-FEA-005.md` |
 | Parcel 继续走集运链路 | E2E 验证转出包裹可继续申请打包 | `docs/agent-runs/2026-05-09-E2E-001.md` |
+| 后台关键操作审计 | 后台写操作请求级审计、财务高风险服务层审计和 Admin Web 查询入口已覆盖 | `docs/agent-runs/2026-05-09-AUDITLOG-001.md` |
 
 ## 验收命令
 

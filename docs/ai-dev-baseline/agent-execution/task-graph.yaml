@@ -238,4 +238,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/OPS-READINESS-001.md
     depends_on: [SECURITY-HEADERS-001]
+    next: OPS-SQLITE-BACKUP-001
+  - id: OPS-SQLITE-BACKUP-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/OPS-SQLITE-BACKUP-001.md
+    depends_on: [OPS-READINESS-001]
     next: null

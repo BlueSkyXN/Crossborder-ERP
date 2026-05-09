@@ -7,8 +7,8 @@
 ## 当前状态
 
 - 项目阶段：`P6_PRODUCTION_GAP`
-- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`IMPORT-XLSX-001` Excel `.xlsx` 批量预报解析、`QA-BROWSER-001` 三端浏览器 smoke、`SHIP-BATCH-001` 发货批次/转单/打印模板数据、`PAYABLE-001` 供应商/成本/应付基础、`GROWTH-001` 积分/推广/返利基础、`AUDITLOG-001` 后台操作审计日志
-- 下一任务：任务图暂无自动下一项；后续建议按完整浏览器旅程、生产化边界和需要业务确认的外部集成单独开任务
+- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`IMPORT-XLSX-001` Excel `.xlsx` 批量预报解析、`QA-BROWSER-001` 三端浏览器 smoke、`QA-BROWSER-002` 浏览器真实包裹预报/入库旅程、`SHIP-BATCH-001` 发货批次/转单/打印模板数据、`PAYABLE-001` 供应商/成本/应付基础、`GROWTH-001` 积分/推广/返利基础、`AUDITLOG-001` 后台操作审计日志
+- 下一任务：任务图暂无自动下一项；后续建议按生产化边界、需要业务确认的外部集成，以及更深浏览器/视觉/组件测试单独开任务
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`
@@ -43,7 +43,7 @@
 | Frontend package manager | pnpm workspace |
 | Request/data | TanStack Query + Axios |
 | State | Zustand |
-| Test | pytest、DRF APIClient、`npm run e2e`、system Chrome CDP browser smoke |
+| Test | pytest、DRF APIClient、`npm run e2e`、system Chrome CDP browser smoke + journey |
 | Deploy | 暂缓，当前阶段 no-Docker local-first |
 
 ## 目录结构
@@ -147,7 +147,7 @@ pnpm lint
 pnpm build
 ```
 
-当前 CI 会在 PR 和 `main` push 上执行后端 check/OpenAPI/pytest、三端前端 lint/build，以及 `Browser Smoke` 三端登录和关键页面 smoke。
+当前 CI 会在 PR 和 `main` push 上执行后端 check/OpenAPI/pytest、三端前端 lint/build，以及 `Browser Smoke` 三端登录、关键页面 smoke 和一条浏览器真实包裹预报/入库旅程。
 
 ## 端到端验收
 
@@ -210,10 +210,11 @@ npm run e2e:browser
 - 在 `.tmp/browser-e2e/` 下创建临时 SQLite、media、日志和 Chrome profile。
 - 自动启动后端、Admin Web、User Web、Mobile H5 的测试服务。
 - 通过 Chrome DevTools Protocol 覆盖 Admin Web、User Web、Mobile H5 登录和关键页面 smoke；Admin Web 额外覆盖财务应付款、会员积分推广和审计日志入口，User Web/Mobile H5 额外覆盖个人中心积分推广入口。
+- 通过真实浏览器表单完成 User Web 包裹预报、Admin Web 扫描同一快递单号入库、User Web 搜索回看在库状态和申请打包入口。
 - 检查浏览器 console error/warning、runtime exception 和 `>=400` network response。
 - 退出时清理临时 profile、数据库、media、日志和测试进程，不使用用户日常 Chrome profile。
 
-该 smoke 是浏览器基础可用性 gate，不替代后续更完整的业务旅程级浏览器测试。
+该 smoke 是浏览器基础可用性和一条关键业务旅程 gate，不替代后续视觉回归、组件级测试或更大范围业务旅程覆盖。
 
 ## 演示流程
 
@@ -249,4 +250,4 @@ npm run e2e:browser
 - 内容 CMS 已支持后台分类/内容、发布/隐藏和三端公开展示；正式服务条款、隐私政策和帮助文案仍需业务/法务确认。
 - 复杂运费公式、首发国家/渠道、验证码、找回密码、多语言等保留 `TODO_CONFIRM`。
 - 后台关键写操作审计日志已完成基础覆盖；更细粒度 RBAC create/update/delete 拆分和长期日志归档仍属后续生产化增强。
-- 浏览器级 smoke 已覆盖三端登录和关键页面基础可用性；复杂业务旅程、视觉回归、组件级测试仍需后续增强。
+- 浏览器级 smoke 已覆盖三端登录、关键页面基础可用性和一条包裹预报/入库/回看旅程；视觉回归、组件级测试和更大范围业务旅程仍需后续增强。

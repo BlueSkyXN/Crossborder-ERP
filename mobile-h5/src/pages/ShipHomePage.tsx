@@ -199,6 +199,9 @@ export function ShipHomePage() {
           <button type="button" onClick={() => navigate("/ship/parcels")}>
             我的包裹
           </button>
+          <button type="button" onClick={() => navigate("/ship/unclaimed-parcels")}>
+            无主认领
+          </button>
           <button type="button" onClick={() => navigate("/ship/waybills")}>
             我的运单
           </button>

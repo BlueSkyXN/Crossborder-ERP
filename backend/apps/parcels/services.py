@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
+import uuid
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import exceptions
 
@@ -38,12 +40,33 @@ def _build_parcel_no(parcel_id: int) -> str:
     return f"P{parcel_id:08d}"
 
 
+def _temporary_parcel_no() -> str:
+    return f"TMP{uuid.uuid4().hex[:20]}"
+
+
+def mask_tracking_no(tracking_no: str) -> str:
+    normalized = (tracking_no or "").strip()
+    if len(normalized) <= 6:
+        return f"{normalized[:1]}***{normalized[-1:]}" if normalized else ""
+    return f"{normalized[:3]}***{normalized[-3:]}"
+
+
 def _dimensions_json(length_cm: Decimal | None, width_cm: Decimal | None, height_cm: Decimal | None) -> dict:
     return {
         "length_cm": str(length_cm) if length_cm is not None else "",
         "width_cm": str(width_cm) if width_cm is not None else "",
         "height_cm": str(height_cm) if height_cm is not None else "",
     }
+
+
+def _dimension_value(dimensions_json: dict, key: str) -> Decimal | None:
+    value = (dimensions_json or {}).get(key)
+    if value in (None, ""):
+        return None
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
+        return None
 
 
 def _assert_active_warehouse(warehouse: Warehouse) -> None:
@@ -63,7 +86,7 @@ def forecast_parcel(
 ) -> Parcel:
     _assert_active_warehouse(warehouse)
     parcel = Parcel.objects.create(
-        parcel_no="PENDING",
+        parcel_no=_temporary_parcel_no(),
         user=user,
         warehouse=warehouse,
         tracking_no=tracking_no,
@@ -201,24 +224,123 @@ def scan_inbound(
 
 
 @transaction.atomic
-def claim_unclaimed_parcel(*, unclaimed_parcel: UnclaimedParcel, user: User) -> Parcel:
+def submit_unclaimed_claim(
+    *,
+    unclaimed_parcel: UnclaimedParcel,
+    user: User,
+    claim_note: str = "",
+    claim_contact: str = "",
+) -> UnclaimedParcel:
     locked = UnclaimedParcel.objects.select_for_update().select_related("warehouse").get(id=unclaimed_parcel.id)
-    if locked.status == UnclaimedParcelStatus.CLAIMED:
-        raise StateConflictError("无主包裹已被认领")
+    if locked.status != UnclaimedParcelStatus.UNCLAIMED:
+        raise StateConflictError("无主包裹当前状态不允许认领")
+    locked.status = UnclaimedParcelStatus.CLAIM_PENDING
+    locked.claimed_by_user = user
+    locked.claim_note = (claim_note or "").strip()
+    locked.claim_contact = (claim_contact or "").strip()
+    locked.claimed_at = timezone.now()
+    locked.review_note = ""
+    locked.reviewed_at = None
+    locked.reviewed_by_admin = None
+    locked.save(
+        update_fields=[
+            "status",
+            "claimed_by_user",
+            "claim_note",
+            "claim_contact",
+            "claimed_at",
+            "review_note",
+            "reviewed_at",
+            "reviewed_by_admin",
+            "updated_at",
+        ]
+    )
+    return locked
+
+
+def user_visible_unclaimed_queryset(*, user: User):
+    return (
+        UnclaimedParcel.objects.select_related("warehouse", "claimed_by_user")
+        .filter(Q(status=UnclaimedParcelStatus.UNCLAIMED) | Q(claimed_by_user=user))
+    ).order_by("-id")
+
+
+@transaction.atomic
+def approve_unclaimed_claim(
+    *,
+    unclaimed_parcel: UnclaimedParcel,
+    operator: AdminUser,
+    review_note: str = "",
+) -> Parcel:
+    locked = UnclaimedParcel.objects.select_for_update().select_related("warehouse", "claimed_by_user").get(
+        id=unclaimed_parcel.id
+    )
+    if locked.status != UnclaimedParcelStatus.CLAIM_PENDING or not locked.claimed_by_user_id:
+        raise StateConflictError("无主包裹当前状态不允许审核通过")
+    if Parcel.objects.filter(tracking_no=locked.tracking_no).exists():
+        raise StateConflictError("已有同追踪号包裹，不能重复转入")
 
     parcel = Parcel.objects.create(
-        parcel_no="PENDING",
-        user=user,
+        parcel_no=_temporary_parcel_no(),
+        user=locked.claimed_by_user,
         warehouse=locked.warehouse,
         tracking_no=locked.tracking_no,
         status=ParcelStatus.IN_STOCK,
         weight_kg=locked.weight_kg,
+        length_cm=_dimension_value(locked.dimensions_json, "length_cm"),
+        width_cm=_dimension_value(locked.dimensions_json, "width_cm"),
+        height_cm=_dimension_value(locked.dimensions_json, "height_cm"),
         inbound_at=timezone.now(),
         remark=locked.description,
     )
     parcel.parcel_no = _build_parcel_no(parcel.id)
     parcel.save(update_fields=["parcel_no", "updated_at"])
+    InboundRecord.objects.create(
+        parcel=parcel,
+        operator=operator,
+        weight_kg=locked.weight_kg or Decimal("0.000"),
+        dimensions_json=locked.dimensions_json,
+        remark=locked.description,
+    )
     locked.status = UnclaimedParcelStatus.CLAIMED
-    locked.claimed_by_user = user
-    locked.save(update_fields=["status", "claimed_by_user", "updated_at"])
+    locked.reviewed_by_admin = operator
+    locked.review_note = (review_note or "").strip()
+    locked.reviewed_at = timezone.now()
+    locked.save(update_fields=["status", "reviewed_by_admin", "review_note", "reviewed_at", "updated_at"])
     return parcel
+
+
+@transaction.atomic
+def reject_unclaimed_claim(
+    *,
+    unclaimed_parcel: UnclaimedParcel,
+    operator: AdminUser,
+    review_note: str = "",
+) -> UnclaimedParcel:
+    locked = UnclaimedParcel.objects.select_for_update().select_related("warehouse", "claimed_by_user").get(
+        id=unclaimed_parcel.id
+    )
+    if locked.status != UnclaimedParcelStatus.CLAIM_PENDING:
+        raise StateConflictError("无主包裹当前状态不允许驳回")
+    locked.status = UnclaimedParcelStatus.UNCLAIMED
+    locked.reviewed_by_admin = operator
+    locked.review_note = (review_note or "").strip()
+    locked.reviewed_at = timezone.now()
+    locked.claimed_by_user = None
+    locked.claim_note = ""
+    locked.claim_contact = ""
+    locked.claimed_at = None
+    locked.save(
+        update_fields=[
+            "status",
+            "reviewed_by_admin",
+            "review_note",
+            "reviewed_at",
+            "claimed_by_user",
+            "claim_note",
+            "claim_contact",
+            "claimed_at",
+            "updated_at",
+        ]
+    )
+    return locked

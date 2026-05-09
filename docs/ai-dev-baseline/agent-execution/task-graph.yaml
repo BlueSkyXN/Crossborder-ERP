@@ -179,3 +179,8 @@ tasks:
     file: tasks/PARCEL-CLAIM-001.md
     depends_on: [MEMBER-001]
     next: CONTENT-001
+  - id: CONTENT-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/CONTENT-001.md
+    depends_on: [PARCEL-CLAIM-001]
+    next: IMPORT-001

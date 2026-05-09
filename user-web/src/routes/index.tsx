@@ -7,6 +7,7 @@ import { LoginPage } from "../pages/LoginPage";
 import { ParcelsPage } from "../pages/ParcelsPage";
 import { PurchasesPage } from "../pages/PurchasesPage";
 import { TicketsPage } from "../pages/TicketsPage";
+import { UnclaimedParcelsPage } from "../pages/UnclaimedParcelsPage";
 import { WaybillsPage } from "../pages/WaybillsPage";
 import { PublicOnly, RequireAuth } from "./guards";
 
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
       { path: "/addresses", element: <AddressesPage /> },
       { path: "/finance", element: <FinancePage /> },
       { path: "/parcels", element: <ParcelsPage /> },
+      { path: "/unclaimed-parcels", element: <UnclaimedParcelsPage /> },
       { path: "/waybills", element: <WaybillsPage /> },
       { path: "/products", element: <PurchasesPage /> },
       { path: "/cart", element: <PurchasesPage /> },

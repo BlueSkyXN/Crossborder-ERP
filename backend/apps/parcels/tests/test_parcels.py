@@ -5,8 +5,9 @@ from django.urls import reverse
 
 from apps.files.models import FileUsage
 from apps.iam.services import seed_iam_demo_data
+from apps.members.models import User
 from apps.members.services import register_user, seed_member_demo_data
-from apps.parcels.models import InboundRecord, Parcel, ParcelPhoto, ParcelStatus, UnclaimedParcel
+from apps.parcels.models import InboundRecord, Parcel, ParcelPhoto, ParcelStatus, UnclaimedParcel, UnclaimedParcelStatus
 from apps.parcels.services import forecast_parcel
 from apps.warehouses.models import Warehouse
 from apps.warehouses.services import seed_warehouse_demo_data
@@ -201,6 +202,151 @@ def test_scan_unknown_tracking_creates_unclaimed_parcel(client, seeded_parcels):
     assert data["created_unclaimed"] is True
     assert data["unclaimed_parcel"]["tracking_no"] == "UNKNOWN10001"
     assert UnclaimedParcel.objects.filter(tracking_no="UNKNOWN10001").exists()
+
+
+def test_member_lists_unclaimed_parcels_with_masked_tracking(client, seeded_parcels):
+    warehouse = Warehouse.objects.get(code="SZ")
+    UnclaimedParcel.objects.create(
+        warehouse=warehouse,
+        tracking_no="MASKED-TRACKING-001",
+        description="后台内部备注不应展示给用户",
+        weight_kg="0.800",
+    )
+    token = member_token(client)
+
+    response = client.get(
+        reverse("unclaimed-parcel-list"),
+        {"keyword": "TRACKING"},
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 200
+    item = response.json()["data"]["items"][0]
+    assert item["tracking_no_masked"] == "MAS***001"
+    assert "tracking_no" not in item
+    assert "description" not in item
+    assert item["is_mine"] is False
+
+
+def test_member_claims_unclaimed_parcel_and_blocks_second_claimant(client, seeded_parcels):
+    warehouse = Warehouse.objects.get(code="SZ")
+    unclaimed = UnclaimedParcel.objects.create(
+        warehouse=warehouse,
+        tracking_no="CLAIM-TRACKING-001",
+        weight_kg="0.900",
+    )
+    first_token = member_token(client)
+    second_user = register_user("second-claimant@example.com", "password123")
+    second_token = member_token(client, email=second_user.email)
+
+    first = client.post(
+        reverse("unclaimed-parcel-claim", kwargs={"unclaimed_id": unclaimed.id}),
+        {"claim_note": "TODO_CONFIRM: 包裹截图凭证", "claim_contact": "13900003333"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {first_token}",
+    )
+    second = client.post(
+        reverse("unclaimed-parcel-claim", kwargs={"unclaimed_id": unclaimed.id}),
+        {"claim_note": "second claim"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {second_token}",
+    )
+
+    assert first.status_code == 200
+    assert first.json()["data"]["status"] == UnclaimedParcelStatus.CLAIM_PENDING
+    assert first.json()["data"]["is_mine"] is True
+    assert second.status_code == 409
+    assert second.json()["code"] == "STATE_CONFLICT"
+    unclaimed.refresh_from_db()
+    assert unclaimed.claimed_by_user.email == "user@example.com"
+    assert unclaimed.claim_contact == "13900003333"
+
+
+def test_admin_approves_unclaimed_claim_to_member_parcel(client, seeded_parcels):
+    warehouse = Warehouse.objects.get(code="SZ")
+    unclaimed = UnclaimedParcel.objects.create(
+        warehouse=warehouse,
+        tracking_no="APPROVE-TRACKING-001",
+        description="入库无主包裹",
+        weight_kg="1.100",
+        dimensions_json={"length_cm": "10.00", "width_cm": "9.00", "height_cm": "8.00"},
+    )
+    member = member_token(client)
+    admin = admin_token(client, email="warehouse@example.com")
+    client.post(
+        reverse("unclaimed-parcel-claim", kwargs={"unclaimed_id": unclaimed.id}),
+        {"claim_note": "matching proof"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {member}",
+    )
+
+    response = client.post(
+        reverse("admin-unclaimed-parcel-approve", kwargs={"unclaimed_id": unclaimed.id}),
+        {"review_note": "凭证匹配"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {admin}",
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["unclaimed_parcel"]["status"] == UnclaimedParcelStatus.CLAIMED
+    assert data["parcel"]["tracking_no"] == "APPROVE-TRACKING-001"
+    assert data["parcel"]["status"] == ParcelStatus.IN_STOCK
+    assert data["parcel"]["length_cm"] == "10.00"
+    assert data["parcel"]["width_cm"] == "9.00"
+    assert data["parcel"]["height_cm"] == "8.00"
+    assert Parcel.objects.filter(tracking_no="APPROVE-TRACKING-001", user__email="user@example.com").exists()
+    assert InboundRecord.objects.filter(parcel__tracking_no="APPROVE-TRACKING-001").exists()
+
+
+def test_admin_rejects_unclaimed_claim_and_reopens_listing(client, seeded_parcels):
+    warehouse = Warehouse.objects.get(code="SZ")
+    unclaimed = UnclaimedParcel.objects.create(
+        warehouse=warehouse,
+        tracking_no="REJECT-TRACKING-001",
+    )
+    member = member_token(client)
+    admin = admin_token(client, email="warehouse@example.com")
+    client.post(
+        reverse("unclaimed-parcel-claim", kwargs={"unclaimed_id": unclaimed.id}),
+        {"claim_note": "bad proof"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {member}",
+    )
+
+    response = client.post(
+        reverse("admin-unclaimed-parcel-reject", kwargs={"unclaimed_id": unclaimed.id}),
+        {"review_note": "凭证不匹配"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {admin}",
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["status"] == UnclaimedParcelStatus.UNCLAIMED
+    assert data["claimed_by_email"] is None
+    unclaimed.refresh_from_db()
+    assert unclaimed.claimed_by_user is None
+    assert unclaimed.claim_note == ""
+
+
+def test_unclaimed_review_requires_parcel_permission(client, seeded_parcels):
+    warehouse = Warehouse.objects.get(code="SZ")
+    unclaimed = UnclaimedParcel.objects.create(
+        warehouse=warehouse,
+        tracking_no="RBAC-TRACKING-001",
+        status=UnclaimedParcelStatus.CLAIM_PENDING,
+        claimed_by_user=User.objects.get(email="user@example.com"),
+    )
+    token = admin_token(client, email="finance@example.com")
+
+    response = client.post(
+        reverse("admin-unclaimed-parcel-approve", kwargs={"unclaimed_id": unclaimed.id}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 403
+    assert response.json()["code"] == "FORBIDDEN"
 
 
 def test_scan_matching_tracking_inbounds_forecasted_parcel(client, seeded_parcels):

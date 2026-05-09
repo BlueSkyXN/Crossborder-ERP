@@ -1,5 +1,5 @@
 import { requestData } from "../../api/client";
-import type { Parcel, ParcelForecastPayload } from "./types";
+import type { Parcel, ParcelForecastPayload, PublicUnclaimedParcel, UnclaimedClaimPayload } from "./types";
 
 type ListResponse<T> = {
   items: T[];
@@ -32,4 +32,20 @@ export function fetchPackableParcels() {
     method: "GET",
     url: "/parcels/packable",
   }).then((result) => result.items);
+}
+
+export function fetchUnclaimedParcels(keyword: string) {
+  return requestData<ListResponse<PublicUnclaimedParcel>>({
+    method: "GET",
+    url: "/unclaimed-parcels",
+    params: keyword.trim() ? { keyword: keyword.trim() } : undefined,
+  }).then((result) => result.items);
+}
+
+export function claimUnclaimedParcel(unclaimedId: number, payload: UnclaimedClaimPayload) {
+  return requestData<PublicUnclaimedParcel>({
+    method: "POST",
+    url: `/unclaimed-parcels/${unclaimedId}/claim`,
+    data: payload,
+  });
 }

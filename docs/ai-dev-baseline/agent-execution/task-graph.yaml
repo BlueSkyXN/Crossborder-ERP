@@ -233,4 +233,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/SECURITY-HEADERS-001.md
     depends_on: [AUDIT-RETENTION-001]
+    next: OPS-READINESS-001
+  - id: OPS-READINESS-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/OPS-READINESS-001.md
+    depends_on: [SECURITY-HEADERS-001]
     next: null

@@ -273,4 +273,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/CI-EVIDENCE-001.md
     depends_on: [QA-BROWSER-003]
+    next: RBAC-ROLES-001
+  - id: RBAC-ROLES-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/RBAC-ROLES-001.md
+    depends_on: [CI-EVIDENCE-001, ADMIN-PANELS-001]
     next: null

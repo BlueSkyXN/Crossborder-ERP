@@ -538,7 +538,7 @@ async function runAdmin(debugPort, journey) {
   await verifyRouteText(page, `${ADMIN_URL}/products`, ["商品管理", "启用商品", "启用 SKU"]);
   await verifyRouteText(page, `${ADMIN_URL}/tickets`, ["客服工单", "待处理工单", "处理中"]);
   await verifyRouteText(page, `${ADMIN_URL}/content`, ["内容管理", "已发布", "草稿"]);
-  await verifyRouteText(page, `${ADMIN_URL}/roles`, ["角色权限", "权限覆盖矩阵", "super_admin"]);
+  await verifyRouteText(page, `${ADMIN_URL}/roles`, ["角色权限", "权限覆盖矩阵", "super_admin", "新增角色"]);
   assertNoIssues("Admin Web", page.issues);
   page.cdp.close();
   console.log("[QA-BROWSER-002] Admin Web scanned the browser-created parcel into stock");

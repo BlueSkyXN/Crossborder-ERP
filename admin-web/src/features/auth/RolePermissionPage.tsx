@@ -1,17 +1,42 @@
-import { CheckCircleOutlined, ReloadOutlined, SafetyOutlined } from "@ant-design/icons";
-import { useQuery } from "@tanstack/react-query";
-import { Alert, Button, Card, Col, Empty, Row, Space, Statistic, Table, Tag, Typography } from "antd";
+import { CheckCircleOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SafetyOutlined } from "@ant-design/icons";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Alert,
+  App as AntdApp,
+  Button,
+  Card,
+  Checkbox,
+  Col,
+  Empty,
+  Form,
+  Input,
+  Modal,
+  Row,
+  Space,
+  Statistic,
+  Table,
+  Tag,
+  Typography,
+} from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
 import { ForbiddenPage } from "../../pages/ForbiddenPage";
-import { fetchAdminRoles } from "./api";
+import { createAdminRole, fetchAdminPermissions, fetchAdminRoles, updateAdminRole } from "./api";
 import { adminRouteMeta } from "./menu";
-import type { Permission, Role } from "./types";
+import type { Permission, Role, RolePayload } from "./types";
 
 type WorkspaceContext = {
   allowedCodes: Set<string>;
+  permissionCodes: Set<string>;
+};
+
+type RoleFormValues = {
+  code: string;
+  name: string;
+  description?: string;
+  permission_codes: string[];
 };
 
 function getErrorMessage(error: unknown) {
@@ -28,16 +53,84 @@ function permissionTag(permission: Permission) {
 }
 
 export function RolePermissionPage() {
-  const { allowedCodes } = useOutletContext<WorkspaceContext>();
+  const { allowedCodes, permissionCodes } = useOutletContext<WorkspaceContext>();
+  const queryClient = useQueryClient();
+  const { message } = AntdApp.useApp();
+  const [form] = Form.useForm<RoleFormValues>();
+  const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const hasPermission = allowedCodes.has("iam.role.view");
+  const canManage = permissionCodes.has("iam.role.manage");
   const rolesQuery = useQuery({
     queryKey: ["admin-roles"],
     queryFn: fetchAdminRoles,
     enabled: hasPermission,
   });
+  const permissionsQuery = useQuery({
+    queryKey: ["admin-permissions"],
+    queryFn: fetchAdminPermissions,
+    enabled: hasPermission,
+  });
+  const saveRoleMutation = useMutation({
+    mutationFn: (values: RoleFormValues) => {
+      const payload: RolePayload = {
+        code: editingRole ? undefined : values.code,
+        name: values.name,
+        description: values.description || "",
+        permission_codes: values.permission_codes,
+      };
+      return editingRole ? updateAdminRole(editingRole.id, payload) : createAdminRole(payload);
+    },
+    onSuccess: () => {
+      message.success(editingRole ? "角色已更新" : "角色已创建");
+      setModalOpen(false);
+      setEditingRole(null);
+      form.resetFields();
+      queryClient.invalidateQueries({ queryKey: ["admin-roles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "menus"] });
+    },
+    onError: (error) => {
+      message.error(getErrorMessage(error));
+    },
+  });
 
   const roles = useMemo(() => rolesQuery.data || [], [rolesQuery.data]);
+  const permissions = useMemo(() => permissionsQuery.data || [], [permissionsQuery.data]);
   const menuPermissionCodes = useMemo(() => adminRouteMeta.map((route) => route.permission), []);
+  const permissionOptions = useMemo(
+    () =>
+      permissions.map((permission) => ({
+        label: (
+          <Space orientation="vertical" size={0}>
+            <span>{permission.name}</span>
+            <Typography.Text type="secondary">{permission.code}</Typography.Text>
+          </Space>
+        ),
+        value: permission.code,
+      })),
+    [permissions],
+  );
+  const openCreateModal = useCallback(() => {
+    setEditingRole(null);
+    form.setFieldsValue({
+      code: "",
+      name: "",
+      description: "",
+      permission_codes: ["dashboard.view"],
+    });
+    setModalOpen(true);
+  }, [form]);
+  const openEditModal = useCallback((role: Role) => {
+    setEditingRole(role);
+    form.setFieldsValue({
+      code: role.code,
+      name: role.name,
+      description: role.description,
+      permission_codes: role.permission_codes,
+    });
+    setModalOpen(true);
+  }, [form]);
   const roleColumns = useMemo<ColumnsType<Role>>(
     () => [
       {
@@ -53,8 +146,22 @@ export function RolePermissionPage() {
         width: 100,
         render: (_, role) => role.permissions.length,
       },
+      {
+        title: "操作",
+        width: 120,
+        render: (_, role) => (
+          <Button
+            size="small"
+            icon={<EditOutlined />}
+            disabled={!canManage || role.code === "super_admin"}
+            onClick={() => openEditModal(role)}
+          >
+            编辑
+          </Button>
+        ),
+      },
     ],
-    [],
+    [canManage, openEditModal],
   );
   const matrixColumns = useMemo<ColumnsType<{ code: string; label: string; resource: string }>>(
     () => [
@@ -100,11 +207,17 @@ export function RolePermissionPage() {
         <Button icon={<ReloadOutlined />} onClick={() => rolesQuery.refetch()} loading={rolesQuery.isFetching}>
           刷新
         </Button>
+        {canManage && (
+          <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
+            新增角色
+          </Button>
+        )}
       </div>
 
       {rolesQuery.isError && (
         <Alert type="error" showIcon message="角色权限加载失败" description={getErrorMessage(rolesQuery.error)} />
       )}
+      {!canManage && <Alert type="info" showIcon message="当前账号只读角色权限，缺少 iam.role.manage。" />}
 
       <Row gutter={[16, 16]}>
         <Col xs={24} md={8}>
@@ -119,7 +232,7 @@ export function RolePermissionPage() {
         </Col>
         <Col xs={24} md={8}>
           <Card>
-            <Statistic title="当前账号可见" value={allowedCodes.size} suffix="项" />
+            <Statistic title="全部权限" value={permissions.length} suffix="项" />
           </Card>
         </Col>
       </Row>
@@ -158,6 +271,47 @@ export function RolePermissionPage() {
           locale={{ emptyText: <Empty description="暂无权限矩阵" /> }}
         />
       </Card>
+      <Modal
+        title={editingRole ? "编辑角色" : "新增角色"}
+        open={modalOpen}
+        onCancel={() => {
+          setModalOpen(false);
+          setEditingRole(null);
+        }}
+        okText="保存"
+        confirmLoading={saveRoleMutation.isPending}
+        onOk={() => form.submit()}
+        destroyOnHidden
+      >
+        <Form form={form} layout="vertical" onFinish={(values) => saveRoleMutation.mutate(values)}>
+          <Form.Item
+            label="角色编码"
+            name="code"
+            rules={[
+              { required: true, message: "请输入角色编码" },
+              {
+                pattern: /^[a-z][a-z0-9_]{2,79}$/,
+                message: "仅支持小写字母、数字和下划线，且必须以字母开头",
+              },
+            ]}
+          >
+            <Input disabled={Boolean(editingRole)} placeholder="ops_custom" />
+          </Form.Item>
+          <Form.Item label="角色名称" name="name" rules={[{ required: true, message: "请输入角色名称" }]}>
+            <Input maxLength={100} />
+          </Form.Item>
+          <Form.Item label="说明" name="description">
+            <Input.TextArea rows={3} maxLength={500} showCount />
+          </Form.Item>
+          <Form.Item
+            label="权限"
+            name="permission_codes"
+            rules={[{ required: true, message: "至少选择一个权限" }]}
+          >
+            <Checkbox.Group className="permission-check-list" options={permissionOptions} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Space>
   );
 }

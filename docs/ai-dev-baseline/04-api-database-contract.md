@@ -200,7 +200,8 @@ GET  /api/v1/admin/me
 GET  /api/v1/admin/menus
 GET  /api/v1/admin/roles
 POST /api/v1/admin/roles
-PUT  /api/v1/admin/roles/{id}
+GET  /api/v1/admin/roles/{id}
+PATCH /api/v1/admin/roles/{id}
 GET  /api/v1/admin/permissions
 ```
 

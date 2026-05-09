@@ -5,6 +5,7 @@ export type AdminUser = {
   status: "ACTIVE" | "DISABLED";
   is_super_admin: boolean;
   roles: string[];
+  permission_codes: string[];
 };
 
 export type LoginPayload = {
@@ -38,4 +39,12 @@ export type Role = {
   name: string;
   description: string;
   permissions: Permission[];
+  permission_codes: string[];
+};
+
+export type RolePayload = {
+  code?: string;
+  name: string;
+  description?: string;
+  permission_codes: string[];
 };

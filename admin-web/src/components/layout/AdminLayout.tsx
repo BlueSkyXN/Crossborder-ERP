@@ -54,6 +54,10 @@ export function AdminLayout() {
 
   const menus = menusQuery.data?.items?.length ? menusQuery.data.items : fallbackMenus;
   const allowedCodes = useMemo(() => new Set(menus.map((item) => item.code)), [menus]);
+  const permissionCodes = useMemo(
+    () => new Set(meQuery.data?.permission_codes || menus.map((item) => item.code)),
+    [meQuery.data?.permission_codes, menus],
+  );
   const menuItems: MenuProps["items"] = adminRouteMeta
     .filter((route) => allowedCodes.has(route.permission))
     .map((route) => ({
@@ -190,7 +194,7 @@ export function AdminLayout() {
           </Space>
         </Header>
         <Content className="admin-content">
-          <Outlet context={{ allowedCodes }} />
+          <Outlet context={{ allowedCodes, permissionCodes }} />
         </Content>
       </Layout>
     </Layout>

@@ -26,11 +26,17 @@ MENU_PERMISSIONS = [
     ("iam.role.view", "角色权限", "roles", 90),
 ]
 
+ACTION_PERMISSIONS = [
+    ("iam.role.manage", "角色权限管理", "roles", 91, PermissionType.BUTTON),
+]
+
+ALL_PERMISSION_CODES = [item[0] for item in MENU_PERMISSIONS] + [item[0] for item in ACTION_PERMISSIONS]
+
 ROLE_DEFINITIONS = {
     "super_admin": {
         "name": "超级管理员",
         "description": "全部后台权限",
-        "permissions": [item[0] for item in MENU_PERMISSIONS],
+        "permissions": ALL_PERMISSION_CODES,
     },
     "warehouse": {
         "name": "仓库人员",
@@ -138,6 +144,17 @@ def seed_iam_demo_data(password: str = "password123") -> None:
             defaults={
                 "name": name,
                 "type": PermissionType.MENU,
+                "resource": resource,
+                "sort_order": sort_order,
+            },
+        )
+        permission_by_code[code] = permission
+    for code, name, resource, sort_order, permission_type in ACTION_PERMISSIONS:
+        permission, _ = Permission.objects.update_or_create(
+            code=code,
+            defaults={
+                "name": name,
+                "type": permission_type,
                 "resource": resource,
                 "sort_order": sort_order,
             },

@@ -14,6 +14,7 @@
 - 后端响应已本地验证基础安全 header，包括 `nosniff`、`Referrer-Policy`、`Cross-Origin-Opener-Policy`、`X-Frame-Options` 和 `Permissions-Policy`。
 - 后端提供 `/api/v1/health/ready` readiness endpoint，当前检查 SQLite/default database 连接。
 - 后端提供 `backup_sqlite` 显式 SQLite 本地备份命令，默认输出到 ignored 的 `backend/backups/`。
+- 后端提供 `purge_deleted_files` 显式本地软删除文件清理命令。
 
 启动命令：
 
@@ -35,6 +36,7 @@ npm run e2e
 npm run e2e:browser
 (cd backend && uv run pytest)
 (cd backend && uv run python manage.py backup_sqlite --dry-run)
+(cd backend && uv run python manage.py purge_deleted_files --older-than-days 30 --dry-run)
 pnpm lint
 pnpm build
 ```
@@ -169,6 +171,22 @@ uv run python manage.py backup_sqlite --database default --force
 - 无主包裹认领只向用户返回脱敏快递单号；后台审核通过后才创建会员在库包裹，认领凭证和通知外呼仍是后续业务规则。
 - 内容 CMS 当前使用数据库文本内容，不接外部富文本上传；公开接口只返回已发布内容，正式条款/隐私/帮助文案仍需业务或法务确认。
 - 批量导入使用 `IMPORT_FILE` 文件用途，支持 CSV 和标准 `.xlsx` parser；导入模板/导出 CSV 是即时响应，不持久化到 git 或 media，上传的源 CSV/Excel 按本地 `MEDIA_ROOT` 文件策略保存。
+- 软删除文件可用 `purge_deleted_files --older-than-days N --dry-run` 预演清理，再显式执行真实清理。该命令只删除已软删除且超过保留期的本地物理文件，不删除数据库记录。
+
+本地软删除文件清理：
+
+```bash
+cd backend
+uv run python manage.py purge_deleted_files --older-than-days 30 --dry-run
+uv run python manage.py purge_deleted_files --older-than-days 30
+```
+
+边界：
+
+- 不清理 ACTIVE 文件。
+- 不自动执行清理。
+- 路径必须仍位于 `MEDIA_ROOT` 内，且目标必须是普通文件；异常路径或目录会计入 unsafe 并跳过。
+- 已缺失的物理文件会计入 missing，不作为命令失败处理。
 
 后续生产化要求：
 

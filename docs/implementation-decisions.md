@@ -36,6 +36,7 @@
 | 安全响应头 | Django `SecurityMiddleware` + 项目内 `PermissionsPolicyMiddleware` | 本地可验证最小安全边界；真实 TLS/HSTS/反向代理留到 staging 任务验证 |
 | 运维 readiness | `/api/v1/health/ready` 检查当前默认数据库连接 | 区分进程存活和依赖可用；不暴露 DSN、异常堆栈或本地路径 |
 | SQLite 本地备份 | `backup_sqlite` management command，默认输出到 ignored 的 `backend/backups/` | 当前 SQLite-first 阶段的显式备份手段；不替代生产数据库备份策略 |
+| 本地文件清理 | `purge_deleted_files` 只清理超过保留期的 `StoredFile.DELETED` 本地物理文件 | 控制 `MEDIA_ROOT` 增长；不替代对象存储生命周期、病毒扫描或远程归档 |
 | 本地部署 | 当前暂不考虑 Docker；先做 no-Docker local-first | 用户明确要求暂不考虑 Docker，避免拉镜像和启动容器 |
 
 ## 路由约定
@@ -150,6 +151,7 @@
 | Redis 缺失 | 缓存、分布式锁、Celery broker、异步任务、限流不能真实验证 | 当前使用本地内存缓存和同步任务；禁止依赖 Redis 完成 P0 关键一致性 |
 | Celery 异步边界 | 同步 eager 模式不能暴露序列化、重试、并发和 broker 故障问题 | 当前只用于保持接口形态；真实异步任务后续单独验证 |
 | 文件存储 | 本地 `MEDIA_ROOT` 与对象存储/反向代理访问控制不同 | 当前仅支持本地文件；文件权限和对象存储后置 |
+| 本地文件清理 | 过早删除软删除文件可能影响人工恢复和审计 | 当前清理命令必须显式传入保留天数，默认支持 dry-run，不删除数据库记录 |
 | 邮件/短信/验证码 | 真实通道需要账号、回调和风控 | 当前用 no-op/console backend；验证码规则保持 `TODO_CONFIRM` |
 | Excel 导入 | `.xlsx` 可用标准 ZIP/XML 结构解析，但旧 `.xls` 需要额外依赖 | 当前不新增依赖，支持标准 `.xlsx` 和 CSV；旧 `.xls` 要求另存 |
 | 支付/物流/商品外部接口 | 真实接口涉及密钥、回调、签名、失败补偿 | P0 只做人工充值、线下汇款人工审核、余额支付、人工轨迹和手工代购 |
@@ -164,7 +166,7 @@
 
 ## 下一步
 
-按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `OPS-SQLITE-BACKUP-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
+按 `docs/ai-dev-baseline/agent-execution/current-state.yaml` 推进。当前任务图已完成到 `STORAGE-CLEANUP-001`，后续如果继续收敛生产级差距，应单独确认下一张任务卡：
 
 ```text
 生产化边界 / 需业务确认的外部集成 / 测试深度增强。

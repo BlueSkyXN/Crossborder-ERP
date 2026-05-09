@@ -243,4 +243,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/OPS-SQLITE-BACKUP-001.md
     depends_on: [OPS-READINESS-001]
+    next: STORAGE-CLEANUP-001
+  - id: STORAGE-CLEANUP-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/STORAGE-CLEANUP-001.md
+    depends_on: [OPS-SQLITE-BACKUP-001]
     next: null

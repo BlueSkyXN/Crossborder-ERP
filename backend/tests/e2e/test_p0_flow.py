@@ -457,6 +457,92 @@ def _run_offline_remittance_flow(
     }
 
 
+def _run_payable_flow(*, admin_client: APIClient, run_id: str) -> dict:
+    supplier = _api_data(
+        admin_client.post(
+            "/api/v1/admin/suppliers",
+            {
+                "code": f"E2E-SUP-{run_id}",
+                "name": f"E2E {run_id} 供应商",
+                "contact_name": "E2E Contact",
+                "phone": "13800001111",
+                "email": f"payable-{run_id.lower()}@example.com",
+                "bank_account": "TODO_CONFIRM: E2E payable demo account",
+            },
+            format="json",
+        ),
+        expected_status=201,
+    )
+    assert supplier["status"] == "ACTIVE"
+
+    cost_type = _api_data(
+        admin_client.post(
+            "/api/v1/admin/cost-types",
+            {
+                "code": f"E2E-COST-{run_id}",
+                "name": f"E2E {run_id} 国际运费",
+                "category": "LOGISTICS",
+            },
+            format="json",
+        ),
+        expected_status=201,
+    )
+    assert cost_type["status"] == "ACTIVE"
+
+    payable = _api_data(
+        admin_client.post(
+            "/api/v1/admin/payables",
+            {
+                "supplier_id": supplier["id"],
+                "cost_type_id": cost_type["id"],
+                "amount": "123.45",
+                "currency": "CNY",
+                "source_type": "E2E",
+                "source_id": supplier["id"],
+                "description": "E2E 应付链路验证",
+                "due_date": "2026-05-31",
+            },
+            format="json",
+        ),
+        expected_status=201,
+    )
+    assert payable["payable_no"].startswith("AP")
+    assert payable["status"] == "PENDING_REVIEW"
+    assert payable["amount"] == "123.45"
+
+    confirmed = _api_data(admin_client.post(f"/api/v1/admin/payables/{payable['id']}/confirm", {}, format="json"))
+    assert confirmed["status"] == "CONFIRMED"
+    assert confirmed["confirmed_by_name"]
+
+    settled = _api_data(
+        admin_client.post(
+            f"/api/v1/admin/payables/{payable['id']}/settle",
+            {
+                "settlement_reference": f"E2E-SETTLE-{run_id}",
+                "settlement_note": "E2E manual settlement marker",
+            },
+            format="json",
+        )
+    )
+    assert settled["status"] == "SETTLED"
+    assert settled["settlement_reference"] == f"E2E-SETTLE-{run_id}"
+
+    repeat_settle = admin_client.post(
+        f"/api/v1/admin/payables/{payable['id']}/settle",
+        {"settlement_reference": f"E2E-SETTLE-REPEAT-{run_id}"},
+        format="json",
+    )
+    assert repeat_settle.status_code == 409
+    assert repeat_settle.json()["code"] == "STATE_CONFLICT"
+
+    return {
+        "payable_no": payable["payable_no"],
+        "supplier_code": supplier["code"],
+        "cost_type_code": cost_type["code"],
+        "status": settled["status"],
+    }
+
+
 def _run_forwarding_flow(
     *,
     admin_client: APIClient,
@@ -886,6 +972,7 @@ def test_p0_forwarding_and_purchase_e2e():
         member_client=member_client,
         run_id=run_id,
     )
+    payable_result = _run_payable_flow(admin_client=admin_client, run_id=run_id)
 
     print("[E2E-001] 主链路完成:", main_result)
     print("[SHIP-BATCH-001] 发货批次链路完成:", {"batch_no": main_result["batch_no"]})
@@ -895,6 +982,7 @@ def test_p0_forwarding_and_purchase_e2e():
     print("[MSG-001] 工单链路完成:", ticket_result)
     print("[MEMBER-001] 会员后台链路完成:", member_admin_result)
     print("[CONTENT-001] 内容 CMS 链路完成:", content_result)
+    print("[PAYABLE-001] 应付链路完成:", payable_result)
     assert main_result["status"] == "SIGNED"
     assert import_result["job_no"].startswith("IMP")
     assert unclaimed_result["status"] == "CLAIMED"
@@ -902,3 +990,4 @@ def test_p0_forwarding_and_purchase_e2e():
     assert ticket_result["status"] == "PROCESSING"
     assert member_admin_result["status"] == "ACTIVE"
     assert content_result["status"] == "HIDDEN"
+    assert payable_result["status"] == "SETTLED"

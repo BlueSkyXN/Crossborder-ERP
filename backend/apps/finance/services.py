@@ -12,11 +12,17 @@ from apps.members.models import User
 from apps.waybills.models import Waybill, WaybillStatus
 
 from .models import (
+    CostType,
+    CostTypeStatus,
+    Payable,
+    PayableStatus,
     PaymentBusinessType,
     PaymentOrder,
     PaymentOrderStatus,
     RechargeRequest,
     RechargeRequestStatus,
+    Supplier,
+    SupplierStatus,
     Wallet,
     WalletTransaction,
     WalletTransactionDirection,
@@ -33,6 +39,10 @@ class PaymentStateConflictError(Exception):
 
 
 class RechargeRequestStateConflictError(Exception):
+    pass
+
+
+class PayableStateConflictError(Exception):
     pass
 
 
@@ -53,13 +63,38 @@ def _build_recharge_request_no(request_id: int) -> str:
     return f"RCG{request_id:08d}"
 
 
+def _build_payable_no(payable_id: int) -> str:
+    return f"AP{payable_id:08d}"
+
+
 def _build_pending_recharge_request_no() -> str:
+    return f"PENDING-{uuid4().hex[:22]}"
+
+
+def _build_pending_payable_no() -> str:
     return f"PENDING-{uuid4().hex[:22]}"
 
 
 def _assert_positive_amount(amount: Decimal, field: str = "amount") -> None:
     if amount <= Decimal("0.00"):
         raise exceptions.ValidationError({field: ["金额必须大于 0"]})
+
+
+def _normalize_code(value: str, field: str = "code") -> str:
+    normalized = (value or "").strip().upper()
+    if not normalized:
+        raise exceptions.ValidationError({field: ["编码不能为空"]})
+    return normalized
+
+
+def _assert_active_supplier(supplier: Supplier) -> None:
+    if supplier.status != SupplierStatus.ACTIVE:
+        raise exceptions.ValidationError({"supplier_id": ["供应商已停用"]})
+
+
+def _assert_active_cost_type(cost_type: CostType) -> None:
+    if cost_type.status != CostTypeStatus.ACTIVE:
+        raise exceptions.ValidationError({"cost_type_id": ["成本类型已停用"]})
 
 
 def get_or_create_wallet(user: User, currency: str = "CNY") -> Wallet:
@@ -89,6 +124,271 @@ def _assert_member_remittance_proof(*, user: User, proof_file_id: str) -> Stored
     ):
         raise exceptions.ValidationError({"proof_file_id": ["汇款凭证无效"]})
     return stored_file
+
+
+@transaction.atomic
+def create_supplier(
+    *,
+    code: str,
+    name: str,
+    status: str = SupplierStatus.ACTIVE,
+    contact_name: str = "",
+    phone: str = "",
+    email: str = "",
+    address: str = "",
+    bank_account: str = "",
+    remark: str = "",
+) -> Supplier:
+    normalized_code = _normalize_code(code)
+    if not name.strip():
+        raise exceptions.ValidationError({"name": ["供应商名称不能为空"]})
+    return Supplier.objects.create(
+        code=normalized_code,
+        name=name.strip(),
+        status=status,
+        contact_name=contact_name.strip(),
+        phone=phone.strip(),
+        email=email.strip(),
+        address=address.strip(),
+        bank_account=bank_account.strip(),
+        remark=remark.strip(),
+    )
+
+
+@transaction.atomic
+def update_supplier(
+    *,
+    supplier: Supplier,
+    code: str,
+    name: str,
+    status: str = SupplierStatus.ACTIVE,
+    contact_name: str = "",
+    phone: str = "",
+    email: str = "",
+    address: str = "",
+    bank_account: str = "",
+    remark: str = "",
+) -> Supplier:
+    locked = Supplier.objects.select_for_update().get(id=supplier.id)
+    normalized_code = _normalize_code(code)
+    if not name.strip():
+        raise exceptions.ValidationError({"name": ["供应商名称不能为空"]})
+    locked.code = normalized_code
+    locked.name = name.strip()
+    locked.status = status
+    locked.contact_name = contact_name.strip()
+    locked.phone = phone.strip()
+    locked.email = email.strip()
+    locked.address = address.strip()
+    locked.bank_account = bank_account.strip()
+    locked.remark = remark.strip()
+    locked.save(
+        update_fields=[
+            "code",
+            "name",
+            "status",
+            "contact_name",
+            "phone",
+            "email",
+            "address",
+            "bank_account",
+            "remark",
+            "updated_at",
+        ]
+    )
+    return locked
+
+
+@transaction.atomic
+def create_cost_type(
+    *,
+    code: str,
+    name: str,
+    category: str = "",
+    status: str = CostTypeStatus.ACTIVE,
+    remark: str = "",
+) -> CostType:
+    normalized_code = _normalize_code(code)
+    if not name.strip():
+        raise exceptions.ValidationError({"name": ["成本类型名称不能为空"]})
+    return CostType.objects.create(
+        code=normalized_code,
+        name=name.strip(),
+        category=category.strip(),
+        status=status,
+        remark=remark.strip(),
+    )
+
+
+@transaction.atomic
+def update_cost_type(
+    *,
+    cost_type: CostType,
+    code: str,
+    name: str,
+    category: str = "",
+    status: str = CostTypeStatus.ACTIVE,
+    remark: str = "",
+) -> CostType:
+    locked = CostType.objects.select_for_update().get(id=cost_type.id)
+    normalized_code = _normalize_code(code)
+    if not name.strip():
+        raise exceptions.ValidationError({"name": ["成本类型名称不能为空"]})
+    locked.code = normalized_code
+    locked.name = name.strip()
+    locked.category = category.strip()
+    locked.status = status
+    locked.remark = remark.strip()
+    locked.save(update_fields=["code", "name", "category", "status", "remark", "updated_at"])
+    return locked
+
+
+def payable_queryset():
+    return Payable.objects.select_related(
+        "supplier",
+        "cost_type",
+        "created_by",
+        "confirmed_by",
+        "settled_by",
+        "cancelled_by",
+    )
+
+
+@transaction.atomic
+def create_payable(
+    *,
+    operator: AdminUser,
+    supplier: Supplier,
+    cost_type: CostType,
+    amount: Decimal,
+    currency: str = "CNY",
+    source_type: str = "",
+    source_id: int | None = None,
+    description: str = "",
+    due_date=None,
+) -> Payable:
+    _assert_positive_amount(amount)
+    _assert_active_supplier(supplier)
+    _assert_active_cost_type(cost_type)
+    payable = Payable.objects.create(
+        payable_no=_build_pending_payable_no(),
+        supplier=supplier,
+        cost_type=cost_type,
+        status=PayableStatus.PENDING_REVIEW,
+        amount=amount,
+        currency=currency,
+        source_type=source_type.strip(),
+        source_id=source_id,
+        description=description.strip(),
+        due_date=due_date,
+        created_by=operator,
+    )
+    payable.payable_no = _build_payable_no(payable.id)
+    payable.save(update_fields=["payable_no", "updated_at"])
+    return payable_queryset().get(id=payable.id)
+
+
+@transaction.atomic
+def update_payable(
+    *,
+    payable: Payable,
+    supplier: Supplier,
+    cost_type: CostType,
+    amount: Decimal,
+    currency: str = "CNY",
+    source_type: str = "",
+    source_id: int | None = None,
+    description: str = "",
+    due_date=None,
+) -> Payable:
+    _assert_positive_amount(amount)
+    _assert_active_supplier(supplier)
+    _assert_active_cost_type(cost_type)
+    locked = Payable.objects.select_for_update().get(id=payable.id)
+    if locked.status != PayableStatus.PENDING_REVIEW:
+        raise PayableStateConflictError("应付款当前状态不允许修改")
+    locked.supplier = supplier
+    locked.cost_type = cost_type
+    locked.amount = amount
+    locked.currency = currency
+    locked.source_type = source_type.strip()
+    locked.source_id = source_id
+    locked.description = description.strip()
+    locked.due_date = due_date
+    locked.save(
+        update_fields=[
+            "supplier",
+            "cost_type",
+            "amount",
+            "currency",
+            "source_type",
+            "source_id",
+            "description",
+            "due_date",
+            "updated_at",
+        ]
+    )
+    return payable_queryset().get(id=locked.id)
+
+
+@transaction.atomic
+def confirm_payable(*, payable: Payable, operator: AdminUser) -> Payable:
+    locked = Payable.objects.select_for_update().get(id=payable.id)
+    if locked.status == PayableStatus.CONFIRMED:
+        return payable_queryset().get(id=locked.id)
+    if locked.status != PayableStatus.PENDING_REVIEW:
+        raise PayableStateConflictError("应付款当前状态不允许确认")
+    locked.status = PayableStatus.CONFIRMED
+    locked.confirmed_by = operator
+    locked.confirmed_at = timezone.now()
+    locked.save(update_fields=["status", "confirmed_by", "confirmed_at", "updated_at"])
+    return payable_queryset().get(id=locked.id)
+
+
+@transaction.atomic
+def settle_payable(
+    *,
+    payable: Payable,
+    operator: AdminUser,
+    settlement_reference: str = "",
+    settlement_note: str = "",
+) -> Payable:
+    locked = Payable.objects.select_for_update().get(id=payable.id)
+    if locked.status == PayableStatus.SETTLED:
+        raise PayableStateConflictError("应付款已核销，不能重复核销")
+    if locked.status != PayableStatus.CONFIRMED:
+        raise PayableStateConflictError("应付款需要确认后才能核销")
+    locked.status = PayableStatus.SETTLED
+    locked.settled_by = operator
+    locked.settled_at = timezone.now()
+    locked.settlement_reference = settlement_reference.strip()
+    locked.settlement_note = settlement_note.strip()
+    locked.save(
+        update_fields=[
+            "status",
+            "settled_by",
+            "settled_at",
+            "settlement_reference",
+            "settlement_note",
+            "updated_at",
+        ]
+    )
+    return payable_queryset().get(id=locked.id)
+
+
+@transaction.atomic
+def cancel_payable(*, payable: Payable, operator: AdminUser, cancel_reason: str = "") -> Payable:
+    locked = Payable.objects.select_for_update().get(id=payable.id)
+    if locked.status == PayableStatus.CANCELLED:
+        return payable_queryset().get(id=locked.id)
+    if locked.status == PayableStatus.SETTLED:
+        raise PayableStateConflictError("已核销应付款不允许取消")
+    locked.status = PayableStatus.CANCELLED
+    locked.cancelled_by = operator
+    locked.cancelled_at = timezone.now()
+    locked.cancel_reason = cancel_reason.strip()
+    locked.save(update_fields=["status", "cancelled_by", "cancelled_at", "cancel_reason", "updated_at"])
+    return payable_queryset().get(id=locked.id)
 
 
 @transaction.atomic

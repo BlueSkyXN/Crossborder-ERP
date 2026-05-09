@@ -7,8 +7,8 @@
 ## 当前状态
 
 - 项目阶段：`P6_PRODUCTION_GAP`
-- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`QA-BROWSER-001` 三端浏览器 smoke、`SHIP-BATCH-001` 发货批次/转单/打印模板数据
-- 下一任务：`PAYABLE-001` 供应商/成本/应付基础
+- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`QA-BROWSER-001` 三端浏览器 smoke、`SHIP-BATCH-001` 发货批次/转单/打印模板数据、`PAYABLE-001` 供应商/成本/应付基础
+- 下一任务：`GROWTH-001` 积分/推广/返利基础
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`
@@ -173,6 +173,7 @@ npm run e2e
 - 后台创建内容草稿，发布后用户端可读取帮助/公告/条款，隐藏后公开接口不可再读取。
 - 用户上传 CSV 批量导入包裹预报，并验证用户/后台 CSV 导出。
 - 主链路发货阶段会覆盖发货批次、转单号、承运商批次号、打印模板数据和批量发货幂等性。
+- 后台创建供应商、成本类型和应付款，完成待审核、确认、核销状态流，并验证重复核销返回状态冲突。
 
 如需浏览器手工复现三端界面，先启动后端和三端前端：
 
@@ -206,7 +207,7 @@ npm run e2e:browser
 - 使用系统 Chrome/Chromium；如系统路径不可发现，可设置 `BROWSER_E2E_CHROME`。
 - 在 `.tmp/browser-e2e/` 下创建临时 SQLite、media、日志和 Chrome profile。
 - 自动启动后端、Admin Web、User Web、Mobile H5 的测试服务。
-- 通过 Chrome DevTools Protocol 覆盖 Admin Web、User Web、Mobile H5 登录和关键页面 smoke。
+- 通过 Chrome DevTools Protocol 覆盖 Admin Web、User Web、Mobile H5 登录和关键页面 smoke；Admin Web 额外覆盖财务应付款入口。
 - 检查浏览器 console error/warning、runtime exception 和 `>=400` network response。
 - 退出时清理临时 profile、数据库、media、日志和测试进程，不使用用户日常 Chrome profile。
 
@@ -235,6 +236,7 @@ npm run e2e:browser
 ## 已知边界
 
 - 真实在线支付、支付回调、退款和对账不在 P0 范围；当前支持后台人工充值、用户线下汇款提交、财务人工审核入账和余额支付。
+- 供应商、成本类型和应付基础已完成；真实银行付款、自动打款、外部财务系统同步、供应商结算规则和付款审批流仍未接入。
 - 自动采购、商品链接解析、外部电商抓取不在 P0 范围；当前支持自营商品和手工代购。
 - PostgreSQL/MySQL/Redis/Celery/Docker 均未真实验证，不能作为生产可用结论。
 - 本地文件上传、元数据、鉴权下载、包裹图片、线下汇款凭证和消息附件引用已完成；对象存储、缩略图、文件安全扫描和真实打印硬件接入后续补齐。

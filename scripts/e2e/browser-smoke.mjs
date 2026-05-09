@@ -308,9 +308,13 @@ async function runAdmin(debugPort) {
   await navigate(page, `${ADMIN_URL}/waybills`, "运单处理");
   await waitForText(page, "发货批次");
   await waitForText(page, "创建批次");
+  await navigate(page, `${ADMIN_URL}/finance`, "财务管理");
+  await waitForText(page, "应付款");
+  await waitForText(page, "供应商");
+  await waitForText(page, "新建应付款");
   assertNoIssues("Admin Web", page.issues);
   page.cdp.close();
-  console.log("[QA-BROWSER-001] Admin Web login, parcels, and shipping batch smoke passed");
+  console.log("[QA-BROWSER-001] Admin Web login, parcels, shipping batch, and finance payable smoke passed");
 }
 
 async function runUser(debugPort) {

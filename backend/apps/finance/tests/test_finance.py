@@ -6,10 +6,16 @@ from django.urls import reverse
 
 from apps.files.models import FileUsage
 from apps.finance.models import (
+    CostType,
+    CostTypeStatus,
+    Payable,
+    PayableStatus,
     PaymentOrder,
     PaymentOrderStatus,
     RechargeRequest,
     RechargeRequestStatus,
+    Supplier,
+    SupplierStatus,
     Wallet,
     WalletTransaction,
     WalletTransactionType,
@@ -400,3 +406,166 @@ def test_admin_payment_order_list(client, seeded_finance):
     assert len(items) == 1
     assert items[0]["business_id"] == waybill.id
     assert items[0]["status"] == PaymentOrderStatus.PAID
+
+
+def test_admin_supplier_cost_type_and_payable_lifecycle(client, seeded_finance):
+    token = admin_token(client)
+    supplier_response = client.post(
+        reverse("admin-supplier-list"),
+        {
+            "code": "sf-express",
+            "name": "顺丰测试供应商",
+            "contact_name": "张三",
+            "phone": "13800001111",
+            "email": "supplier@example.com",
+            "bank_account": "TODO_CONFIRM: demo bank account",
+        },
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert supplier_response.status_code == 201
+    supplier = supplier_response.json()["data"]
+    assert supplier["code"] == "SF-EXPRESS"
+    assert supplier["status"] == SupplierStatus.ACTIVE
+
+    cost_type_response = client.post(
+        reverse("admin-cost-type-list"),
+        {"code": "international-freight", "name": "国际运费", "category": "LOGISTICS"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert cost_type_response.status_code == 201
+    cost_type = cost_type_response.json()["data"]
+    assert cost_type["code"] == "INTERNATIONAL-FREIGHT"
+    assert cost_type["status"] == CostTypeStatus.ACTIVE
+
+    payable_response = client.post(
+        reverse("admin-payable-list"),
+        {
+            "supplier_id": supplier["id"],
+            "cost_type_id": cost_type["id"],
+            "amount": "123.45",
+            "currency": "CNY",
+            "source_type": "WAYBILL_BATCH",
+            "source_id": 1,
+            "description": "批次国际运费",
+            "due_date": "2026-05-31",
+        },
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert payable_response.status_code == 201
+    payable = payable_response.json()["data"]
+    assert payable["payable_no"].startswith("AP")
+    assert payable["supplier_name"] == "顺丰测试供应商"
+    assert payable["cost_type_name"] == "国际运费"
+    assert payable["status"] == PayableStatus.PENDING_REVIEW
+    assert payable["amount"] == "123.45"
+    assert payable["due_date"] == "2026-05-31"
+
+    confirm_response = client.post(
+        reverse("admin-payable-confirm", kwargs={"payable_id": payable["id"]}),
+        {},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert confirm_response.status_code == 200
+    assert confirm_response.json()["data"]["status"] == PayableStatus.CONFIRMED
+    assert confirm_response.json()["data"]["confirmed_by_name"] == "财务人员"
+
+    settle_response = client.post(
+        reverse("admin-payable-settle", kwargs={"payable_id": payable["id"]}),
+        {"settlement_reference": "BANK-AP-001", "settlement_note": "人工核销"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert settle_response.status_code == 200
+    settled = settle_response.json()["data"]
+    assert settled["status"] == PayableStatus.SETTLED
+    assert settled["settlement_reference"] == "BANK-AP-001"
+    assert settled["settled_by_name"] == "财务人员"
+    assert Payable.objects.get(id=payable["id"]).amount == Decimal("123.45")
+    assert WalletTransaction.objects.count() == 0
+
+
+def test_payable_settle_rejects_repeat_and_unconfirmed(client, seeded_finance):
+    token = admin_token(client)
+    supplier = Supplier.objects.create(code="SUP-REPEAT", name="重复核销供应商")
+    cost_type = CostType.objects.create(code="COST-REPEAT", name="重复核销成本")
+    pending = client.post(
+        reverse("admin-payable-list"),
+        {"supplier_id": supplier.id, "cost_type_id": cost_type.id, "amount": "10.00"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    ).json()["data"]
+
+    settle_pending = client.post(
+        reverse("admin-payable-settle", kwargs={"payable_id": pending["id"]}),
+        {"settlement_reference": "BANK-PENDING"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert settle_pending.status_code == 409
+    assert settle_pending.json()["code"] == "STATE_CONFLICT"
+
+    client.post(
+        reverse("admin-payable-confirm", kwargs={"payable_id": pending["id"]}),
+        {},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    first_settle = client.post(
+        reverse("admin-payable-settle", kwargs={"payable_id": pending["id"]}),
+        {"settlement_reference": "BANK-ONCE"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    repeat_settle = client.post(
+        reverse("admin-payable-settle", kwargs={"payable_id": pending["id"]}),
+        {"settlement_reference": "BANK-TWICE"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert first_settle.status_code == 200
+    assert repeat_settle.status_code == 409
+    assert repeat_settle.json()["code"] == "STATE_CONFLICT"
+    assert Payable.objects.get(id=pending["id"]).settlement_reference == "BANK-ONCE"
+
+
+def test_payable_blocks_disabled_master_data_and_requires_finance_permission(client, seeded_finance):
+    finance_token = admin_token(client)
+    warehouse_token = admin_token(client, email="warehouse@example.com")
+    disabled_supplier = Supplier.objects.create(
+        code="SUP-DISABLED",
+        name="停用供应商",
+        status=SupplierStatus.DISABLED,
+    )
+    disabled_cost_type = CostType.objects.create(
+        code="COST-DISABLED",
+        name="停用成本",
+        status=CostTypeStatus.DISABLED,
+    )
+    active_supplier = Supplier.objects.create(code="SUP-ACTIVE", name="启用供应商")
+    active_cost_type = CostType.objects.create(code="COST-ACTIVE", name="启用成本")
+
+    no_permission = client.get(reverse("admin-payable-list"), HTTP_AUTHORIZATION=f"Bearer {warehouse_token}")
+    assert no_permission.status_code == 403
+
+    blocked_supplier = client.post(
+        reverse("admin-payable-list"),
+        {"supplier_id": disabled_supplier.id, "cost_type_id": active_cost_type.id, "amount": "20.00"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {finance_token}",
+    )
+    blocked_cost_type = client.post(
+        reverse("admin-payable-list"),
+        {"supplier_id": active_supplier.id, "cost_type_id": disabled_cost_type.id, "amount": "20.00"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {finance_token}",
+    )
+
+    assert blocked_supplier.status_code == 400
+    assert blocked_supplier.json()["code"] == "VALIDATION_ERROR"
+    assert blocked_cost_type.status_code == 400
+    assert blocked_cost_type.json()["code"] == "VALIDATION_ERROR"

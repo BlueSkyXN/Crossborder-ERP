@@ -7,7 +7,9 @@ import { LoginPage } from "../pages/LoginPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { AuditLogPage } from "../features/audit/AuditLogPage";
 import { adminRouteMeta } from "../features/auth/menu";
+import { RolePermissionPage } from "../features/auth/RolePermissionPage";
 import { ContentCmsPage } from "../features/content/ContentCmsPage";
+import { AdminDashboardPage } from "../features/dashboard/AdminDashboardPage";
 import { FinancePage } from "../features/finance/FinancePage";
 import { MemberOpsPage } from "../features/members/MemberOpsPage";
 import { ParcelWmsPage } from "../features/parcels/ParcelWmsPage";
@@ -33,7 +35,9 @@ export const router = createBrowserRouter([
           ...adminRouteMeta.map((route) => ({
             path: route.path.slice(1),
             element:
-              route.resource === "warehouses" ? (
+              route.resource === "dashboard" ? (
+                <AdminDashboardPage />
+              ) : route.resource === "warehouses" ? (
                 <WarehouseConfigPage />
               ) : route.resource === "members" ? (
                 <MemberOpsPage />
@@ -53,6 +57,8 @@ export const router = createBrowserRouter([
                 <ContentCmsPage />
               ) : route.resource === "audit" ? (
                 <AuditLogPage />
+              ) : route.resource === "roles" ? (
+                <RolePermissionPage />
               ) : (
                 <WorkspacePage route={route} />
               ),

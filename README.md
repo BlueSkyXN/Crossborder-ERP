@@ -7,7 +7,7 @@
 ## 当前状态
 
 - 项目阶段：`P6_PRODUCTION_GAP`
-- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`IMPORT-XLSX-001` Excel `.xlsx` 批量预报解析、`QA-BROWSER-001` 三端浏览器 smoke、`QA-BROWSER-002` 浏览器真实包裹预报/入库旅程、`SHIP-BATCH-001` 发货批次/转单/打印模板数据、`PAYABLE-001` 供应商/成本/应付基础、`GROWTH-001` 积分/推广/返利基础、`AUDITLOG-001` 后台操作审计日志、`AUDIT-RETENTION-001` 审计日志导出与本地留存命令、`SECURITY-HEADERS-001` 基础安全响应头、`OPS-READINESS-001` 运维 readiness 检查、`OPS-SQLITE-BACKUP-001` SQLite 本地备份命令、`STORAGE-CLEANUP-001` 本地软删除文件清理命令、`PURCHASE-AUTO-001` 外部商品链接解析入口、`ACCOUNT-SETTINGS-001` 会员注册与账户设置闭环
+- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`IMPORT-XLSX-001` Excel `.xlsx` 批量预报解析、`QA-BROWSER-001` 三端浏览器 smoke、`QA-BROWSER-002` 浏览器真实包裹预报/入库旅程、`SHIP-BATCH-001` 发货批次/转单/打印模板数据、`PAYABLE-001` 供应商/成本/应付基础、`GROWTH-001` 积分/推广/返利基础、`AUDITLOG-001` 后台操作审计日志、`AUDIT-RETENTION-001` 审计日志导出与本地留存命令、`SECURITY-HEADERS-001` 基础安全响应头、`OPS-READINESS-001` 运维 readiness 检查、`OPS-SQLITE-BACKUP-001` SQLite 本地备份命令、`STORAGE-CLEANUP-001` 本地软删除文件清理命令、`PURCHASE-AUTO-001` 外部商品链接解析入口、`ACCOUNT-SETTINGS-001` 会员注册与账户设置闭环、`ADMIN-PANELS-001` 后台 dashboard/roles 真实面板
 - 下一任务：任务图暂无自动下一项；后续建议按生产化边界、需要业务确认的外部集成，以及更深浏览器/视觉/组件测试单独开任务
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
@@ -269,5 +269,6 @@ npm run e2e:browser
 - 无主包裹认领已支持脱敏列表、用户认领和后台人工审核；认领凭证规则、争议处理和通知外呼仍需业务确认。
 - 内容 CMS 已支持后台分类/内容、发布/隐藏和三端公开展示；正式服务条款、隐私政策和帮助文案仍需业务/法务确认。
 - 会员注册、账户资料设置和自助改密码已完成；短信/邮件验证码、找回密码、微信登录、多语言和复杂运费公式等保留 `TODO_CONFIRM`。
+- 后台 `/dashboard` 和 `/roles` 已使用真实接口与真实角色数据；角色编辑、权限分配和 create/update/delete 细粒度 RBAC 仍属后续增强。
 - 后台关键写操作审计日志已完成基础覆盖，并支持 CSV 导出和显式本地留存清理命令；更细粒度 RBAC create/update/delete 拆分、外部 SIEM 和自动告警仍属后续生产化增强。
 - 浏览器级 smoke 已覆盖三端登录、关键页面基础可用性和一条包裹预报/入库/回看旅程；视觉回归、组件级测试和更大范围业务旅程仍需后续增强。

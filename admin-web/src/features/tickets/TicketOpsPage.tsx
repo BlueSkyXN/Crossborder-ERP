@@ -251,7 +251,7 @@ export function TicketOpsPage() {
   const closedCount = tickets.filter((ticket) => ticket.status === "CLOSED").length;
 
   return (
-    <Space direction="vertical" size={16} style={{ width: "100%" }}>
+    <Space orientation="vertical" size={16} style={{ width: "100%" }}>
       <Row gutter={[16, 16]}>
         <Col xs={24} md={8}>
           <Card>
@@ -308,14 +308,14 @@ export function TicketOpsPage() {
       </Card>
 
       <Drawer
-        width={720}
+        size="large"
         title={selectedTicket ? `${selectedTicket.ticket_no} / ${selectedTicket.title}` : "工单处理"}
         open={Boolean(selectedTicket)}
         onClose={() => setSelectedTicketId(null)}
         destroyOnHidden
       >
         {selectedTicket && (
-          <Space direction="vertical" size={16} style={{ width: "100%" }}>
+          <Space orientation="vertical" size={16} style={{ width: "100%" }}>
             <Descriptions size="small" column={2} bordered>
               <Descriptions.Item label="会员">{selectedTicket.user_email}</Descriptions.Item>
               <Descriptions.Item label="类型">{typeMeta[selectedTicket.type]}</Descriptions.Item>
@@ -330,7 +330,7 @@ export function TicketOpsPage() {
                 items={selectedTicket.messages.map((item) => ({
                   color: item.sender_type === "ADMIN" ? "blue" : "green",
                   children: (
-                    <Space direction="vertical" size={4}>
+                    <Space orientation="vertical" size={4}>
                       <Space wrap>
                         <Tag color={item.sender_type === "ADMIN" ? "blue" : "green"}>
                           {item.sender_type === "ADMIN" ? "客服" : "会员"}

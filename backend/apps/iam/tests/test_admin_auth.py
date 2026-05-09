@@ -71,6 +71,51 @@ def test_super_admin_can_list_roles(client, seeded_iam):
     }
 
 
+def test_dashboard_requires_admin_token(client, seeded_iam):
+    response = client.get(reverse("admin-dashboard"))
+
+    assert response.status_code == 401
+    assert response.json()["code"] == "UNAUTHORIZED"
+
+
+def test_super_admin_dashboard_uses_real_snapshot(client, seeded_iam):
+    login_response = admin_login(client)
+    token = login_response.json()["data"]["access_token"]
+
+    response = client.get(reverse("admin-dashboard"), HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["code"] == "OK"
+    data = body["data"]
+    assert data["generated_at"]
+    assert {card["key"] for card in data["summary_cards"]} >= {
+        "members",
+        "warehouse_config",
+        "parcel_wms",
+        "waybills",
+        "finance",
+        "purchases",
+        "products",
+        "tickets",
+    }
+    assert any(module["key"] == "audit" for module in data["modules"])
+    assert all("path" in item and "value" in item for item in data["work_queue"])
+
+
+def test_dashboard_respects_role_visibility(client, seeded_iam):
+    login_response = admin_login(client, email="warehouse@example.com")
+    token = login_response.json()["data"]["access_token"]
+
+    response = client.get(reverse("admin-dashboard"), HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert {card["key"] for card in data["summary_cards"]} == {"parcel_wms", "waybills"}
+    assert {module["key"] for module in data["modules"]} == {"parcel_wms", "waybills"}
+    assert all(item["path"] in {"/parcels", "/waybills"} for item in data["work_queue"])
+
+
 def test_seed_creates_required_demo_admins(seeded_iam):
     assert AdminUser.objects.filter(email="admin@example.com", is_super_admin=True).exists()
     assert AdminUser.objects.filter(email="warehouse@example.com").exists()

@@ -1,5 +1,5 @@
 import { requestData } from "../../api/client";
-import type { AdminMenuItem, AdminUser, LoginPayload, LoginResult } from "./types";
+import type { AdminMenuItem, AdminUser, LoginPayload, LoginResult, Role } from "./types";
 
 export function loginAdmin(payload: LoginPayload) {
   return requestData<LoginResult>({
@@ -21,4 +21,11 @@ export function fetchAdminMenus() {
     method: "GET",
     url: "/admin/menus",
   });
+}
+
+export function fetchAdminRoles() {
+  return requestData<{ items: Role[] }>({
+    method: "GET",
+    url: "/admin/roles",
+  }).then((result) => result.items);
 }

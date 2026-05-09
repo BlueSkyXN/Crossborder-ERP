@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from apps.common.responses import success_response
 
 from .authentication import AdminTokenAuthentication
+from .dashboard import build_admin_dashboard_snapshot
 from .models import Role
 from .permissions import HasAdminPermission, IsAdminAuthenticated
 from .serializers import AdminLoginSerializer, AdminUserSerializer, RoleSerializer
@@ -51,6 +52,16 @@ class AdminMenusView(APIView):
     @extend_schema(tags=["admin-auth"], responses={200: OpenApiResponse(description="Menus")})
     def get(self, request):
         return success_response({"items": get_admin_menus(request.user)})
+
+
+class AdminDashboardView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "dashboard.view"
+
+    @extend_schema(tags=["admin-dashboard"], responses={200: OpenApiResponse(description="Admin dashboard snapshot")})
+    def get(self, request):
+        return success_response(build_admin_dashboard_snapshot(request.user))
 
 
 class AdminRolesView(APIView):

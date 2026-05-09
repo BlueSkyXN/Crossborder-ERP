@@ -258,4 +258,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/ACCOUNT-SETTINGS-001.md
     depends_on: [PURCHASE-AUTO-001]
+    next: ADMIN-PANELS-001
+  - id: ADMIN-PANELS-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/ADMIN-PANELS-001.md
+    depends_on: [ACCOUNT-SETTINGS-001]
     next: null

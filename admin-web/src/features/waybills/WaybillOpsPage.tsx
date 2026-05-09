@@ -875,7 +875,7 @@ export function WaybillOpsPage() {
       <Drawer
         title={detailWaybill ? `${detailWaybill.waybill_no} 详情` : "运单详情"}
         open={Boolean(detailWaybillId)}
-        size={920}
+        size="large"
         destroyOnHidden
         onClose={() => setDetailWaybillId(null)}
         extra={detailWaybill ? renderActionButtons(detailWaybill) : null}
@@ -1031,7 +1031,7 @@ export function WaybillOpsPage() {
       <Drawer
         title={detailBatch ? `${detailBatch.batch_no} 详情` : "发货批次详情"}
         open={Boolean(detailBatchId)}
-        size={980}
+        size="large"
         destroyOnHidden
         onClose={() => setDetailBatchId(null)}
         extra={

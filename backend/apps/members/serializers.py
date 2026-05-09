@@ -67,6 +67,16 @@ class UpdateProfileSerializer(serializers.Serializer):
     phone = serializers.CharField(required=False, allow_blank=True)
 
 
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(trim_whitespace=False)
+    new_password = serializers.CharField(min_length=8, trim_whitespace=False)
+
+    def validate(self, attrs):
+        if attrs["current_password"] == attrs["new_password"]:
+            raise serializers.ValidationError({"new_password": ["新密码不能与当前密码相同"]})
+        return attrs
+
+
 class AdminMemberServiceSummarySerializer(serializers.Serializer):
     ticket_count = serializers.IntegerField()
     open_ticket_count = serializers.IntegerField()

@@ -9,6 +9,7 @@ import {
   LogoutOutlined,
   MessageOutlined,
   ReloadOutlined,
+  SettingOutlined,
   ShoppingCartOutlined,
   TruckOutlined,
   WalletOutlined,
@@ -200,6 +201,10 @@ export function DashboardPage() {
             <button type="button" onClick={() => navigate("/products")}>
               <ShoppingCartOutlined />
               商品代购
+            </button>
+            <button type="button" onClick={() => navigate("/settings")}>
+              <SettingOutlined />
+              账户设置
             </button>
           </div>
         </div>

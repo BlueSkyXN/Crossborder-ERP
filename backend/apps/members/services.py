@@ -326,15 +326,26 @@ def login_user(email: str, password: str) -> MemberLoginResult:
     return MemberLoginResult(user=user, access_token=issue_member_access_token(user))
 
 
-def update_member_profile(user: User, *, display_name: str = "", phone: str = "") -> User:
-    if display_name != "":
+def update_member_profile(user: User, *, display_name: str | None = None, phone: str | None = None) -> User:
+    if display_name is not None:
         user.profile.display_name = display_name
         user.profile.save(update_fields=["display_name", "updated_at"])
-    if phone != "":
+    if phone is not None:
         user.phone = phone
         user.save(update_fields=["phone", "updated_at"])
     user.refresh_from_db()
     return user
+
+
+def change_member_password(user: User, *, current_password: str, new_password: str) -> User:
+    locked = User.objects.select_for_update().select_related("profile").get(id=user.id)
+    if not check_password(current_password, locked.password_hash):
+        raise exceptions.ValidationError({"current_password": ["当前密码不正确"]})
+    if check_password(new_password, locked.password_hash):
+        raise exceptions.ValidationError({"new_password": ["新密码不能与当前密码相同"]})
+    locked.password_hash = make_password(new_password)
+    locked.save(update_fields=["password_hash", "updated_at"])
+    return locked
 
 
 def admin_member_queryset() -> QuerySet[User]:

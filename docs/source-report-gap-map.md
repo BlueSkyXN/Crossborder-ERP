@@ -10,7 +10,7 @@
 - Admin Web、User Web、Mobile H5 已覆盖登录、仓库地址、包裹预报、扫描入库、申请打包、审核计费、余额支付、发货轨迹、确认收货、商品/购物车/手工代购最小链路。
 - `npm run e2e` 已覆盖 API 级 P0 主流程，并已把线下汇款审核入账纳入主链路资金来源。
 
-但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 模板下载和批量预报解析；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础；`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础；`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础；`GROWTH-001` 已补齐积分流水、邀请关系、返利记录统计和三端入口基础；`AUDITLOG-001` 已补齐后台关键写操作审计日志和查询面板；`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令；`SECURITY-HEADERS-001` 已补齐基础应用安全响应头配置和测试；`OPS-READINESS-001` 已补齐默认数据库 readiness 检查；`OPS-SQLITE-BACKUP-001` 已补齐 SQLite-first 本地备份命令；`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令；`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口。剩余差距集中在真实生产部署/TLS/HSTS/监控/告警/远程备份/对象存储等运维边界、需要业务/合规确认的真实外部下单/支付/物流集成，以及视觉回归/组件级测试/更大范围浏览器流。
+但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹；`CONTENT-001` 已补齐内容 CMS、帮助公告和条款展示基础；`IMPORT-001` 已补齐 CSV 模板、批量预报导入、错误明细和基础导出；`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 模板下载和批量预报解析；`QA-BROWSER-001` 已补齐不下载浏览器、不使用用户 profile 的三端浏览器 smoke 基础；`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础；`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础；`GROWTH-001` 已补齐积分流水、邀请关系、返利记录统计和三端入口基础；`AUDITLOG-001` 已补齐后台关键写操作审计日志和查询面板；`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令；`SECURITY-HEADERS-001` 已补齐基础应用安全响应头配置和测试；`OPS-READINESS-001` 已补齐默认数据库 readiness 检查；`OPS-SQLITE-BACKUP-001` 已补齐 SQLite-first 本地备份命令；`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令；`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口；`ACCOUNT-SETTINGS-001` 已补齐前台注册、账户设置和会员自助改密码基础。剩余差距集中在真实生产部署/TLS/HSTS/监控/告警/远程备份/对象存储等运维边界、需要业务/合规确认的真实外部下单/支付/物流集成，以及视觉回归/组件级测试/更大范围浏览器流。
 
 ## Source Scope
 
@@ -31,14 +31,14 @@
 | --- | --- | --- |
 | 后台 MVP 范围 | ChatGPT Admin L924-L936 要求后台基础框架、通用列表、基础配置、会员、商品、代购、包裹仓储、运单、批次发货、财务核心、内容基础 | 部分完成；会员后台、线下汇款、内容基础和发货批次已补 |
 | 后台后端服务 | ChatGPT Admin L1005-L1023 要求 RBAC、文件、会员、消息、包裹、运单、批次、转单、财务应收/应付、内容、打印、操作日志 | 部分完成；文件、消息、内容、批次、转单、打印模板数据、应付基础和审计日志基础已补 |
-| 用户 Web MVP | ChatGPT User Web L773-L789 要求用户账户、控制台、仓库地址、商品、购物车、订单、代购、包裹、运单、支付、财务、地址、消息 | 部分完成；地址簿、文件上传、独立财务页和消息工单已补，真实在线充值未完成 |
+| 用户 Web MVP | ChatGPT User Web L773-L789 要求用户账户、控制台、仓库地址、商品、购物车、订单、代购、包裹、运单、支付、财务、地址、消息 | 部分完成；地址簿、文件上传、独立财务页、消息工单、注册入口和账户设置已补，真实在线充值未完成 |
 | 用户 Web 第二阶段 | ChatGPT User Web L795-L803 要求批量导入、直邮、无主包裹、线下汇款、推广返利、积分、物流对接、帮助中心 | 线下汇款、无主包裹认领、帮助中心、CSV / `.xlsx` 批量预报导入、积分/推广/返利基础已补；物流对接仍后续 |
 | 用户 Web 后端任务 | ChatGPT User Web L879-L902 要求账户、仓库、商品、购物车、订单、代购、包裹、运单、支付、财务、汇款、积分、推广、地址、消息、无主、文件、审计 | P0 主链路、地址、文件、汇款、消息工单、无主用户认领、积分/推广基础和后台审计日志已完成 |
-| 移动端 MVP | ChatGPT Mobile L892-L907 要求五栏导航、登录、首页搜索、分类、商品详情、购物车、确认订单、集运地址、预报、包裹、打包、运单、追踪、我的、设置 | 部分完成；分类为复用页，地址、财务和消息入口已补，多语言等未完整 |
-| 移动端二阶段 | ChatGPT Mobile L913-L922 要求注册/找回、微信登录、代购订单列表、财务、地址、多语言、消息、客服、无主认领 | 财务、地址和消息工单已补；其余大多未完成 |
+| 移动端 MVP | ChatGPT Mobile L892-L907 要求五栏导航、登录、首页搜索、分类、商品详情、购物车、确认订单、集运地址、预报、包裹、打包、运单、追踪、我的、设置 | 部分完成；分类为复用页，地址、财务、消息入口和账户设置已补，多语言等未完整 |
+| 移动端二阶段 | ChatGPT Mobile L913-L922 要求注册/找回、微信登录、代购订单列表、财务、地址、多语言、消息、客服、无主认领 | 注册、代购订单列表、财务、地址、消息工单和无主认领已补；找回密码、微信登录和多语言仍需业务/通道确认 |
 | Gemini Admin 核心模块 | Gemini Admin L168-L175 明确 WMS、会员、商品、应收、应付、图片、网站管理、基础设置 | 应收/应付/商品/WMS/网站管理基础已补；生产图片增强仍缺 |
 | Gemini User Web 需求 | Gemini User Web L290-L303 明确 dashboard、商品、手工代购、预报、包裹、无主、运单、流水、充值、推广、地址、客服 | 部分完成；地址、流水、线下汇款、客服工单、无主用户认领和推广/积分基础已补 |
-| Gemini Mobile 需求 | Gemini Mobile L289-L303 明确登录、搜索、分类、商品、购物车、确认订单、仓库地址、包裹、追踪、无主、我的、设置 | 部分完成；地址、财务入口和客服工单已补，无主、多语言未完整 |
+| Gemini Mobile 需求 | Gemini Mobile L289-L303 明确登录、搜索、分类、商品、购物车、确认订单、仓库地址、包裹、追踪、无主、我的、设置 | 部分完成；地址、财务入口、客服工单、无主认领和设置已补，多语言未完整 |
 
 ## Current Implementation Inventory
 
@@ -54,8 +54,8 @@
 | Audit | 后台写操作请求级审计、财务高风险服务层审计、脱敏请求/响应数据、后台审计日志查询 API | `backend/apps/audit/models.py`；`backend/apps/audit/middleware.py` |
 | Products/Purchases | 商品分类、商品、SKU、购物车、代购订单、采购任务 | `backend/apps/products/models.py` L6-L78；`backend/apps/purchases/models.py` L6-L120 |
 | Admin Web routes | 控制台、会员、仓库、包裹、运单、财务、代购、商品、内容管理、角色权限入口 | `admin-web/src/features/auth/menu.tsx` |
-| User Web routes | dashboard、addresses、finance、tickets、content、parcels、unclaimed-parcels、waybills、products/cart/purchases | `user-web/src/routes/index.tsx` |
-| Mobile H5 routes | home/category、ship、forecast、parcels、unclaimed-parcels、packing、waybills、cart、me、content、addresses、finance、tickets、purchases/manual | `mobile-h5/src/routes/index.tsx` |
+| User Web routes | dashboard、addresses、finance、tickets、content、settings、parcels、unclaimed-parcels、waybills、products/cart/purchases | `user-web/src/routes/index.tsx` |
+| Mobile H5 routes | home/category、ship、forecast、parcels、unclaimed-parcels、packing、waybills、cart、me、settings、content、addresses、finance、tickets、purchases/manual | `mobile-h5/src/routes/index.tsx` |
 | CI | PR 和 main push 执行 backend check/OpenAPI/pytest、frontend lint/build、Browser Smoke | `.github/workflows/ci.yml` |
 | E2E | `npm run e2e` 调用 API 级 P0 pytest 流程；`npm run e2e:browser` 调用 system Chrome CDP 三端 smoke 和一条包裹预报/入库/回看业务旅程 | `package.json`；`scripts/e2e/` |
 | Security headers | 后端输出 `nosniff`、`Referrer-Policy`、`Cross-Origin-Opener-Policy`、`X-Frame-Options` 和 `Permissions-Policy`，HSTS/TLS 仍后续验证 | `backend/config/settings/base.py`；`backend/apps/common/tests/test_health.py` |
@@ -84,6 +84,7 @@
 | SQLite 本地备份 | 当前 SQLite-first 验收需要显式数据备份手段，避免只靠手工复制 `db.sqlite3` | `OPS-SQLITE-BACKUP-001` 已补 `backup_sqlite` 命令、dry-run、覆盖保护和边界测试；生产数据库/远程备份未验证 | `OPS-SQLITE-BACKUP-001` 已完成基础 |
 | 本地文件生命周期 | 本地 `MEDIA_ROOT` 需要显式清理软删除文件，避免只增不减 | `STORAGE-CLEANUP-001` 已补 `purge_deleted_files` 命令、dry-run、保留期、missing/unsafe 统计和路径保护；对象存储生命周期仍后续 | `STORAGE-CLEANUP-001` 已完成基础 |
 | 外链解析/自动采购 | User Web/Mobile 要求关键词/链接搜索，Admin 二阶段提到外部平台对接 | `PURCHASE-AUTO-001` 已补外部链接解析 provider、URL 规范化、商品 ID 提取和三端人工代购入口；真实第三方抓取、自动下单和外部订单同步仍未接 | `PURCHASE-AUTO-001` 已完成基础；真实自动采购需业务/合规确认 |
+| 账户注册和设置 | User Web/Mobile 均要求登录/注册、我的和账户设置 | `ACCOUNT-SETTINGS-001` 已补前台注册并自动登录、会员资料设置和自助改密码；短信/邮件验证码、找回密码和微信登录不接 | `ACCOUNT-SETTINGS-001` 已完成基础；外部通道需业务确认 |
 | 浏览器级 E2E | 源报告要求三端具备可实际操作产品形态；API E2E 不能发现真实浏览器运行时问题 | `QA-BROWSER-001` 已补 system Chrome CDP smoke，覆盖 Admin Web/User Web/Mobile H5 登录和关键页面，并纳入 CI；`QA-BROWSER-002` 已补会员预报、后台扫描入库、会员回看在库的真实浏览器业务旅程；视觉回归、组件级测试和更多复杂浏览器流仍可增强 | `QA-BROWSER-001`/`QA-BROWSER-002` 已完成；更深测试后续 |
 | PostgreSQL/MySQL/Redis | 用户已确认先 SQLite，后续补但不真实验证 | 当前只验证 SQLite，Redis/Celery 未真实验证 | 保持 `configured_unverified`，不进入当前验证 gate |
 

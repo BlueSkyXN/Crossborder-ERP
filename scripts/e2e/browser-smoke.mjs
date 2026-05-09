@@ -475,6 +475,8 @@ async function runUser(debugPort, journey) {
   await navigate(page, `${USER_URL}/dashboard`, "会员中心");
   await waitForText(page, "积分推广");
   await waitForText(page, "邀请码");
+  await navigate(page, `${USER_URL}/purchases?tab=manual`, "手工代购");
+  await waitForText(page, "解析链接");
   assertNoIssues("User Web", page.issues);
   page.cdp.close();
   console.log("[QA-BROWSER-002] User Web created a parcel forecast through the browser form");
@@ -505,6 +507,8 @@ async function runMobile(debugPort) {
   await navigate(page, `${MOBILE_URL}/me`, "我的");
   await waitForText(page, "积分推广");
   await waitForText(page, "邀请码");
+  await navigate(page, `${MOBILE_URL}/me/purchases/manual`, "手工代购");
+  await waitForText(page, "解析链接");
   assertNoIssues("Mobile H5", page.issues);
   page.cdp.close();
   console.log("[QA-BROWSER-001] Mobile H5 login, ship, and growth smoke passed");

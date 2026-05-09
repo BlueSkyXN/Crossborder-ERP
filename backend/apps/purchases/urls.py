@@ -11,12 +11,14 @@ from .views import (
     AdminPurchaseOrderReviewView,
     AdminPurchaseWarehouseOptionListView,
     ManualPurchaseOrderCreateView,
+    PurchaseLinkParseView,
     PurchaseOrderDetailView,
     PurchaseOrderListCreateView,
     PurchaseOrderPayView,
 )
 
 urlpatterns = [
+    path("purchase-links/parse", PurchaseLinkParseView.as_view(), name="purchase-link-parse"),
     path("purchase-orders", PurchaseOrderListCreateView.as_view(), name="purchase-order-list"),
     path("purchase-orders/manual", ManualPurchaseOrderCreateView.as_view(), name="purchase-order-manual"),
     path("purchase-orders/<int:purchase_order_id>", PurchaseOrderDetailView.as_view(), name="purchase-order-detail"),

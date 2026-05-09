@@ -139,6 +139,23 @@ export type ManualPurchaseOrderCreatePayload = {
   }>;
 };
 
+export type ParsedPurchaseLink = {
+  source_url: string;
+  normalized_url: string;
+  provider: string;
+  provider_label: string;
+  external_item_id: string;
+  name: string;
+  quantity: number;
+  unit_price: string;
+  product_url: string;
+  remark: string;
+};
+
+export type PurchaseLinkParsePayload = {
+  source_url: string;
+};
+
 export type PurchasePayPayload = {
   idempotency_key: string;
 };

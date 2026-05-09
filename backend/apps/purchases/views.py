@@ -13,6 +13,7 @@ from apps.members.permissions import IsMemberAuthenticated
 from apps.warehouses.models import ConfigStatus, Warehouse
 from apps.warehouses.serializers import WarehouseSerializer
 
+from .link_parser import parse_purchase_link
 from .models import PurchaseOrder
 from .serializers import (
     ManualPurchaseOrderCreateSerializer,
@@ -20,6 +21,8 @@ from .serializers import (
     PurchaseCancelSerializer,
     PurchaseConvertToParcelSerializer,
     PurchaseExceptionSerializer,
+    PurchaseLinkParseResultSerializer,
+    PurchaseLinkParseSerializer,
     PurchaseOrderCreateSerializer,
     PurchaseOrderSerializer,
     PurchasePaySerializer,
@@ -79,6 +82,22 @@ class ManualPurchaseOrderCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         purchase_order = create_manual_purchase_order(user=request.user, **serializer.validated_data)
         return success_response(PurchaseOrderSerializer(purchase_order).data, status=status.HTTP_201_CREATED)
+
+
+class PurchaseLinkParseView(APIView):
+    authentication_classes = [MemberTokenAuthentication]
+    permission_classes = [IsMemberAuthenticated]
+
+    @extend_schema(
+        tags=["purchases"],
+        request=PurchaseLinkParseSerializer,
+        responses={200: PurchaseLinkParseResultSerializer},
+    )
+    def post(self, request):
+        serializer = PurchaseLinkParseSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = parse_purchase_link(**serializer.validated_data)
+        return success_response(PurchaseLinkParseResultSerializer(result).data)
 
 
 class PurchaseOrderDetailView(APIView):

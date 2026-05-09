@@ -493,6 +493,30 @@
   gap: 10px;
 }
 
+.linkParser {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 94px;
+  gap: 8px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid #99f6e4;
+  border-radius: 10px;
+  background: #ecfdf5;
+}
+
+.linkParser button {
+  height: 38px;
+}
+
+.parsePreview {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #0f766e;
+  font-size: 12px;
+}
+
 .formRow {
   display: grid;
   grid-template-columns: 1fr 92px;

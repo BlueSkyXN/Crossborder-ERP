@@ -140,6 +140,23 @@ class ManualPurchaseOrderCreateSerializer(serializers.Serializer):
         return value
 
 
+class PurchaseLinkParseSerializer(serializers.Serializer):
+    source_url = serializers.URLField(max_length=1000)
+
+
+class PurchaseLinkParseResultSerializer(serializers.Serializer):
+    source_url = serializers.URLField()
+    normalized_url = serializers.URLField()
+    provider = serializers.CharField()
+    provider_label = serializers.CharField()
+    external_item_id = serializers.CharField(allow_blank=True)
+    name = serializers.CharField()
+    quantity = serializers.IntegerField()
+    unit_price = serializers.CharField()
+    product_url = serializers.URLField()
+    remark = serializers.CharField()
+
+
 class PurchasePaySerializer(serializers.Serializer):
     idempotency_key = serializers.CharField(max_length=120)
 

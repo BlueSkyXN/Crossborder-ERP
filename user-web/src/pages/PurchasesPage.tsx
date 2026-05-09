@@ -27,12 +27,14 @@ import {
   fetchPurchaseOrders,
   fetchPurchaseWallet,
   fetchPurchaseWalletTransactions,
+  parsePurchaseLink,
   payPurchaseOrder,
   updateCartItem,
 } from "../features/purchases/api";
 import type {
   CartItem,
   ManualPurchaseOrderCreatePayload,
+  ParsedPurchaseLink,
   Product,
   PurchaseOrder,
   PurchaseOrderStatus,
@@ -190,6 +192,8 @@ export function PurchasesPage() {
   const [productQuantity, setProductQuantity] = useState("1");
   const [selectedCartItemIds, setSelectedCartItemIds] = useState<number[] | null>(null);
   const [cartServiceFee, setCartServiceFee] = useState("0.00");
+  const [linkInput, setLinkInput] = useState("");
+  const [parsedLink, setParsedLink] = useState<ParsedPurchaseLink | null>(null);
   const [manualItems, setManualItems] = useState<ManualLine[]>(() => [manualLine(Date.now())]);
   const [manualServiceFee, setManualServiceFee] = useState("0.00");
   const [orderStatusFilter, setOrderStatusFilter] = useState<OrderStatusFilter>("ALL");
@@ -331,6 +335,29 @@ export function PurchasesPage() {
     },
   });
 
+  const parseLinkMutation = useMutation({
+    mutationFn: parsePurchaseLink,
+    onSuccess: (result) => {
+      const nextLine: ManualLine = {
+        id: Date.now(),
+        name: result.name,
+        product_url: result.product_url,
+        unit_price: "",
+        quantity: String(result.quantity || 1),
+        remark: result.remark,
+      };
+      setParsedLink(result);
+      setManualItems((current) => {
+        const emptyIndex = current.findIndex((item) => !item.name.trim() && !item.product_url.trim());
+        if (emptyIndex === -1) {
+          return [...current, nextLine];
+        }
+        return current.map((item, index) => (index === emptyIndex ? nextLine : item));
+      });
+      clearNoticeLater(`${result.provider_label} 链接已填入商品行。`);
+    },
+  });
+
   const payOrderMutation = useMutation({
     mutationFn: ({ orderId, idempotencyKey }: { orderId: number; idempotencyKey: string }) =>
       payPurchaseOrder(orderId, { idempotency_key: idempotencyKey }),
@@ -400,6 +427,7 @@ export function PurchasesPage() {
     deleteCartMutation.error,
     createCartOrderMutation.error,
     createManualOrderMutation.error,
+    parseLinkMutation.error,
     payOrderMutation.error,
   ];
   const hasError =
@@ -413,6 +441,7 @@ export function PurchasesPage() {
     deleteCartMutation.isError ||
     createCartOrderMutation.isError ||
     createManualOrderMutation.isError ||
+    parseLinkMutation.isError ||
     payOrderMutation.isError;
   const errorMessage = allErrors.find((error) => error instanceof Error)?.message || "数据加载失败，请刷新后重试。";
 
@@ -467,6 +496,15 @@ export function PurchasesPage() {
       return;
     }
     createManualOrderMutation.mutate(payload);
+  };
+
+  const handleParseLink = () => {
+    const sourceUrl = linkInput.trim();
+    if (!sourceUrl) {
+      clearNoticeLater("请输入商品链接。");
+      return;
+    }
+    parseLinkMutation.mutate({ source_url: sourceUrl });
   };
 
   const refreshAll = () => {
@@ -796,6 +834,26 @@ export function PurchasesPage() {
           </div>
 
           <div className={styles.manualLines}>
+            <section className={styles.linkParser}>
+              <label>
+                <span>外部商品链接</span>
+                <input
+                  value={linkInput}
+                  placeholder="https://item.taobao.com/..."
+                  onChange={(event) => setLinkInput(event.target.value)}
+                />
+              </label>
+              <button className={styles.secondaryButton} type="button" onClick={handleParseLink} disabled={parseLinkMutation.isPending}>
+                <FileSearchOutlined />
+                {parseLinkMutation.isPending ? "解析中" : "解析链接"}
+              </button>
+              {parsedLink && (
+                <div className={styles.parsePreview}>
+                  <strong>{parsedLink.provider_label}</strong>
+                  <span>{parsedLink.external_item_id || parsedLink.provider}</span>
+                </div>
+              )}
+            </section>
             {manualItems.map((item, index) => (
               <article key={item.id} className={styles.manualLine}>
                 <div className={styles.lineTitle}>

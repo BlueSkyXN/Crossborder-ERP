@@ -28,6 +28,7 @@
 | `QA-BROWSER-002` | P1 | 浏览器真实业务旅程 | 会员预报、后台扫描入库、会员回看在库的跨端浏览器表单流 | 已完成：沿用 system Chrome CDP，不新增依赖和浏览器下载 |
 | `QA-BROWSER-003` | P1 | Browser Smoke 稳定性 | CDP 导航等待加固、页面快照诊断、失败服务日志输出 | 已完成：不新增依赖，不下载浏览器 |
 | `QA-BROWSER-004` | P1 | 浏览器跨面板业务旅程 | User Web 线下汇款/工单、Admin Web 汇款审核/工单回复、User Web 回看回复 | 已完成：沿用 system Chrome CDP 和临时 SQLite，不新增依赖 |
+| `QA-BROWSER-005` | P1 | 运单后半程浏览器旅程 | User Web 创建运单、Admin Web 审核计费、User Web 支付、Admin Web 发货、User Web 确认收货 | 已完成：沿用 system Chrome CDP 和临时 SQLite，不新增依赖 |
 | `CI-EVIDENCE-001` | P1 | Agent 证据门禁 | 校验任务图、current-state、Agent run 摘要和未验证边界 | 已完成：标准库 Python，无新增依赖 |
 | `SHIP-BATCH-001` | P2 | 发货批次/转单/打印 | 发货批次模型、运单归批、批量轨迹、转单号、打印模板占位 | 已完成：不接硬件；打印只生成模板数据 |
 | `PAYABLE-001` | P2 | 供应商/成本/应付 | 供应商、成本类型、应付款、审批/核销基础 | 已完成：与应收钱包分离，金额精度和状态测试 |
@@ -65,6 +66,7 @@
 - `QA-BROWSER-002`：已在同一 Browser Smoke 中补真实跨端业务旅程：User Web 创建包裹预报，Admin Web 扫描同一快递单号入库，User Web 搜索回看在库状态和申请打包入口；仍不引入 Playwright 或浏览器下载。
 - `QA-BROWSER-003`：已加固现有 CDP Browser Smoke 的导航等待、文本断言失败快照和失败服务日志输出；PR #49 合并后出现的 Admin Web 登录页偶发等待问题由同一 merge commit 重跑通过，本任务进一步降低后续误判并提升 CI 可诊断性。
 - `QA-BROWSER-004`：已在 Browser Smoke 中补财务和客服跨面板业务旅程：User Web 创建线下汇款和客服工单，Admin Web 审核汇款入账并回复工单，User Web 回看客服回复；本轮同时修复 Admin Web 工单回复 URL 与后端契约不一致的问题，并清理该旅程触发的 Ant Design console warning。
+- `QA-BROWSER-005`：已在 Browser Smoke 中补运单后半程跨面板业务旅程：User Web 从在库包裹创建运单，Admin Web 审核并设置费用，User Web 使用钱包余额支付，Admin Web 发货并生成轨迹，User Web 回看轨迹并确认收货；本轮同时修复 Admin Web 运单动作弹窗 Form 初始化触发的 Ant Design console error。
 - `CI-EVIDENCE-001`：已补 `scripts/ci/validate_agent_evidence.py` 和 CI `Agent Evidence` job，校验任务图、current-state、任务文件、Agent run 摘要、验证结果和未验证边界说明，避免证明材料出现缺失或占位记录。
 - `SHIP-BATCH-001`：已补后台发货批次模型/API，支持创建批次、待发货运单归批/移出、锁定后批量发货、批量轨迹、转单号和承运商批次号；Admin Web 运单处理页已增加批次列表、详情、归批、批量发货和面单/拣货单/交接单打印模板数据预览入口。打印仍只生成结构化模板数据，不接真实硬件。
 - `PAYABLE-001`：已补后台供应商、成本类型和应付款模型/API，支持应付款待审核、确认、核销和取消状态流；Admin Web 财务页已增加应付款、供应商和成本类型入口，API E2E 和 Browser Smoke 已覆盖基础链路。真实银行付款、自动打款和外部财务系统同步仍未接入。
@@ -89,11 +91,11 @@
 
 ## Current Next Task
 
-任务图中的 `QA-BROWSER-004` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
+任务图中的 `QA-BROWSER-005` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
 
 - 生产化边界：补对象存储、病毒扫描、PostgreSQL/MySQL/Redis 真实连接/迁移验证计划、告警和部署验证。
 - 需业务/合规确认的外部集成：真实支付、真实物流 API、真实自动采购下单和外部商品抓取。
-- 测试深度增强：在现有 system Chrome CDP smoke、多条真实浏览器旅程之外，补视觉回归、组件级测试或运单后半程等更多复杂浏览器流。
+- 测试深度增强：在现有 system Chrome CDP smoke、多条真实浏览器旅程之外，补视觉回归、组件级测试或更多复杂浏览器流。
 
 ## Completion Boundary
 

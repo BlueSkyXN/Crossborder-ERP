@@ -17,9 +17,9 @@
 | 后端框架 | Django + Django REST Framework | 适合 ERP、RBAC、事务和管理型系统 |
 | 后端依赖管理 | `uv` + 项目本地 `.venv/` | 快速、可锁版本、不污染全局 Python 环境 |
 | Python 版本 | Python 3.12+ | 与基线一致；如本机缺少 3.12，先确认后再由 `uv` 管理 |
-| 数据库 | 当前唯一真实验证数据库为 SQLite；后续补 PostgreSQL/MySQL 配置兼容但不做真实验证 | 不干扰本机环境；未验证数据库能力不得写成生产可用 |
+| 数据库 | 当前唯一真实验证数据库为 SQLite；PostgreSQL/MySQL DSN 只做无连接配置解析和 `configured_unverified` 标记 | 不干扰本机环境；未验证数据库能力不得写成生产可用 |
 | 主键策略 | Django `BigAutoField` / bigint | 与 Django 默认一致，减少实现复杂度；业务单号另设字段 |
-| 缓存和任务 | 当前使用本地内存/同步任务；后续补 Redis/Celery 配置但不做真实 Redis 验证 | 避免依赖本机服务，先完成业务和 API 基线 |
+| 缓存和任务 | 当前使用本地内存/同步任务；Redis/Celery DSN 只做无连接配置解析和 `configured_unverified` 标记 | 避免依赖本机服务，先完成业务和 API 基线 |
 | API 风格 | REST + `/api/v1` | 与基线契约一致 |
 | API 文档 | drf-spectacular / OpenAPI | 前端类型生成和 Agent 接力需要稳定 schema |
 | 鉴权 | JWT，用户端和后台端登录域分离 | 匹配 `/api/v1/auth/login` 与 `/api/v1/admin/auth/login` |
@@ -105,9 +105,10 @@
 - 不使用 Docker 作为当前开发和验证前提。
 - 不启动本机 PostgreSQL/MySQL/Redis。
 - `BE-001` 先用项目本地 `backend/db.sqlite3` 完成 Django/DRF、统一响应、OpenAPI 和测试基线。
-- PostgreSQL/MySQL 只允许做配置层兼容，例如 settings/env/requirements extra，不做真实连接和迁移验证。
-- Celery/Redis 相关配置先支持同步执行或延后接入；任何依赖 Redis 的功能必须标记当前验证边界。
+- PostgreSQL/MySQL 只允许做配置层兼容，例如 settings/env 和 DSN 边界检查，不做真实连接和迁移验证。
+- Celery/Redis 相关配置先支持同步执行和 DSN 边界检查；任何依赖 Redis 的功能必须标记当前验证边界。
 - 所有依赖 PostgreSQL/MySQL/Redis 的能力，在完成真实环境验证前只能标记为 `configured_unverified`。
+- 使用 `npm run inspect:services` 做配置边界检查时，不执行 Django setup、不导入数据库驱动、不连接外部服务。
 
 ## AI 驱动开发执行口径
 
@@ -150,6 +151,7 @@
 | MySQL 原生驱动 | `mysqlclient` 可能需要本机编译依赖；`PyMySQL` 行为和性能边界不同 | 当前不安装 MySQL 驱动；后续用 optional extra 管理 |
 | PostgreSQL 驱动 | `psycopg` 配置简单，但未连接真实库就无法验证迁移和字段行为 | 当前不安装或不强依赖；后续用 optional extra 管理 |
 | Redis 缺失 | 缓存、分布式锁、Celery broker、异步任务、限流不能真实验证 | 当前使用本地内存缓存和同步任务；禁止依赖 Redis 完成 P0 关键一致性 |
+| DSN 检查边界 | 只解析 `DATABASE_URL`/`REDIS_URL` 不等于 runtime 可用 | `inspect:services` 输出 `configured_unverified`，且明确 `django_setup_performed=false`、`external_connections_opened=false` |
 | Celery 异步边界 | 同步 eager 模式不能暴露序列化、重试、并发和 broker 故障问题 | 当前只用于保持接口形态；真实异步任务后续单独验证 |
 | 文件存储 | 本地 `MEDIA_ROOT` 与对象存储/反向代理访问控制不同 | 当前仅支持本地文件；文件权限和对象存储后置 |
 | 本地文件清理 | 过早删除软删除文件可能影响人工恢复和审计 | 当前清理命令必须显式传入保留天数，默认支持 dry-run，不删除数据库记录 |
@@ -174,4 +176,4 @@
 生产化边界 / 需业务确认的外部集成 / 测试深度增强。
 ```
 
-当前执行约束：不使用 Docker，不启动 PostgreSQL/MySQL/Redis；验证以本地 `.venv`、SQLite、pytest、API E2E 和 system Chrome browser smoke 为主。PostgreSQL/MySQL/Redis 只做配置兼容，不做真实验证。
+当前执行约束：不使用 Docker，不启动 PostgreSQL/MySQL/Redis；验证以本地 `.venv`、SQLite、pytest、API E2E 和 system Chrome browser smoke 为主。PostgreSQL/MySQL/Redis 只做配置解析和边界检查，不做真实验证。

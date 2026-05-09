@@ -21,6 +21,7 @@
 - 后台角色创建、编辑和权限分配基础闭环。
 - 后台管理员账号创建、启停、密码重置和角色分配基础闭环。
 - 后台业务写操作按模块级 `*.manage` / `*.export` action 权限拆分。
+- PostgreSQL/MySQL/Redis/Celery 无连接 DSN 边界检查。
 - `npm run e2e` 自动验收主链路和最小代购链路。
 - `npm run e2e:browser` 自动验收 Admin Web、User Web、Mobile H5 登录、关键页面 smoke 和一条真实包裹预报/入库/回看浏览器旅程。
 - Browser Smoke 导航等待、失败页面快照和服务日志输出已加固，降低 CI 偶发误判并提升失败可诊断性。
@@ -36,8 +37,8 @@
 | 避免干扰本地环境 | 使用项目本地 `.venv`、项目内 `node_modules`、SQLite、no-Docker | README、`.env.example`、`docs/deployment/README.md` |
 | 暂不考虑 Docker | 不提供已验证 compose，不执行 Docker 验证 | `docs/deployment/README.md` |
 | SQLite first | 当前唯一真实验证数据库为 SQLite | README、`config.settings.test`、E2E |
-| PostgreSQL/MySQL 后续补支持但不验证 | 标记为 `configured_unverified` | `docs/known-issues-and-roadmap.md` |
-| Redis 后续补且不真实验证 | 当前使用 local memory 和 eager task | README、`docs/deployment/README.md` |
+| PostgreSQL/MySQL 后续补支持但不验证 | `DATABASE_URL` 可做无连接 DSN 检查并标记 `configured_unverified` | `npm run inspect:services`、`docs/known-issues-and-roadmap.md` |
+| Redis 后续补且不真实验证 | 当前使用 local memory 和 eager task；`REDIS_URL` 可做无连接 DSN 检查并标记 `configured_unverified` | `npm run inspect:services`、README、`docs/deployment/README.md` |
 | 基础应用安全响应头 | 本地已验证 health endpoint 输出最小安全 header；TLS/HSTS 不声明完成 | `docs/agent-runs/2026-05-09-SECURITY-HEADERS-001.md`、`backend/apps/common/tests/test_health.py` |
 | 运维 readiness 检查 | 本地已验证默认数据库连接检查；外部监控/告警不声明完成 | `docs/agent-runs/2026-05-09-OPS-READINESS-001.md`、`backend/apps/common/tests/test_health.py` |
 | SQLite 本地备份 | 本地已验证 `backup_sqlite --dry-run` 和备份测试；生产数据库备份不声明完成 | `docs/agent-runs/2026-05-09-OPS-SQLITE-BACKUP-001.md`、`backend/apps/common/tests/test_backup_sqlite.py` |
@@ -74,6 +75,7 @@
 | 本地文件清理 | `purge_deleted_files` 已验证 dry-run、真实删除、ACTIVE/未到期保护、missing、unsafe 路径和非普通文件跳过 | `docs/agent-runs/2026-05-09-STORAGE-CLEANUP-001.md` |
 | 外链代购入口 | `purchase-links/parse` 已验证常见平台识别、未知平台 fallback、敏感 URL 拒绝，并已进入 Web/H5 手工代购页 | `docs/agent-runs/2026-05-09-PURCHASE-AUTO-001.md` |
 | 后台控制台和 RBAC | `/api/v1/admin/dashboard` 按权限返回真实聚合指标，Admin Web `/dashboard`、`/roles` 与 `/admin-users` 不再使用固定假数据占位页；角色、管理员账号和业务写操作分别由 `iam.*.manage`、`*.manage` / `*.export` 控制 | `docs/agent-runs/2026-05-09-ADMIN-PANELS-001.md`、`docs/agent-runs/2026-05-09-RBAC-ROLES-001.md`、`docs/agent-runs/2026-05-09-RBAC-ADMIN-USERS-001.md`、`docs/agent-runs/2026-05-09-RBAC-BUSINESS-ACTIONS-001.md` |
+| 外部服务配置边界 | `DATABASE_URL`/`REDIS_URL`/Celery eager 可通过无连接脚本检查，PostgreSQL/MySQL/Redis/Celery 仍不声明真实可用 | `docs/agent-runs/2026-05-09-CONFIG-EXTERNAL-SERVICES-001.md`、`scripts/config/inspect_configured_services.py` |
 
 ## 验收命令
 
@@ -102,5 +104,6 @@ git diff --check
 - PostgreSQL/MySQL 生产备份、远程备份、加密、轮转和恢复演练未验证；当前只完成 SQLite 本地显式备份命令。
 - 对象存储生命周期、CDN、缩略图、病毒扫描和远程文件归档未验证；当前只完成本地软删除文件清理命令。
 - `npm run e2e:browser` 已纳入仓库，并覆盖一条真实包裹预报/入库/回看旅程；Playwright、组件级测试、视觉回归和更多业务旅程仍需后续增强。
+- `npm run inspect:services` 已纳入仓库，但只做无连接 DSN 检查；PostgreSQL/MySQL/Redis/Celery 真实运行仍需后续验证。
 - 真实支付、真实自动采购下单、对象存储、外部 SIEM/审计告警、真实打印硬件、物流 API、角色/管理员删除和业务 create/update/delete 子权限后续补齐。
 - 短信/邮件验证码、找回密码、微信登录、多语言和复杂业务规则保持 `TODO_CONFIRM`。

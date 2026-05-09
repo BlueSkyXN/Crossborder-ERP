@@ -2,6 +2,8 @@ from pathlib import Path
 
 import environ
 
+from apps.common.configuration import build_database_config
+
 BASE_DIR = Path(__file__).resolve().parents[2]
 REPO_ROOT = BASE_DIR.parent
 
@@ -100,12 +102,8 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-DATABASES = {
-    "default": env.db(
-        "DATABASE_URL",
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-    )
-}
+DATABASE_URL = env("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+DATABASES = {"default": build_database_config(DATABASE_URL, BASE_DIR / "db.sqlite3")}
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

@@ -10,7 +10,7 @@
 - Admin Web、User Web、Mobile H5 已覆盖登录、仓库地址、包裹预报、扫描入库、申请打包、审核计费、余额支付、发货轨迹、确认收货、商品/购物车/手工代购最小链路。
 - `npm run e2e` 已覆盖 API 级 P0 主流程，并已把线下汇款审核入账纳入主链路资金来源。
 
-但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护。剩余差距集中在内容 CMS、无主包裹用户认领、批量导入、发货批次/转单、应付供应商、积分推广、浏览器级 E2E 和生产化运维边界。
+但如果目标是“完整满足两套原始报告的生产级 ERP”，当前仍不完整。`ADDR-001` 已补齐基础地址簿；`FILE-001` 已补齐本地文件上传、元数据、鉴权下载和包裹图片引用基础；`FIN-001` 已补齐用户线下汇款、后台审核入账和三端财务入口；`MSG-001` 已补齐用户工单、附件、后台客服回复和三端入口；`MEMBER-001` 已补齐后台会员管理、冻结/解冻、等级和客服服务信息维护；`PARCEL-CLAIM-001` 已补齐无主包裹用户脱敏查询、认领和后台审核转包裹。剩余差距集中在内容 CMS、批量导入、发货批次/转单、应付供应商、积分推广、浏览器级 E2E 和生产化运维边界。
 
 ## Source Scope
 
@@ -52,8 +52,8 @@
 | Finance | 钱包、支付单、余额流水、后台充值记录、线下汇款凭证和审核字段 | `backend/apps/finance/models.py` |
 | Products/Purchases | 商品分类、商品、SKU、购物车、代购订单、采购任务 | `backend/apps/products/models.py` L6-L78；`backend/apps/purchases/models.py` L6-L120 |
 | Admin Web routes | 控制台、会员、仓库、包裹、运单、财务、代购、商品、角色权限入口 | `admin-web/src/features/auth/menu.tsx` L23-L96 |
-| User Web routes | dashboard、addresses、finance、tickets、parcels、waybills、products/cart/purchases | `user-web/src/routes/index.tsx` |
-| Mobile H5 routes | home/category、ship、forecast、parcels、packing、waybills、cart、me、addresses、finance、tickets、purchases/manual | `mobile-h5/src/routes/index.tsx` |
+| User Web routes | dashboard、addresses、finance、tickets、parcels、unclaimed-parcels、waybills、products/cart/purchases | `user-web/src/routes/index.tsx` |
+| Mobile H5 routes | home/category、ship、forecast、parcels、unclaimed-parcels、packing、waybills、cart、me、addresses、finance、tickets、purchases/manual | `mobile-h5/src/routes/index.tsx` |
 | CI | PR 和 main push 执行 backend check/OpenAPI/pytest、frontend lint/build | `.github/workflows/ci.yml` L3-L74 |
 | E2E | `npm run e2e` 调用 API 级 P0 pytest 流程 | `package.json` L6-L11 |
 
@@ -67,7 +67,7 @@
 | 文件上传 | Admin 后端任务要求图片上传、凭证上传、Excel 导入、模板下载；User Web 后端任务要求文件服务 | `FILE-001` 已补本地上传、元数据、大小/MIME/扩展名限制、鉴权下载和包裹图片引用；对象存储、缩略图、病毒扫描、Excel 解析仍后续 | `FILE-001` 已完成；对象存储/导入增强留给后续 |
 | 客服消息/工单 | Admin/User Web/Mobile 均要求留言、消息列表、客服回复 | `MSG-001` 已补 tickets/messages app、用户 `MESSAGE_ATTACHMENT` 附件校验、后台 `tickets.view` 权限、三端工单入口和 API E2E；真实在线客服/实时推送不做 | `MSG-001` 已完成；实时客服后续 |
 | 内容 CMS | Admin MVP 要求帮助中心、分类、条款隐私、公告、关于我们；Gemini Admin 网站管理同样明确 | 当前没有 content app，没有三端帮助/公告内容管理 | `CONTENT-001` |
-| 无主包裹用户认领 | User Web/Mobile 均要求用户搜索和认领无主包裹 | 后端/Admin 有无主包裹登记和 service，但没有用户侧 list/claim API 与前端页面 | `PARCEL-CLAIM-001` |
+| 无主包裹用户认领 | User Web/Mobile 均要求用户搜索和认领无主包裹 | `PARCEL-CLAIM-001` 已补用户侧脱敏列表/搜索/认领 API，后台审核通过/驳回，审核通过后转会员 `Parcel.IN_STOCK`，三端入口已补 | `PARCEL-CLAIM-001` 已完成 |
 | 批量导入/导出 | Admin/User Web 多处要求 Excel 导入、导出、模板下载 | 当前没有导入解析、模板下载和导出服务 | `IMPORT-001` |
 | 发货批次/转单/打印 | Admin MVP 要求批次发货，二阶段要求转单、打印体系 | 当前支持单票人工发货和轨迹；没有 shipment batch、transfer order、面单/拣货单模板 | `SHIP-BATCH-001` |
 | 应付、供应商、成本 | Gemini Admin L124-L126、L172 和 ChatGPT Admin L942 要求应付管理 | 当前 finance 仅应收/钱包方向；没有 suppliers/payables/cost types | `PAYABLE-001` |
@@ -80,10 +80,10 @@
 
 后续不应一次性做超大 PR，建议按依赖顺序拆小任务：
 
-1. `PARCEL-CLAIM-001`：用户无主包裹查询/认领与后台审核。
-2. `CONTENT-001`：帮助、公告、条款、关于我们 CMS。
-3. `IMPORT-001`：批量导入/导出基础，复用 `FILE-001` 的上传能力。
-4. `QA-BROWSER-001`：在不污染本机环境的前提下引入浏览器级 E2E。
-5. `SHIP-BATCH-001`：发货批次、转单号和打印模板数据。
+1. `CONTENT-001`：帮助、公告、条款、关于我们 CMS。
+2. `IMPORT-001`：批量导入/导出基础，复用 `FILE-001` 的上传能力。
+3. `QA-BROWSER-001`：在不污染本机环境的前提下引入浏览器级 E2E。
+4. `SHIP-BATCH-001`：发货批次、转单号和打印模板数据。
+5. `PAYABLE-001`：供应商、成本类型和应付基础。
 
 每个任务仍需独立分支、PR、更新 PR 信息、CI 通过后合并回 `main`。

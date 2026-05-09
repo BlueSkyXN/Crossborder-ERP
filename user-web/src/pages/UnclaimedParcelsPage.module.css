@@ -1,0 +1,318 @@
+.page {
+  min-height: 100vh;
+  padding: 24px;
+  color: #111827;
+}
+
+.header,
+.notice,
+.alert,
+.summary,
+.workspace {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.brand strong,
+.brand span {
+  display: block;
+}
+
+.brand span,
+.listHead p {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.backButton,
+.iconButton,
+.primaryButton,
+.record {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 800;
+}
+
+.backButton,
+.primaryButton {
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+.iconButton {
+  width: 40px;
+  height: 40px;
+}
+
+.notice,
+.alert {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 6px;
+}
+
+.notice {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.alert {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.metric,
+.listPanel,
+.detailPanel {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.metric {
+  padding: 18px;
+}
+
+.metric span,
+.metric strong {
+  display: block;
+}
+
+.metric span {
+  color: #6b7280;
+}
+
+.metric strong {
+  margin-top: 6px;
+  font-size: 24px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 16px;
+  align-items: start;
+}
+
+.listPanel,
+.detailPanel {
+  padding: 20px;
+}
+
+.listHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.listHead h1,
+.listHead h2,
+.listHead p {
+  margin: 0;
+}
+
+.listHead h1,
+.listHead h2 {
+  margin-bottom: 4px;
+}
+
+.searchInput,
+.claimForm input,
+.claimForm textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+}
+
+.searchInput,
+.claimForm input {
+  height: 40px;
+  padding: 0 10px;
+}
+
+.searchInput {
+  margin-bottom: 14px;
+}
+
+.claimForm textarea {
+  min-height: 96px;
+  padding: 10px;
+  resize: vertical;
+}
+
+.empty,
+.stateBox {
+  padding: 28px;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #6b7280;
+  text-align: center;
+}
+
+.records {
+  display: grid;
+  gap: 10px;
+}
+
+.record {
+  width: 100%;
+  min-height: 66px;
+  justify-content: space-between;
+  padding: 12px;
+  text-align: left;
+}
+
+.record span,
+.record strong,
+.record small {
+  display: block;
+  min-width: 0;
+}
+
+.record small {
+  margin-top: 3px;
+  color: #6b7280;
+}
+
+.activeRecord {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+
+.statusBadge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.info {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.detailList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.detailList div {
+  min-width: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.detailList dt {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.detailList dd {
+  margin: 4px 0 0;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.claimForm {
+  display: grid;
+  gap: 14px;
+}
+
+.claimForm label {
+  display: grid;
+  gap: 6px;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.primaryButton {
+  width: 100%;
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.primaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding: 16px;
+  }
+
+  .header {
+    align-items: flex-start;
+  }
+
+  .summary,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}

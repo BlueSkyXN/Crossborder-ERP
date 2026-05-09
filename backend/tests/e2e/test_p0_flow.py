@@ -230,6 +230,67 @@ def _run_member_admin_flow(*, admin_client: APIClient, member_client: APIClient,
     }
 
 
+def _run_unclaimed_claim_flow(
+    *,
+    admin_client: APIClient,
+    member_client: APIClient,
+    warehouse: dict,
+    run_id: str,
+) -> dict:
+    tracking_no = f"E2E-UNCLAIMED-{run_id}"
+    scanned = _api_data(
+        admin_client.post(
+            "/api/v1/admin/parcels/scan-inbound",
+            {
+                "warehouse_id": warehouse["id"],
+                "tracking_no": tracking_no,
+                "weight_kg": "0.660",
+                "remark": "E2E unclaimed inbound",
+            },
+            format="json",
+        ),
+        expected_status=201,
+    )
+    unclaimed = scanned["unclaimed_parcel"]
+    assert unclaimed["tracking_no"] == tracking_no
+
+    public_items = _api_data(member_client.get("/api/v1/unclaimed-parcels", {"keyword": "UNCLAIMED"}))["items"]
+    public_unclaimed = next(item for item in public_items if item["id"] == unclaimed["id"])
+    assert "tracking_no" not in public_unclaimed
+    assert public_unclaimed["tracking_no_masked"].startswith("E2E")
+
+    claimed = _api_data(
+        member_client.post(
+            f"/api/v1/unclaimed-parcels/{unclaimed['id']}/claim",
+            {
+                "claim_note": "TODO_CONFIRM: E2E claim proof",
+                "claim_contact": "13900004444",
+            },
+            format="json",
+        )
+    )
+    assert claimed["status"] == "CLAIM_PENDING"
+    assert claimed["is_mine"] is True
+
+    approved = _api_data(
+        admin_client.post(
+            f"/api/v1/admin/unclaimed-parcels/{unclaimed['id']}/approve",
+            {"review_note": "E2E claim approved"},
+            format="json",
+        )
+    )
+    parcel = approved["parcel"]
+    assert approved["unclaimed_parcel"]["status"] == "CLAIMED"
+    assert parcel["status"] == "IN_STOCK"
+    packable = _api_data(member_client.get("/api/v1/parcels/packable"))["items"]
+    assert any(item["id"] == parcel["id"] for item in packable)
+    return {
+        "tracking_no_masked": claimed["tracking_no_masked"],
+        "parcel_no": parcel["parcel_no"],
+        "status": approved["unclaimed_parcel"]["status"],
+    }
+
+
 def _run_offline_remittance_flow(
     *,
     admin_client: APIClient,
@@ -615,6 +676,12 @@ def test_p0_forwarding_and_purchase_e2e():
     admin_client, _admin = _login_admin()
     member_client, member = _login_member()
     warehouse, channel = _confirm_demo_configs(admin_client, member_client, member)
+    unclaimed_result = _run_unclaimed_claim_flow(
+        admin_client=admin_client,
+        member_client=member_client,
+        warehouse=warehouse,
+        run_id=run_id,
+    )
 
     main_result = _run_forwarding_flow(
         admin_client=admin_client,
@@ -645,10 +712,12 @@ def test_p0_forwarding_and_purchase_e2e():
     )
 
     print("[E2E-001] 主链路完成:", main_result)
+    print("[PARCEL-CLAIM-001] 无主包裹认领链路完成:", unclaimed_result)
     print("[E2E-001] 代购链路完成:", purchase_result)
     print("[MSG-001] 工单链路完成:", ticket_result)
     print("[MEMBER-001] 会员后台链路完成:", member_admin_result)
     assert main_result["status"] == "SIGNED"
+    assert unclaimed_result["status"] == "CLAIMED"
     assert purchase_result["waybill_status"] == "PENDING_REVIEW"
     assert ticket_result["status"] == "PROCESSING"
     assert member_admin_result["status"] == "ACTIVE"

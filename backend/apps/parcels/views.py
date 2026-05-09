@@ -12,14 +12,28 @@ from apps.members.permissions import IsMemberAuthenticated
 from .models import Parcel, ParcelStatus, UnclaimedParcel, UnclaimedParcelStatus
 from .serializers import (
     AdminUnclaimedParcelCreateSerializer,
+    AdminUnclaimedParcelApproveResponseSerializer,
     InboundRequestSerializer,
     ParcelForecastSerializer,
     ParcelSerializer,
+    PublicUnclaimedParcelSerializer,
     ScanInboundResponseSerializer,
     ScanInboundRequestSerializer,
+    UnclaimedParcelClaimSerializer,
+    UnclaimedParcelQuerySerializer,
+    UnclaimedParcelReviewSerializer,
     UnclaimedParcelSerializer,
 )
-from .services import StateConflictError, forecast_parcel, inbound_parcel, scan_inbound
+from .services import (
+    StateConflictError,
+    approve_unclaimed_claim,
+    forecast_parcel,
+    inbound_parcel,
+    reject_unclaimed_claim,
+    scan_inbound,
+    submit_unclaimed_claim,
+    user_visible_unclaimed_queryset,
+)
 
 
 def state_conflict_response(exc: StateConflictError):
@@ -78,6 +92,47 @@ class ParcelDetailView(APIView):
             user=request.user,
         )
         return success_response(ParcelSerializer(parcel).data)
+
+
+class UnclaimedParcelListView(APIView):
+    authentication_classes = [MemberTokenAuthentication]
+    permission_classes = [IsMemberAuthenticated]
+
+    @extend_schema(
+        tags=["unclaimed-parcels"],
+        parameters=[UnclaimedParcelQuerySerializer],
+        responses={200: PublicUnclaimedParcelSerializer(many=True)},
+    )
+    def get(self, request):
+        serializer = UnclaimedParcelQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        keyword = serializer.validated_data.get("keyword", "").strip()
+        unclaimed = user_visible_unclaimed_queryset(user=request.user)
+        if keyword:
+            unclaimed = unclaimed.filter(tracking_no__icontains=keyword)
+        return success_response(
+            {"items": PublicUnclaimedParcelSerializer(unclaimed, many=True, context={"user": request.user}).data}
+        )
+
+
+class UnclaimedParcelClaimView(APIView):
+    authentication_classes = [MemberTokenAuthentication]
+    permission_classes = [IsMemberAuthenticated]
+
+    @extend_schema(
+        tags=["unclaimed-parcels"],
+        request=UnclaimedParcelClaimSerializer,
+        responses={200: PublicUnclaimedParcelSerializer},
+    )
+    def post(self, request, unclaimed_id: int):
+        serializer = UnclaimedParcelClaimSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        unclaimed = get_object_or_404(UnclaimedParcel, id=unclaimed_id)
+        try:
+            claimed = submit_unclaimed_claim(unclaimed_parcel=unclaimed, user=request.user, **serializer.validated_data)
+        except StateConflictError as exc:
+            return state_conflict_response(exc)
+        return success_response(PublicUnclaimedParcelSerializer(claimed, context={"user": request.user}).data)
 
 
 class AdminParcelListView(APIView):
@@ -145,7 +200,11 @@ class AdminUnclaimedParcelListCreateView(APIView):
 
     @extend_schema(tags=["admin-parcels"], responses={200: UnclaimedParcelSerializer(many=True)})
     def get(self, request):
-        unclaimed = UnclaimedParcel.objects.select_related("warehouse", "claimed_by_user").all()
+        unclaimed = UnclaimedParcel.objects.select_related(
+            "warehouse",
+            "claimed_by_user",
+            "reviewed_by_admin",
+        ).order_by("-id")
         return success_response({"items": UnclaimedParcelSerializer(unclaimed, many=True).data})
 
     @extend_schema(
@@ -161,3 +220,59 @@ class AdminUnclaimedParcelListCreateView(APIView):
             **serializer.validated_data,
         )
         return success_response(UnclaimedParcelSerializer(unclaimed).data, status=status.HTTP_201_CREATED)
+
+
+class AdminUnclaimedParcelApproveView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "parcels.view"
+
+    @extend_schema(
+        tags=["admin-parcels"],
+        request=UnclaimedParcelReviewSerializer,
+        responses={200: AdminUnclaimedParcelApproveResponseSerializer},
+    )
+    def post(self, request, unclaimed_id: int):
+        serializer = UnclaimedParcelReviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        unclaimed = get_object_or_404(UnclaimedParcel, id=unclaimed_id)
+        try:
+            parcel = approve_unclaimed_claim(
+                unclaimed_parcel=unclaimed,
+                operator=request.user,
+                **serializer.validated_data,
+            )
+        except StateConflictError as exc:
+            return state_conflict_response(exc)
+        unclaimed.refresh_from_db()
+        return success_response(
+            {
+                "parcel": ParcelSerializer(parcel).data,
+                "unclaimed_parcel": UnclaimedParcelSerializer(unclaimed).data,
+            }
+        )
+
+
+class AdminUnclaimedParcelRejectView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "parcels.view"
+
+    @extend_schema(
+        tags=["admin-parcels"],
+        request=UnclaimedParcelReviewSerializer,
+        responses={200: UnclaimedParcelSerializer},
+    )
+    def post(self, request, unclaimed_id: int):
+        serializer = UnclaimedParcelReviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        unclaimed = get_object_or_404(UnclaimedParcel, id=unclaimed_id)
+        try:
+            rejected = reject_unclaimed_claim(
+                unclaimed_parcel=unclaimed,
+                operator=request.user,
+                **serializer.validated_data,
+            )
+        except StateConflictError as exc:
+            return state_conflict_response(exc)
+        return success_response(UnclaimedParcelSerializer(rejected).data)

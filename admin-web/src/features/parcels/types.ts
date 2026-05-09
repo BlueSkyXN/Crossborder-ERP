@@ -71,6 +71,12 @@ export type UnclaimedParcel = {
   status: UnclaimedParcelStatus;
   description: string;
   claimed_by_email: string | null;
+  claim_note: string;
+  claim_contact: string;
+  claimed_at: string | null;
+  reviewed_by_name: string | null;
+  review_note: string;
+  reviewed_at: string | null;
   weight_kg: string | null;
   dimensions_json: Record<string, string>;
   created_at: string;
@@ -88,4 +94,13 @@ export type UnclaimedParcelCreatePayload = {
   tracking_no: string;
   description?: string;
   weight_kg?: string;
+};
+
+export type UnclaimedParcelReviewPayload = {
+  review_note?: string;
+};
+
+export type UnclaimedParcelApproveResponse = {
+  parcel: Parcel;
+  unclaimed_parcel: UnclaimedParcel;
 };

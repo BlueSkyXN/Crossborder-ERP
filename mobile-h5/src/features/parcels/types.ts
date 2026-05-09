@@ -7,6 +7,8 @@ export type ParcelStatus =
   | "CANCELLED"
   | "PROBLEM";
 
+export type UnclaimedParcelStatus = "UNCLAIMED" | "CLAIM_PENDING" | "CLAIMED";
+
 export type ParcelItem = {
   id: number;
   name: string;
@@ -59,4 +61,21 @@ export type ParcelForecastPayload = {
     product_url?: string;
     remark?: string;
   }>;
+};
+
+export type PublicUnclaimedParcel = {
+  id: number;
+  warehouse: number;
+  warehouse_name: string;
+  tracking_no_masked: string;
+  status: UnclaimedParcelStatus;
+  is_mine: boolean;
+  weight_kg: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UnclaimedClaimPayload = {
+  claim_note?: string;
+  claim_contact?: string;
 };

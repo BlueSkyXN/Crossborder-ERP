@@ -1,5 +1,6 @@
 import {
   CheckCircleOutlined,
+  CloseCircleOutlined,
   EyeOutlined,
   PlusOutlined,
   ReloadOutlined,
@@ -70,6 +71,12 @@ type UnclaimedFormValues = {
   tracking_no?: string;
   description?: string;
   weight_kg?: number;
+};
+
+type ReviewAction = "approve" | "reject";
+
+type ReviewFormValues = {
+  review_note?: string;
 };
 
 const parcelQueryKey = ["admin-parcels"] as const;
@@ -186,10 +193,13 @@ export function ParcelWmsPage() {
   const [scanForm] = Form.useForm<InboundFormValues>();
   const [inboundForm] = Form.useForm<InboundFormValues>();
   const [unclaimedForm] = Form.useForm<UnclaimedFormValues>();
+  const [reviewForm] = Form.useForm<ReviewFormValues>();
   const [activeTab, setActiveTab] = useState<ActiveTab>("pending");
   const [keyword, setKeyword] = useState("");
   const [detailParcel, setDetailParcel] = useState<Parcel | null>(null);
   const [inboundParcel, setInboundParcel] = useState<Parcel | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<UnclaimedParcel | null>(null);
+  const [reviewAction, setReviewAction] = useState<ReviewAction | null>(null);
   const [scanResult, setScanResult] = useState<ScanInboundResponse | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
 
@@ -263,7 +273,7 @@ export function ParcelWmsPage() {
 
   const renderPhotoUploadField = (form: FormInstance<InboundFormValues>) => (
     <Form.Item label="图片凭证">
-      <Space direction="vertical" style={{ width: "100%" }}>
+      <Space orientation="vertical" style={{ width: "100%" }}>
         <Form.Item name="photo_file_ids" noStyle>
           <Input.TextArea rows={2} placeholder="上传图片后自动填入文件 ID，也可粘贴已有 ID" />
         </Form.Item>
@@ -324,6 +334,36 @@ export function ParcelWmsPage() {
     onError: (error) => message.error(getErrorMessage(error)),
   });
 
+  const approveClaimMutation = useMutation({
+    mutationFn: ({ unclaimedId, values }: { unclaimedId: number; values: ReviewFormValues }) =>
+      parcelWmsApi.approveUnclaimedParcel(unclaimedId, {
+        review_note: values.review_note?.trim() || "",
+      }),
+    onSuccess: (result) => {
+      invalidateParcelData();
+      setReviewTarget(null);
+      setReviewAction(null);
+      reviewForm.resetFields();
+      message.success(`${result.parcel.parcel_no} 已转入会员包裹`);
+    },
+    onError: (error) => message.error(getErrorMessage(error)),
+  });
+
+  const rejectClaimMutation = useMutation({
+    mutationFn: ({ unclaimedId, values }: { unclaimedId: number; values: ReviewFormValues }) =>
+      parcelWmsApi.rejectUnclaimedParcel(unclaimedId, {
+        review_note: values.review_note?.trim() || "",
+      }),
+    onSuccess: (unclaimed) => {
+      invalidateParcelData();
+      setReviewTarget(null);
+      setReviewAction(null);
+      reviewForm.resetFields();
+      message.warning(`${unclaimed.tracking_no} 已驳回并重新开放认领`);
+    },
+    onError: (error) => message.error(getErrorMessage(error)),
+  });
+
   const openInbound = (parcel: Parcel) => {
     setInboundParcel(parcel);
     inboundForm.resetFields();
@@ -332,6 +372,25 @@ export function ParcelWmsPage() {
       length_cm: parcel.length_cm ? Number(parcel.length_cm) : undefined,
       width_cm: parcel.width_cm ? Number(parcel.width_cm) : undefined,
       height_cm: parcel.height_cm ? Number(parcel.height_cm) : undefined,
+    });
+  };
+
+  const openUnclaimedReview = (unclaimed: UnclaimedParcel, action: ReviewAction) => {
+    setReviewTarget(unclaimed);
+    setReviewAction(action);
+    reviewForm.resetFields();
+  };
+
+  const submitUnclaimedReview = () => {
+    if (!reviewTarget || !reviewAction) {
+      return;
+    }
+    reviewForm.validateFields().then((values) => {
+      if (reviewAction === "approve") {
+        approveClaimMutation.mutate({ unclaimedId: reviewTarget.id, values });
+        return;
+      }
+      rejectClaimMutation.mutate({ unclaimedId: reviewTarget.id, values });
     });
   };
 
@@ -384,13 +443,64 @@ export function ParcelWmsPage() {
     { title: "仓库", dataIndex: "warehouse_name", width: 140 },
     { title: "状态", dataIndex: "status", width: 120, render: unclaimedStatusTag },
     {
+      title: "认领会员",
+      dataIndex: "claimed_by_email",
+      width: 220,
+      render: (value: string | null, record) =>
+        value ? (
+          <Space orientation="vertical" size={0}>
+            <Typography.Text copyable>{value}</Typography.Text>
+            <Typography.Text type="secondary">{record.claim_contact || "-"}</Typography.Text>
+          </Space>
+        ) : (
+          "-"
+        ),
+    },
+    {
+      title: "认领说明",
+      dataIndex: "claim_note",
+      width: 220,
+      ellipsis: true,
+      render: (value: string) => value || "-",
+    },
+    {
       title: "重量",
       dataIndex: "weight_kg",
       width: 110,
       render: (value: string | null) => formatWeight(value),
     },
     { title: "说明", dataIndex: "description" },
+    { title: "认领时间", dataIndex: "claimed_at", width: 180, render: formatDate },
+    { title: "审核备注", dataIndex: "review_note", width: 180, ellipsis: true, render: (value: string) => value || "-" },
     { title: "登记时间", dataIndex: "created_at", width: 180, render: formatDate },
+    {
+      title: "操作",
+      width: 170,
+      fixed: "right",
+      render: (_, record) =>
+        record.status === "CLAIM_PENDING" ? (
+          <Space size={4}>
+            <Button
+              size="small"
+              type="primary"
+              icon={<CheckCircleOutlined />}
+              onClick={() => openUnclaimedReview(record, "approve")}
+            >
+              通过
+            </Button>
+            <Button
+              size="small"
+              danger
+              icon={<CloseCircleOutlined />}
+              onClick={() => openUnclaimedReview(record, "reject")}
+            >
+              驳回
+            </Button>
+          </Space>
+        ) : (
+          "-"
+        ),
+    },
   ];
 
   const filteredPending = filterRows(pendingParcels, keyword, (row) => [
@@ -409,7 +519,13 @@ export function ParcelWmsPage() {
     row.tracking_no,
     row.warehouse_name,
     row.description,
+    row.claimed_by_email,
+    row.claim_contact,
+    row.claim_note,
   ]);
+  const claimPendingCount = unclaimedParcels.filter((parcel) => parcel.status === "CLAIM_PENDING").length;
+  const reviewTitle = reviewAction === "approve" ? "审核通过认领" : "驳回认领";
+  const reviewLoading = approveClaimMutation.isPending || rejectClaimMutation.isPending;
 
   const renderParcelTable = (rows: Parcel[], emptyDescription: string) => (
     <Table
@@ -463,7 +579,7 @@ export function ParcelWmsPage() {
         </Col>
         <Col xs={24} md={8}>
           <Card>
-            <Statistic title="无主包裹" value={unclaimedParcels.length} suffix="件" styles={{ content: { color: "#2563eb" } }} />
+            <Statistic title="无主/认领" value={unclaimedParcels.length} suffix={`件 / 待审 ${claimPendingCount}`} styles={{ content: { color: "#2563eb" } }} />
           </Card>
         </Col>
       </Row>
@@ -615,7 +731,7 @@ export function ParcelWmsPage() {
                   dataSource={filteredUnclaimed}
                   columns={unclaimedColumns}
                   pagination={{ pageSize: 8, showSizeChanger: true }}
-                  scroll={{ x: 860 }}
+                  scroll={{ x: 1420 }}
                   locale={{ emptyText: <Empty description="暂无无主包裹" /> }}
                 />
               </Col>
@@ -773,6 +889,64 @@ export function ParcelWmsPage() {
               {renderPhotoUploadField(inboundForm)}
               <Form.Item name="remark" label="备注">
                 <Input.TextArea rows={4} />
+              </Form.Item>
+            </Form>
+          </Space>
+        )}
+      </Drawer>
+
+      <Drawer
+        title={reviewTarget ? `${reviewTarget.tracking_no} ${reviewTitle}` : reviewTitle}
+        open={Boolean(reviewTarget)}
+        size={520}
+        destroyOnHidden
+        onClose={() => {
+          setReviewTarget(null);
+          setReviewAction(null);
+        }}
+        extra={
+          <Space>
+            <Button
+              onClick={() => {
+                setReviewTarget(null);
+                setReviewAction(null);
+              }}
+            >
+              取消
+            </Button>
+            <Button
+              type="primary"
+              danger={reviewAction === "reject"}
+              loading={reviewLoading}
+              onClick={submitUnclaimedReview}
+            >
+              {reviewAction === "approve" ? "通过认领" : "驳回认领"}
+            </Button>
+          </Space>
+        }
+      >
+        {reviewTarget && (
+          <Space orientation="vertical" size={16} className="parcel-detail">
+            <Alert
+              type={reviewAction === "approve" ? "info" : "warning"}
+              showIcon
+              title={`${reviewTarget.claimed_by_email || "-"} / ${reviewTarget.claim_contact || "-"}`}
+            />
+            <Descriptions
+              bordered
+              column={1}
+              size="small"
+              items={[
+                { key: "tracking", label: "快递单号", children: reviewTarget.tracking_no },
+                { key: "warehouse", label: "仓库", children: reviewTarget.warehouse_name },
+                { key: "weight", label: "重量", children: formatWeight(reviewTarget.weight_kg) },
+                { key: "claimed_at", label: "认领时间", children: formatDate(reviewTarget.claimed_at) },
+                { key: "claim_note", label: "认领说明", children: reviewTarget.claim_note || "-" },
+              ]}
+            />
+            <Form form={reviewForm} layout="vertical" requiredMark={false}>
+              <Form.Item name="review_note" label="审核备注">
+                <Input.TextArea rows={4} maxLength={1000} showCount />
               </Form.Item>
             </Form>
           </Space>

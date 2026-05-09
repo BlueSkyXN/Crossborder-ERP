@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.warehouses.models import ConfigStatus, Warehouse
 
 from .models import InboundRecord, Parcel, ParcelItem, ParcelPhoto, UnclaimedParcel
+from .services import mask_tracking_no
 
 
 class ParcelItemSerializer(serializers.ModelSerializer):
@@ -124,7 +125,8 @@ class ScanInboundResponseSerializer(serializers.Serializer):
 
 class UnclaimedParcelSerializer(serializers.ModelSerializer):
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
-    claimed_by_email = serializers.EmailField(source="claimed_by_user.email", read_only=True)
+    claimed_by_email = serializers.EmailField(source="claimed_by_user.email", read_only=True, allow_null=True)
+    reviewed_by_name = serializers.CharField(source="reviewed_by_admin.name", read_only=True, allow_null=True)
 
     class Meta:
         model = UnclaimedParcel
@@ -136,12 +138,59 @@ class UnclaimedParcelSerializer(serializers.ModelSerializer):
             "status",
             "description",
             "claimed_by_email",
+            "claim_note",
+            "claim_contact",
+            "claimed_at",
+            "reviewed_by_name",
+            "review_note",
+            "reviewed_at",
             "weight_kg",
             "dimensions_json",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "status", "claimed_by_email", "dimensions_json", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "status",
+            "claimed_by_email",
+            "claim_note",
+            "claim_contact",
+            "claimed_at",
+            "reviewed_by_name",
+            "review_note",
+            "reviewed_at",
+            "dimensions_json",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class PublicUnclaimedParcelSerializer(serializers.ModelSerializer):
+    warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
+    tracking_no_masked = serializers.SerializerMethodField()
+    is_mine = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UnclaimedParcel
+        fields = [
+            "id",
+            "warehouse",
+            "warehouse_name",
+            "tracking_no_masked",
+            "status",
+            "is_mine",
+            "weight_kg",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_tracking_no_masked(self, obj: UnclaimedParcel) -> str:
+        return mask_tracking_no(obj.tracking_no)
+
+    def get_is_mine(self, obj: UnclaimedParcel) -> bool:
+        user = self.context.get("user")
+        return bool(user and obj.claimed_by_user_id == user.id)
 
 
 class AdminUnclaimedParcelCreateSerializer(serializers.Serializer):
@@ -152,3 +201,21 @@ class AdminUnclaimedParcelCreateSerializer(serializers.Serializer):
     tracking_no = serializers.CharField(max_length=80)
     description = serializers.CharField(required=False, allow_blank=True)
     weight_kg = serializers.DecimalField(max_digits=10, decimal_places=3, required=False, allow_null=True)
+
+
+class UnclaimedParcelQuerySerializer(serializers.Serializer):
+    keyword = serializers.CharField(required=False, allow_blank=True, max_length=80)
+
+
+class UnclaimedParcelClaimSerializer(serializers.Serializer):
+    claim_note = serializers.CharField(required=False, allow_blank=True, max_length=1000)
+    claim_contact = serializers.CharField(required=False, allow_blank=True, max_length=120)
+
+
+class UnclaimedParcelReviewSerializer(serializers.Serializer):
+    review_note = serializers.CharField(required=False, allow_blank=True, max_length=1000)
+
+
+class AdminUnclaimedParcelApproveResponseSerializer(serializers.Serializer):
+    parcel = ParcelSerializer()
+    unclaimed_parcel = UnclaimedParcelSerializer()

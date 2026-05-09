@@ -5,7 +5,9 @@ import type {
   ScanInboundPayload,
   ScanInboundResponse,
   UnclaimedParcel,
+  UnclaimedParcelApproveResponse,
   UnclaimedParcelCreatePayload,
+  UnclaimedParcelReviewPayload,
 } from "./types";
 
 type ListResponse<T> = {
@@ -29,4 +31,16 @@ export const parcelWmsApi = {
   listUnclaimedParcels: () => listItems<UnclaimedParcel>("/admin/unclaimed-parcels"),
   createUnclaimedParcel: (payload: UnclaimedParcelCreatePayload) =>
     requestData<UnclaimedParcel>({ method: "POST", url: "/admin/unclaimed-parcels", data: payload }),
+  approveUnclaimedParcel: (unclaimedId: number, payload: UnclaimedParcelReviewPayload) =>
+    requestData<UnclaimedParcelApproveResponse>({
+      method: "POST",
+      url: `/admin/unclaimed-parcels/${unclaimedId}/approve`,
+      data: payload,
+    }),
+  rejectUnclaimedParcel: (unclaimedId: number, payload: UnclaimedParcelReviewPayload) =>
+    requestData<UnclaimedParcel>({
+      method: "POST",
+      url: `/admin/unclaimed-parcels/${unclaimedId}/reject`,
+      data: payload,
+    }),
 };

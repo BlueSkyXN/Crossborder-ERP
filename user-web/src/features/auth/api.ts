@@ -5,6 +5,10 @@ import type {
   LoginPayload,
   LoginResult,
   MemberUser,
+  PasswordResetConfirmPayload,
+  PasswordResetConfirmResult,
+  PasswordResetRequestPayload,
+  PasswordResetRequestResult,
   ProfileUpdatePayload,
   RegisterPayload,
 } from "./types";
@@ -44,6 +48,22 @@ export function changePassword(payload: ChangePasswordPayload) {
   return requestData<ChangePasswordResult>({
     method: "POST",
     url: "/me/password",
+    data: payload,
+  });
+}
+
+export function requestPasswordReset(payload: PasswordResetRequestPayload) {
+  return requestData<PasswordResetRequestResult>({
+    method: "POST",
+    url: "/auth/password-reset/request",
+    data: payload,
+  });
+}
+
+export function confirmPasswordReset(payload: PasswordResetConfirmPayload) {
+  return requestData<PasswordResetConfirmResult>({
+    method: "POST",
+    url: "/auth/password-reset/confirm",
     data: payload,
   });
 }

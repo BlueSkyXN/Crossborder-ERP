@@ -1,3 +1,4 @@
+from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import exceptions, status
 from rest_framework.views import APIView
@@ -21,6 +22,8 @@ from .serializers import (
     AdminSupportUserSerializer,
     GrowthSummarySerializer,
     MemberLoginSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     PointLedgerSerializer,
     RebateRecordSerializer,
     ReferralRelationSerializer,
@@ -32,6 +35,7 @@ from .services import (
     active_service_admin_options,
     adjust_member_points,
     change_member_password,
+    confirm_member_password_reset,
     create_rebate_record,
     create_referral_relation,
     filter_admin_members,
@@ -42,6 +46,7 @@ from .services import (
     rebate_record_queryset,
     referral_relation_queryset,
     register_user,
+    request_member_password_reset,
     reset_member_password,
     set_member_status,
     update_admin_member,
@@ -94,6 +99,48 @@ class MemberLogoutView(APIView):
     )
     def post(self, request):
         return success_response({"logged_out": True})
+
+
+class PasswordResetRequestView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    @extend_schema(
+        tags=["auth"],
+        request=PasswordResetRequestSerializer,
+        responses={200: OpenApiResponse(description="Password reset request accepted")},
+    )
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = request_member_password_reset(
+            email=serializer.validated_data["email"],
+            request_ip=request.META.get("REMOTE_ADDR"),
+            user_agent=request.META.get("HTTP_USER_AGENT", ""),
+        )
+        payload = {
+            "requested": True,
+            "expires_in_minutes": settings.MEMBER_PASSWORD_RESET_TOKEN_TTL_MINUTES,
+        }
+        if settings.MEMBER_PASSWORD_RESET_EXPOSE_TOKEN and result.reset_token:
+            payload["dev_reset_token"] = result.reset_token
+        return success_response(payload)
+
+
+class PasswordResetConfirmView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    @extend_schema(
+        tags=["auth"],
+        request=PasswordResetConfirmSerializer,
+        responses={200: OpenApiResponse(description="Password reset confirmed")},
+    )
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        confirm_member_password_reset(**serializer.validated_data)
+        return success_response({"reset": True})
 
 
 class MeView(APIView):

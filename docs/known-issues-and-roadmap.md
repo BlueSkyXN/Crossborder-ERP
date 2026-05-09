@@ -7,7 +7,7 @@
 - `docs/source-report-gap-map.md`
 - `docs/production-readiness-backlog.md`
 
-`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FILE-SNIFF-001` 已补齐上传文件基础内容签名校验，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 批量预报解析，`CSV-EXPORT-SAFE-001` 已补齐 CSV 导出公式注入防护，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础，`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的一条真实浏览器旅程，`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础，`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础，`GROWTH-001` 已补齐积分推广返利基础，`AUDITLOG-001` 已补齐后台关键写操作审计日志，`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令，`SECURITY-HEADERS-001` 已补齐基础应用安全响应头，`OPS-READINESS-001` 已补齐运维 readiness 检查，`OPS-SQLITE-BACKUP-001` 已补齐 SQLite 本地备份命令，`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令，`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口，`ACCOUNT-SETTINGS-001` 已补齐会员注册、账户资料设置和自助改密码基础，`ADMIN-PANELS-001` 已补齐后台 dashboard/roles 真实接口面板，`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环，`RBAC-ADMIN-USERS-001` 已补齐管理员账号与角色分配闭环，`RBAC-BUSINESS-ACTIONS-001` 已补齐后台业务写操作的模块级 action 权限拆分，`CONFIG-EXTERNAL-SERVICES-001` 已补齐 PostgreSQL/MySQL/Redis/Celery 的无连接 DSN 边界检查，`RBAC-DELETE-001` 已补齐角色与管理员账号安全删除闭环。后续优先按生产化边界、需业务/合规确认的外部集成和测试深度增强逐项收敛。
+`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FILE-SNIFF-001` 已补齐上传文件基础内容签名校验，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 批量预报解析，`CSV-EXPORT-SAFE-001` 已补齐 CSV 导出公式注入防护，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础，`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的一条真实浏览器旅程，`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础，`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础，`GROWTH-001` 已补齐积分推广返利基础，`AUDITLOG-001` 已补齐后台关键写操作审计日志，`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令，`SECURITY-HEADERS-001` 已补齐基础应用安全响应头，`OPS-READINESS-001` 已补齐运维 readiness 检查，`OPS-SQLITE-BACKUP-001` 已补齐 SQLite 本地备份命令，`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令，`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口，`ACCOUNT-SETTINGS-001` 已补齐会员注册、账户资料设置和自助改密码基础，`ACCOUNT-RESET-001` 已补齐会员找回密码和重置密码闭环，`ADMIN-PANELS-001` 已补齐后台 dashboard/roles 真实接口面板，`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环，`RBAC-ADMIN-USERS-001` 已补齐管理员账号与角色分配闭环，`RBAC-BUSINESS-ACTIONS-001` 已补齐后台业务写操作的模块级 action 权限拆分，`CONFIG-EXTERNAL-SERVICES-001` 已补齐 PostgreSQL/MySQL/Redis/Celery 的无连接 DSN 边界检查，`RBAC-DELETE-001` 已补齐角色与管理员账号安全删除闭环。后续优先按生产化边界、需业务/合规确认的外部集成和测试深度增强逐项收敛。
 
 ## 已知问题
 
@@ -125,7 +125,7 @@
 
 ### 复杂业务规则仍需确认
 
-问题：计费公式、首发国家/渠道、短信/邮件验证码、找回密码、微信登录、多语言、真实打印模板版式和硬件接入等仍为 `TODO_CONFIRM`。
+问题：计费公式、首发国家/渠道、短信/邮件验证码、真实通知送达、微信登录、多语言、真实打印模板版式和硬件接入等仍为 `TODO_CONFIRM`。
 影响：不能作为最终商业规则上线。
 当前临时处理：P0 使用简化字段和人工操作完成闭环。
 后续建议：由业务负责人逐项确认后进入独立任务。
@@ -172,4 +172,4 @@
 - 真实外部电商抓取、自动采购下单和外部订单同步。
 - 积分兑换、推广返利结算、提现和风控。
 - 物流 API 轨迹同步、真实面单打印和更复杂批次发货。
-- 短信/邮件验证码、找回密码、微信登录、多语言、内容审批流和更复杂客服能力。
+- 短信/邮件验证码、真实通知送达、微信登录、多语言、内容审批流和更复杂客服能力。

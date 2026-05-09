@@ -77,6 +77,16 @@ class ChangePasswordSerializer(serializers.Serializer):
         return attrs
 
 
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    token = serializers.CharField(trim_whitespace=False, max_length=200)
+    new_password = serializers.CharField(min_length=8, trim_whitespace=False)
+
+
 class AdminMemberServiceSummarySerializer(serializers.Serializer):
     ticket_count = serializers.IntegerField()
     open_ticket_count = serializers.IntegerField()

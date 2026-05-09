@@ -45,7 +45,7 @@
 
 .modeSwitch {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   margin: 12px 12px 0;
   padding: 4px;
@@ -75,6 +75,13 @@
   font-weight: 900;
 }
 
+.secondary {
+  height: 42px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  font-weight: 900;
+}
+
 .error {
   margin: 12px 12px 0;
   padding: 10px 12px;
@@ -82,6 +89,16 @@
   border-radius: 6px;
   background: #fef2f2;
   color: #b91c1c;
+  font-weight: 700;
+}
+
+.notice {
+  margin: 12px 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #99f6e4;
+  border-radius: 6px;
+  background: #f0fdfa;
+  color: #0f766e;
   font-weight: 700;
 }
 

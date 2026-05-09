@@ -39,6 +39,7 @@
 | `STORAGE-CLEANUP-001` | P2 | 本地文件清理 | `purge_deleted_files` 命令、软删除保留期、dry-run、路径安全 | 已完成基础；对象存储生命周期仍后续 |
 | `PURCHASE-AUTO-001` | P3 | 外链解析/自动采购 | 外部链接解析 provider 接口、人工 fallback、合规边界 | 已完成基础；不抓取真实第三方前不声明自动采购完成 |
 | `ACCOUNT-SETTINGS-001` | P3 | 会员注册与账户设置 | 前台注册入口、会员自助资料设置、会员自助改密码 | 已完成基础；不接短信/邮件/验证码/找回密码 |
+| `ACCOUNT-RESET-001` | P3 | 会员找回密码与重置密码 | reset token 模型/API、User Web/Mobile H5 找回密码入口 | 已完成基础；真实短信/邮件/微信通道后续 |
 | `ADMIN-PANELS-001` | P3 | 后台占位面板真实化 | Admin dashboard 真实聚合接口、角色权限真实面板、browser smoke 覆盖 | 已完成基础；角色写操作由 `RBAC-ROLES-001` 承接 |
 | `RBAC-ROLES-001` | P3 | 角色权限管理闭环 | 角色创建、编辑、权限分配、独立 manage 权限、`super_admin` 保护 | 已完成基础；角色删除和后台用户分配角色由后续任务处理 |
 | `RBAC-ADMIN-USERS-001` | P3 | 管理员账号与角色分配 | 管理员账号列表、新增、启停、密码重置、角色分配、独立 manage 权限 | 已完成基础；账号删除和外部 IAM 由后续任务处理 |
@@ -74,6 +75,7 @@
 - `STORAGE-CLEANUP-001`：已补 `purge_deleted_files` management command，只清理超过保留期的 `StoredFile.DELETED` 本地物理文件，支持 dry-run、missing/unsafe 统计和路径逃逸保护；对象存储生命周期、病毒扫描、缩略图和 CDN 仍后续补齐。
 - `PURCHASE-AUTO-001`：已补 `purchase-links/parse` 外部商品链接解析入口，User Web 和 Mobile H5 手工代购页可把解析结果填入商品行；当前只做 host/item id/URL 规范化和人工确认备注，不抓取真实第三方页面、不自动下单。
 - `ACCOUNT-SETTINGS-001`：已补会员自助改密码 API、User Web/H5 注册并自动登录入口、Web `/settings` 和 H5 `/me/settings` 账户设置页；当前不接短信/邮件验证码、找回密码或第三方登录。
+- `ACCOUNT-RESET-001`：已补会员找回密码请求和确认重置 API，reset token 只保存 hash、具备过期和一次性消费语义；User Web/Mobile H5 登录页已接入找回密码入口。当前不接真实短信、邮件、微信或 MFA。
 - `ADMIN-PANELS-001`：已把 Admin Web `/dashboard` 和 `/roles` 从通用占位工作台替换为真实面板。Dashboard 由 `GET /api/v1/admin/dashboard` 按角色权限返回真实模块指标、工作队列和最近审计动作；角色权限页读取真实角色和权限覆盖矩阵。
 - `RBAC-ROLES-001`：已补 `iam.role.manage` 写权限、权限列表 API、角色创建/编辑 API 和 Admin Web `/roles` 新增/编辑弹窗；`super_admin` 内置角色不可编辑。角色删除、后台用户分配角色和外部 IAM 仍后续补齐。
 - `RBAC-ADMIN-USERS-001`：已补 `iam.admin.view` / `iam.admin.manage`，新增后台管理员账号 API 和 Admin Web `/admin-users` 页面，支持创建普通管理员、启停账号、重置密码和分配角色；内置超级管理员账号不可编辑，当前登录管理员不可修改自己的状态、角色或密码。账号删除和外部 IAM/SSO/MFA 仍后续补齐。
@@ -85,7 +87,7 @@
 
 ## Current Next Task
 
-任务图中的 `CSV-EXPORT-SAFE-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
+任务图中的 `ACCOUNT-RESET-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
 
 - 生产化边界：补对象存储、病毒扫描、PostgreSQL/MySQL/Redis 真实连接/迁移验证计划、告警和部署验证。
 - 需业务/合规确认的外部集成：真实支付、真实物流 API、真实自动采购下单和外部商品抓取。

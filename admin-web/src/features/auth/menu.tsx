@@ -3,6 +3,7 @@ import {
   DatabaseOutlined,
   DeploymentUnitOutlined,
   DollarOutlined,
+  FileTextOutlined,
   InboxOutlined,
   MessageOutlined,
   SafetyOutlined,
@@ -93,6 +94,14 @@ export const adminRouteMeta: AdminRouteMeta[] = [
     label: "客服工单",
     icon: <MessageOutlined />,
     description: "用户留言、客服回复和工单处理状态。",
+  },
+  {
+    permission: "content.view",
+    resource: "content",
+    path: "/content",
+    label: "内容管理",
+    icon: <FileTextOutlined />,
+    description: "帮助、公告、条款和基础页面。",
   },
   {
     permission: "iam.role.view",

@@ -1,6 +1,7 @@
 import {
   CopyOutlined,
   FileSearchOutlined,
+  FileTextOutlined,
   HomeOutlined,
   InboxOutlined,
   PlusOutlined,
@@ -177,6 +178,10 @@ export function DashboardPage() {
             <button type="button" onClick={() => navigate("/tickets")}>
               <MessageOutlined />
               消息工单
+            </button>
+            <button type="button" onClick={() => navigate("/content")}>
+              <FileTextOutlined />
+              帮助公告
             </button>
             <button type="button" onClick={() => navigate("/products")}>
               <ShoppingCartOutlined />

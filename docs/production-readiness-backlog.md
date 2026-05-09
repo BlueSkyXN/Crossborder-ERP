@@ -21,7 +21,7 @@
 | `MSG-001` | P1 | 客服消息/工单 | 用户留言、图片附件、后台回复/处理、用户查看状态 | 已完成：消息状态测试、权限隔离测试、三端入口和 API E2E |
 | `MEMBER-001` | P1 | 后台会员管理 | 会员列表、筛选、冻结/解冻、重置密码、会员等级、客服分配占位 | 已完成：RBAC/权限测试、冻结 token 阻断、后台页面 build、API E2E |
 | `PARCEL-CLAIM-001` | P1 | 无主包裹用户认领 | 用户侧无主包裹列表/搜索/认领；后台审核；认领后转包裹 | 已完成：防抢认领事务测试、脱敏展示测试、三端入口 |
-| `CONTENT-001` | P1 | 内容 CMS | 帮助、公告、条款、关于我们、显示/排序；用户端展示 | CRUD 测试、前台读取测试 |
+| `CONTENT-001` | P1 | 内容 CMS | 帮助、公告、条款、关于我们、显示/排序；用户端展示 | 已完成：后台 CRUD/发布隐藏、三端入口、公开读取测试 |
 | `IMPORT-001` | P1 | 批量导入/导出基础 | 预报模板下载、Excel 导入、错误明细；通用导出策略 | 不新增系统依赖；优先使用现有 Python 库或标准 CSV fallback |
 | `SHIP-BATCH-001` | P2 | 发货批次/转单/打印 | 发货批次模型、运单归批、批量轨迹、转单号、打印模板占位 | 不接硬件；打印只生成模板数据 |
 | `PAYABLE-001` | P2 | 供应商/成本/应付 | 供应商、成本类型、应付款、审批/核销基础 | 与应收钱包分离，金额精度测试 |
@@ -37,18 +37,19 @@
 - `MSG-001`：已补 tickets/messages app、`MESSAGE_ATTACHMENT` 附件校验、后台 `tickets.view` 权限、用户/后台回复状态机、Admin Web/User Web/Mobile H5 工单入口和 API E2E 工单往返。
 - `MEMBER-001`：已补后台会员列表/筛选/详情、会员资料维护、冻结/解冻、测试密码重置、客服负责人和内部服务备注；Admin Web `/members` 已从占位页升级为真实管理面板。
 - `PARCEL-CLAIM-001`：已补用户侧无主包裹脱敏列表/搜索/认领 API，后台认领通过/驳回审核，审核通过后转为会员 `Parcel.IN_STOCK`；User Web、Mobile H5 和 Admin Web 已补入口和操作。
+- `CONTENT-001`：已补内容分类/内容条目模型、后台 CRUD、发布/隐藏、公开只读 API、Admin Web 内容管理页、User Web `/content` 和 Mobile H5 `/me/content` 展示入口；条款/隐私正式文案仍需业务/法务确认。
 
 ## Current Next Task
 
-`CONTENT-001` 是当前下一项，因为无主包裹认领已补齐，内容 CMS/帮助公告仍是 ChatGPT/Gemini 后台和用户端报告中的 P1 缺口。
+`IMPORT-001` 是当前下一项，因为内容 CMS 已补齐，批量导入/导出仍是 ChatGPT/Gemini 后台和用户端报告中的 P1 缺口。
 
-建议 `CONTENT-001` 范围：
+建议 `IMPORT-001` 范围：
 
-- 后端补内容分类、内容条目、发布/隐藏、slug 和排序。
-- 后台补内容 CRUD 与状态维护，走 RBAC。
-- User Web/Mobile H5 增加帮助、公告、条款等只读入口。
-- 增加后台 CRUD、用户端读取、隐藏内容不可见和权限测试。
-- 继续保持 SQLite-first，不接复杂 CMS workflow。
+- 先确认仓库内是否已有 CSV/XLSX 相关依赖，优先复用或采用标准 CSV fallback。
+- 后端补模板下载、批量预报导入、错误明细和导入结果记录。
+- User Web/Admin Web 补导入/导出入口和进度/错误反馈。
+- 增加字段校验、重复单号、权限隔离和错误行测试。
+- 继续保持 SQLite-first，不接外部云表格服务或未验证异步队列。
 
 ## Completion Boundary
 

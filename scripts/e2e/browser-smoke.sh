@@ -29,7 +29,10 @@ cleanup() {
   for pid in "${PIDS[@]:-}"; do
     wait "$pid" 2>/dev/null || true
   done
-  rm -rf "$TMP_DIR" || true
+  rm -rf "$TMP_DIR" 2>/dev/null || {
+    sleep 1
+    rm -rf "$TMP_DIR" 2>/dev/null || true
+  }
   exit "$status"
 }
 

@@ -1,16 +1,25 @@
 from django.urls import path
 
 from .views import (
+    AdminPointLedgerListView,
+    AdminRebateRecordListCreateView,
+    AdminReferralRelationListCreateView,
     AdminMemberDetailView,
     AdminMemberFreezeView,
+    AdminMemberGrowthDetailView,
     AdminMemberListView,
     AdminMemberResetPasswordView,
     AdminMemberUnfreezeView,
     AdminSupportUserListView,
+    AdminUserPointAdjustView,
+    GrowthSummaryView,
     MemberLoginView,
     MemberLogoutView,
     MeProfileView,
     MeView,
+    PointLedgerListView,
+    RebateRecordListView,
+    ReferralRelationListView,
     RegisterView,
 )
 
@@ -20,8 +29,13 @@ urlpatterns = [
     path("auth/logout", MemberLogoutView.as_view(), name="member-logout"),
     path("me", MeView.as_view(), name="member-me"),
     path("me/profile", MeProfileView.as_view(), name="member-profile"),
+    path("growth/summary", GrowthSummaryView.as_view(), name="growth-summary"),
+    path("growth/point-ledgers", PointLedgerListView.as_view(), name="growth-point-ledger-list"),
+    path("growth/referrals", ReferralRelationListView.as_view(), name="growth-referral-list"),
+    path("growth/rebates", RebateRecordListView.as_view(), name="growth-rebate-list"),
     path("admin/members", AdminMemberListView.as_view(), name="admin-members"),
     path("admin/members/<int:user_id>", AdminMemberDetailView.as_view(), name="admin-member-detail"),
+    path("admin/members/<int:user_id>/growth", AdminMemberGrowthDetailView.as_view(), name="admin-member-growth-detail"),
     path("admin/members/<int:user_id>/freeze", AdminMemberFreezeView.as_view(), name="admin-member-freeze"),
     path("admin/members/<int:user_id>/unfreeze", AdminMemberUnfreezeView.as_view(), name="admin-member-unfreeze"),
     path(
@@ -30,4 +44,12 @@ urlpatterns = [
         name="admin-member-reset-password",
     ),
     path("admin/member-service-admins", AdminSupportUserListView.as_view(), name="admin-member-service-admins"),
+    path("admin/growth/point-ledgers", AdminPointLedgerListView.as_view(), name="admin-growth-point-ledger-list"),
+    path("admin/growth/referrals", AdminReferralRelationListCreateView.as_view(), name="admin-growth-referral-list"),
+    path("admin/growth/rebates", AdminRebateRecordListCreateView.as_view(), name="admin-growth-rebate-list"),
+    path(
+        "admin/members/<int:user_id>/points/adjust",
+        AdminUserPointAdjustView.as_view(),
+        name="admin-member-point-adjust",
+    ),
 ]

@@ -290,6 +290,77 @@ def _run_member_admin_flow(*, admin_client: APIClient, member_client: APIClient,
     }
 
 
+def _run_growth_flow(*, admin_client: APIClient, member_client: APIClient, member: dict, run_id: str) -> dict:
+    invitee = _api_data(
+        APIClient().post(
+            "/api/v1/auth/register",
+            {
+                "email": f"growth-{run_id.lower()}@example.com",
+                "password": PASSWORD,
+                "display_name": "E2E 被邀请会员",
+            },
+            format="json",
+        ),
+        expected_status=201,
+    )
+    referral = _api_data(
+        admin_client.post(
+            "/api/v1/admin/growth/referrals",
+            {
+                "inviter_id": member["id"],
+                "invitee_id": invitee["id"],
+                "remark": "TODO_CONFIRM: E2E 手工邀请归因",
+            },
+            format="json",
+        ),
+        expected_status=201,
+    )
+    rebate = _api_data(
+        admin_client.post(
+            "/api/v1/admin/growth/rebates",
+            {
+                "referral_id": referral["id"],
+                "amount": "3.50",
+                "reward_points": 25,
+                "business_type": "E2E_REFERRAL",
+                "business_id": 2001,
+                "remark": "TODO_CONFIRM: E2E 返利比例和结算规则待确认",
+            },
+            format="json",
+        ),
+        expected_status=201,
+    )
+    point_adjustment = _api_data(
+        admin_client.post(
+            f"/api/v1/admin/members/{member['id']}/points/adjust",
+            {
+                "points_delta": 15,
+                "remark": "TODO_CONFIRM: E2E 后台手工积分调整",
+            },
+            format="json",
+        ),
+        expected_status=201,
+    )
+
+    summary = _api_data(member_client.get("/api/v1/growth/summary"))
+    assert summary["points_balance"] == 40
+    assert summary["confirmed_reward_points"] == 25
+    assert summary["confirmed_rebate_amount"] == "3.50"
+    assert "TODO_CONFIRM" in summary["rebate_rule_note"]
+
+    detail = _api_data(admin_client.get(f"/api/v1/admin/members/{member['id']}/growth"))
+    assert detail["summary"]["points_balance"] == 40
+    assert detail["referrals"][0]["invitee_email"] == invitee["email"]
+    assert detail["rebates"][0]["reward_points"] == 25
+
+    return {
+        "referral_id": referral["id"],
+        "rebate_id": rebate["id"],
+        "points_balance": point_adjustment["balance_after"],
+        "invitee_email": invitee["email"],
+    }
+
+
 def _run_content_flow(*, admin_client: APIClient, member_client: APIClient, run_id: str) -> dict:
     category = _api_data(
         admin_client.post(
@@ -967,6 +1038,12 @@ def test_p0_forwarding_and_purchase_e2e():
         member_client=member_client,
         member=member,
     )
+    growth_result = _run_growth_flow(
+        admin_client=admin_client,
+        member_client=member_client,
+        member=member,
+        run_id=run_id,
+    )
     content_result = _run_content_flow(
         admin_client=admin_client,
         member_client=member_client,
@@ -981,6 +1058,7 @@ def test_p0_forwarding_and_purchase_e2e():
     print("[E2E-001] 代购链路完成:", purchase_result)
     print("[MSG-001] 工单链路完成:", ticket_result)
     print("[MEMBER-001] 会员后台链路完成:", member_admin_result)
+    print("[GROWTH-001] 积分推广返利链路完成:", growth_result)
     print("[CONTENT-001] 内容 CMS 链路完成:", content_result)
     print("[PAYABLE-001] 应付链路完成:", payable_result)
     assert main_result["status"] == "SIGNED"
@@ -988,6 +1066,7 @@ def test_p0_forwarding_and_purchase_e2e():
     assert unclaimed_result["status"] == "CLAIMED"
     assert purchase_result["waybill_status"] == "PENDING_REVIEW"
     assert ticket_result["status"] == "PROCESSING"
+    assert growth_result["points_balance"] == 40
     assert member_admin_result["status"] == "ACTIVE"
     assert content_result["status"] == "HIDDEN"
     assert payable_result["status"] == "SETTLED"

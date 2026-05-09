@@ -119,6 +119,10 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "ActiveDisabledStatusEnum": "apps.warehouses.models.ConfigStatus",
         "UserStatusEnum": "apps.members.models.UserStatus",
+        "PointTransactionTypeEnum": "apps.members.models.PointTransactionType",
+        "PointTransactionDirectionEnum": "apps.members.models.PointTransactionDirection",
+        "ReferralStatusEnum": "apps.members.models.ReferralStatus",
+        "RebateStatusEnum": "apps.members.models.RebateStatus",
         "AddressTypeEnum": "apps.addresses.models.AddressType",
         "FileUsageEnum": "apps.files.models.FileUsage",
         "FileOwnerTypeEnum": "apps.files.models.FileOwnerType",

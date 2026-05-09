@@ -2,6 +2,7 @@ import {
   CopyOutlined,
   FileSearchOutlined,
   FileTextOutlined,
+  GiftOutlined,
   HomeOutlined,
   InboxOutlined,
   PlusOutlined,
@@ -18,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 
 import { fetchMe } from "../features/auth/api";
 import { useAuthStore } from "../features/auth/store";
+import { fetchGrowthSummary } from "../features/growth/api";
 import { fetchPurchaseOrders } from "../features/purchases/api";
 import { fetchWarehouseAddress, fetchWarehouses } from "../features/warehouses/api";
 import { fetchWallet, fetchWaybills } from "../features/waybills/api";
@@ -71,6 +73,10 @@ export function DashboardPage() {
     queryKey: ["member", "wallet"],
     queryFn: fetchWallet,
   });
+  const growthQuery = useQuery({
+    queryKey: ["member", "growth-summary"],
+    queryFn: fetchGrowthSummary,
+  });
 
   const warehouses = useMemo(() => warehousesQuery.data ?? [], [warehousesQuery.data]);
   const effectiveWarehouseId = selectedWarehouseId ?? warehouses[0]?.id ?? null;
@@ -121,7 +127,8 @@ export function DashboardPage() {
     addressQuery.isError ||
     waybillsQuery.isError ||
     purchaseOrdersQuery.isError ||
-    walletQuery.isError;
+    walletQuery.isError ||
+    growthQuery.isError;
   const isLoading = meQuery.isLoading || warehousesQuery.isLoading || addressQuery.isLoading;
   const waybills = waybillsQuery.data ?? [];
   const purchaseOrders = purchaseOrdersQuery.data ?? [];
@@ -174,6 +181,13 @@ export function DashboardPage() {
             <button type="button" onClick={() => navigate("/finance")}>
               <WalletOutlined />
               财务中心
+            </button>
+            <button
+              type="button"
+              onClick={() => document.getElementById("growth-panel")?.scrollIntoView({ block: "start" })}
+            >
+              <GiftOutlined />
+              积分推广
             </button>
             <button type="button" onClick={() => navigate("/tickets")}>
               <MessageOutlined />
@@ -300,6 +314,35 @@ export function DashboardPage() {
             <li>
               <span>状态</span>
               <strong>{user?.status === "ACTIVE" ? "正常" : "冻结"}</strong>
+            </li>
+          </ul>
+        </div>
+
+        <div id="growth-panel" className={styles.profileCard}>
+          <div className={styles.sectionTitle}>
+            <div>
+              <h2>积分推广</h2>
+              <p>邀请码、邀请关系和返利统计。</p>
+            </div>
+          </div>
+          <ul className={styles.profileList}>
+            <li>
+              <span>当前积分</span>
+              <strong>{growthQuery.data?.points_balance ?? 0}</strong>
+            </li>
+            <li>
+              <span>邀请码</span>
+              <strong>{growthQuery.data?.referral_code || user?.profile?.member_no || "-"}</strong>
+            </li>
+            <li>
+              <span>有效邀请</span>
+              <strong>{growthQuery.data?.active_invited_count ?? 0}</strong>
+            </li>
+            <li>
+              <span>已确认返利</span>
+              <strong>
+                {growthQuery.data?.currency || "CNY"} {growthQuery.data?.confirmed_rebate_amount || "0.00"}
+              </strong>
             </li>
           </ul>
         </div>

@@ -1,8 +1,9 @@
 from dataclasses import dataclass
+from decimal import Decimal
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Max, Q, QuerySet
+from django.db.models import Count, Max, Q, QuerySet, Sum
 from django.utils import timezone
 from rest_framework import exceptions
 from rest_framework_simplejwt.tokens import AccessToken
@@ -10,11 +11,24 @@ from rest_framework_simplejwt.tokens import AccessToken
 from apps.iam.models import AdminUser, AdminUserStatus
 from apps.tickets.models import TicketStatus
 
-from .models import MemberProfile, User, UserStatus
+from .models import (
+    MemberProfile,
+    PointLedger,
+    PointTransactionDirection,
+    PointTransactionType,
+    RebateRecord,
+    RebateStatus,
+    ReferralRelation,
+    ReferralStatus,
+    User,
+    UserStatus,
+)
 
 
 MEMBER_TOKEN_SCOPE = "member"
 DEFAULT_TEST_MEMBER_PASSWORD = "password123"
+TODO_CONFIRM_POINTS_RULE = "TODO_CONFIRM: 积分获取和兑换比例待业务确认；当前仅记录可审计流水和余额。"
+TODO_CONFIRM_REBATE_RULE = "TODO_CONFIRM: 返利比例、结算周期、提现和税务规则待业务确认；当前不进入钱包余额。"
 
 
 @dataclass(frozen=True)
@@ -39,8 +53,13 @@ def build_warehouse_code(user_id: int) -> str:
     return f"CB{user_id:06d}"
 
 
+def _build_referral_code(user: User) -> str:
+    profile = getattr(user, "profile", None)
+    return profile.member_no if profile else build_member_no(user.id)
+
+
 @transaction.atomic
-def register_user(email: str, password: str, display_name: str = "", phone: str = "") -> User:
+def register_user(email: str, password: str, display_name: str = "", phone: str = "", referral_code: str = "") -> User:
     try:
         user = User.objects.create(
             email=email,
@@ -57,7 +76,237 @@ def register_user(email: str, password: str, display_name: str = "", phone: str 
         display_name=display_name,
         warehouse_code=build_warehouse_code(user.id),
     )
+    if referral_code:
+        create_referral_relation_from_code(
+            invitee=user,
+            referral_code=referral_code,
+            remark="TODO_CONFIRM: 当前仅登记邀请关系，不自动发放最终积分或返利。",
+        )
     return user
+
+
+def get_point_balance(user: User) -> int:
+    latest = PointLedger.objects.filter(user=user).order_by("-id").first()
+    return latest.balance_after if latest else 0
+
+
+def member_growth_summary(user: User) -> dict[str, object]:
+    confirmed_amount = (
+        RebateRecord.objects.filter(user=user, status=RebateStatus.CONFIRMED)
+        .aggregate(total=Sum("amount"))
+        .get("total")
+        or Decimal("0.00")
+    )
+    pending_amount = (
+        RebateRecord.objects.filter(user=user, status=RebateStatus.PENDING)
+        .aggregate(total=Sum("amount"))
+        .get("total")
+        or Decimal("0.00")
+    )
+    invited = ReferralRelation.objects.filter(inviter=user)
+    confirmed_reward_points = (
+        RebateRecord.objects.filter(user=user, status=RebateStatus.CONFIRMED)
+        .aggregate(total=Sum("reward_points"))
+        .get("total")
+        or 0
+    )
+    return {
+        "points_balance": get_point_balance(user),
+        "referral_code": _build_referral_code(user),
+        "invited_count": invited.count(),
+        "active_invited_count": invited.filter(status=ReferralStatus.ACTIVE).count(),
+        "confirmed_reward_points": confirmed_reward_points,
+        "confirmed_rebate_amount": confirmed_amount,
+        "pending_rebate_amount": pending_amount,
+        "currency": "CNY",
+        "points_rule_note": TODO_CONFIRM_POINTS_RULE,
+        "rebate_rule_note": TODO_CONFIRM_REBATE_RULE,
+    }
+
+
+def point_ledger_queryset() -> QuerySet[PointLedger]:
+    return PointLedger.objects.select_related("user", "operator")
+
+
+def referral_relation_queryset() -> QuerySet[ReferralRelation]:
+    return ReferralRelation.objects.select_related(
+        "inviter",
+        "inviter__profile",
+        "invitee",
+        "invitee__profile",
+        "created_by_admin",
+    )
+
+
+def rebate_record_queryset() -> QuerySet[RebateRecord]:
+    return RebateRecord.objects.select_related(
+        "user",
+        "referral_relation",
+        "referral_relation__invitee",
+        "created_by_admin",
+    )
+
+
+def get_member_user(*, user_id: int) -> User:
+    try:
+        return User.objects.select_related("profile").get(id=user_id)
+    except User.DoesNotExist as exc:
+        raise exceptions.NotFound("会员不存在") from exc
+
+
+def get_referral_relation(*, referral_id: int) -> ReferralRelation:
+    try:
+        return referral_relation_queryset().get(id=referral_id)
+    except ReferralRelation.DoesNotExist as exc:
+        raise exceptions.NotFound("邀请关系不存在") from exc
+
+
+def create_referral_relation_from_code(
+    *,
+    invitee: User,
+    referral_code: str,
+    operator: AdminUser | None = None,
+    remark: str = "",
+) -> ReferralRelation | None:
+    normalized_code = (referral_code or "").strip().upper()
+    if not normalized_code:
+        return None
+    try:
+        inviter_profile = MemberProfile.objects.select_related("user").get(member_no__iexact=normalized_code)
+    except MemberProfile.DoesNotExist as exc:
+        raise exceptions.ValidationError({"referral_code": ["邀请码不存在"]}) from exc
+    return create_referral_relation(
+        inviter=inviter_profile.user,
+        invitee=invitee,
+        operator=operator,
+        invitation_code=normalized_code,
+        status=ReferralStatus.ACTIVE,
+        remark=remark or "TODO_CONFIRM: 邀请归因、有效期和首单有效条件待业务确认。",
+    )
+
+
+@transaction.atomic
+def adjust_member_points(
+    *,
+    user: User,
+    operator: AdminUser | None,
+    points_delta: int,
+    type: str = PointTransactionType.MANUAL_ADJUSTMENT,
+    business_type: str = "",
+    business_id: int | None = None,
+    remark: str = "",
+) -> PointLedger:
+    if points_delta == 0:
+        raise exceptions.ValidationError({"points_delta": ["积分调整值不能为 0"]})
+    if type not in PointTransactionType.values:
+        raise exceptions.ValidationError({"type": ["积分流水类型无效"]})
+    locked_user = User.objects.select_for_update().get(id=user.id)
+    current_balance = get_point_balance(locked_user)
+    direction = PointTransactionDirection.EARN if points_delta > 0 else PointTransactionDirection.SPEND
+    points = abs(points_delta)
+    next_balance = current_balance + points_delta
+    if next_balance < 0:
+        raise exceptions.ValidationError({"points_delta": ["积分余额不足"]})
+    ledger = PointLedger.objects.create(
+        user=locked_user,
+        operator=operator,
+        type=type,
+        direction=direction,
+        points=points,
+        balance_after=next_balance,
+        business_type=(business_type or "").strip(),
+        business_id=business_id,
+        remark=(remark or "").strip() or TODO_CONFIRM_POINTS_RULE,
+    )
+    return point_ledger_queryset().get(id=ledger.id)
+
+
+@transaction.atomic
+def create_referral_relation(
+    *,
+    inviter: User,
+    invitee: User,
+    operator: AdminUser | None = None,
+    invitation_code: str = "",
+    status: str = ReferralStatus.ACTIVE,
+    remark: str = "",
+) -> ReferralRelation:
+    if inviter.id == invitee.id:
+        raise exceptions.ValidationError({"invitee_id": ["邀请人和被邀请人不能相同"]})
+    inviter = User.objects.select_for_update().select_related("profile").get(id=inviter.id)
+    invitee = User.objects.select_for_update().select_related("profile").get(id=invitee.id)
+    if ReferralRelation.objects.filter(invitee=invitee).exists():
+        raise exceptions.ValidationError({"invitee_id": ["该会员已有邀请关系"]})
+    relation = ReferralRelation.objects.create(
+        inviter=inviter,
+        invitee=invitee,
+        invitation_code=(invitation_code or _build_referral_code(inviter)).strip(),
+        status=status,
+        created_by_admin=operator,
+        remark=(remark or "").strip() or "TODO_CONFIRM: 邀请归因和有效期规则待业务确认。",
+        activated_at=timezone.now() if status == ReferralStatus.ACTIVE else None,
+    )
+    return referral_relation_queryset().get(id=relation.id)
+
+
+@transaction.atomic
+def create_rebate_record(
+    *,
+    referral_relation: ReferralRelation,
+    operator: AdminUser | None,
+    amount: Decimal,
+    reward_points: int = 0,
+    currency: str = "CNY",
+    status: str = RebateStatus.CONFIRMED,
+    business_type: str = "",
+    business_id: int | None = None,
+    remark: str = "",
+) -> RebateRecord:
+    if amount < Decimal("0.00"):
+        raise exceptions.ValidationError({"amount": ["返利金额不能小于 0"]})
+    if reward_points < 0:
+        raise exceptions.ValidationError({"reward_points": ["奖励积分不能小于 0"]})
+    if amount == Decimal("0.00") and reward_points == 0:
+        raise exceptions.ValidationError({"amount": ["返利金额或奖励积分至少填写一项"]})
+    if status not in RebateStatus.values:
+        raise exceptions.ValidationError({"status": ["返利状态无效"]})
+    relation = ReferralRelation.objects.select_for_update().select_related("inviter", "invitee").get(
+        id=referral_relation.id
+    )
+    if relation.status != ReferralStatus.ACTIVE:
+        raise exceptions.ValidationError({"referral_id": ["只有有效邀请关系可以登记返利"]})
+    normalized_business_type = (business_type or "").strip()
+    if normalized_business_type and business_id:
+        exists = RebateRecord.objects.filter(
+            referral_relation=relation,
+            business_type=normalized_business_type,
+            business_id=business_id,
+        ).exists()
+        if exists:
+            raise exceptions.ValidationError({"business_id": ["该业务来源已登记返利"]})
+    rebate = RebateRecord.objects.create(
+        user=relation.inviter,
+        referral_relation=relation,
+        amount=amount,
+        reward_points=reward_points,
+        currency=currency,
+        status=status,
+        business_type=normalized_business_type,
+        business_id=business_id,
+        remark=(remark or "").strip() or TODO_CONFIRM_REBATE_RULE,
+        created_by_admin=operator,
+    )
+    if status == RebateStatus.CONFIRMED and reward_points > 0:
+        adjust_member_points(
+            user=relation.inviter,
+            operator=operator,
+            points_delta=reward_points,
+            type=PointTransactionType.REBATE_REWARD,
+            business_type="REBATE_RECORD",
+            business_id=rebate.id,
+            remark=rebate.remark,
+        )
+    return rebate_record_queryset().get(id=rebate.id)
 
 
 def login_user(email: str, password: str) -> MemberLoginResult:

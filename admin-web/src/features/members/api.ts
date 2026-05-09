@@ -1,5 +1,14 @@
 import { requestData } from "../../api/client";
-import type { MemberQuery, MemberUpdatePayload, MemberUser, ResetPasswordPayload, ServiceAdminUser } from "./types";
+import type {
+  MemberGrowthDetail,
+  MemberQuery,
+  MemberUpdatePayload,
+  MemberUser,
+  PointAdjustmentPayload,
+  PointLedger,
+  ResetPasswordPayload,
+  ServiceAdminUser,
+} from "./types";
 
 type ListResponse<T> = {
   items: T[];
@@ -43,6 +52,17 @@ export const memberOpsApi = {
     requestData<MemberUser>({
       method: "POST",
       url: `/admin/members/${memberId}/reset-password`,
+      data: payload,
+    }),
+  getMemberGrowth: (memberId: number) =>
+    requestData<MemberGrowthDetail>({
+      method: "GET",
+      url: `/admin/members/${memberId}/growth`,
+    }),
+  adjustMemberPoints: (memberId: number, payload: PointAdjustmentPayload) =>
+    requestData<PointLedger>({
+      method: "POST",
+      url: `/admin/members/${memberId}/points/adjust`,
       data: payload,
     }),
   listServiceAdmins: () =>

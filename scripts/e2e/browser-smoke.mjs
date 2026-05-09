@@ -255,7 +255,7 @@ async function navigate(page, url, text) {
   }
 }
 
-async function waitForText(page, text, timeoutMs) {
+async function waitForText(page, text, timeoutMs = 45_000) {
   return waitFor(
     page,
     `text ${text}`,
@@ -264,9 +264,10 @@ async function waitForText(page, text, timeoutMs) {
   );
 }
 
-async function waitForPath(page, pathName) {
+async function waitForPath(page, pathName, timeoutMs = 45_000) {
   return waitFor(page, `path ${pathName}`, () =>
     evaluate(page, `window.location.pathname === ${JSON.stringify(pathName)}`),
+    timeoutMs,
   );
 }
 

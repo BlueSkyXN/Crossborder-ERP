@@ -225,6 +225,17 @@ body {
   width: 100%;
 }
 
+.permission-check-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px 12px;
+  width: 100%;
+}
+
+.permission-check-list .ant-checkbox-wrapper {
+  margin-inline-start: 0;
+}
+
 .waybill-modal-alert {
   margin-bottom: 16px;
 }

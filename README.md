@@ -7,8 +7,8 @@
 ## 当前状态
 
 - 项目阶段：`P6_PRODUCTION_GAP`
-- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`IMPORT-XLSX-001` Excel `.xlsx` 批量预报解析、`QA-BROWSER-001` 三端浏览器 smoke、`QA-BROWSER-002` 浏览器真实包裹预报/入库旅程、`QA-BROWSER-003` Browser Smoke 稳定性加固、`QA-BROWSER-004` 财务/客服跨面板浏览器旅程、`QA-BROWSER-005` 运单后半程浏览器旅程、`CI-EVIDENCE-001` Agent 证据 CI 门禁、`SHIP-BATCH-001` 发货批次/转单/打印模板数据、`PAYABLE-001` 供应商/成本/应付基础、`GROWTH-001` 积分/推广/返利基础、`AUDITLOG-001` 后台操作审计日志、`AUDIT-RETENTION-001` 审计日志导出与本地留存命令、`SECURITY-HEADERS-001` 基础安全响应头、`OPS-READINESS-001` 运维 readiness 检查、`OPS-SQLITE-BACKUP-001` SQLite 本地备份命令、`STORAGE-CLEANUP-001` 本地软删除文件清理命令、`PURCHASE-AUTO-001` 外部商品链接解析入口、`ACCOUNT-SETTINGS-001` 会员注册与账户设置闭环、`ACCOUNT-RESET-001` 会员找回密码与重置密码闭环、`ADMIN-PANELS-001` 后台 dashboard/roles 真实面板、`RBAC-ROLES-001` 角色创建/编辑/权限分配闭环、`RBAC-ADMIN-USERS-001` 管理员账号与角色分配闭环、`RBAC-BUSINESS-ACTIONS-001` 后台业务写操作权限拆分、`CONFIG-EXTERNAL-SERVICES-001` 外部服务 DSN 边界检查、`RBAC-DELETE-001` 角色与管理员安全删除闭环、`FILE-SNIFF-001` 文件上传内容签名校验、`CSV-EXPORT-SAFE-001` CSV 导出公式注入防护
-- 下一任务：任务图暂无自动下一项；后续建议按对象存储/病毒扫描等生产化边界、需要业务确认的外部集成，以及更深浏览器/视觉/组件测试单独开任务
+- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`IMPORT-XLSX-001` Excel `.xlsx` 批量预报解析、`QA-BROWSER-001` 三端浏览器 smoke、`QA-BROWSER-002` 浏览器真实包裹预报/入库旅程、`QA-BROWSER-003` Browser Smoke 稳定性加固、`QA-BROWSER-004` 财务/客服跨面板浏览器旅程、`QA-BROWSER-005` 运单后半程浏览器旅程、`CI-EVIDENCE-001` Agent 证据 CI 门禁、`SHIP-BATCH-001` 发货批次/转单/打印模板数据、`PAYABLE-001` 供应商/成本/应付基础、`GROWTH-001` 积分/推广/返利基础、`AUDITLOG-001` 后台操作审计日志、`AUDIT-RETENTION-001` 审计日志导出与本地留存命令、`SECURITY-HEADERS-001` 基础安全响应头、`OPS-READINESS-001` 运维 readiness 检查、`OPS-SQLITE-BACKUP-001` SQLite 本地备份命令、`STORAGE-CLEANUP-001` 本地软删除文件清理命令、`PURCHASE-AUTO-001` 外部商品链接解析入口、`ACCOUNT-SETTINGS-001` 会员注册与账户设置闭环、`ACCOUNT-RESET-001` 会员找回密码与重置密码闭环、`ADMIN-PANELS-001` 后台 dashboard/roles 真实面板、`RBAC-ROLES-001` 角色创建/编辑/权限分配闭环、`RBAC-ADMIN-USERS-001` 管理员账号与角色分配闭环、`RBAC-BUSINESS-ACTIONS-001` 后台业务写操作权限拆分、`CONFIG-EXTERNAL-SERVICES-001` 外部服务 DSN 边界检查、`RBAC-DELETE-001` 角色与管理员安全删除闭环、`FILE-SNIFF-001` 文件上传内容签名校验、`CSV-EXPORT-SAFE-001` CSV 导出公式注入防护、`RBAC-IAM-ACTIONS-001` IAM 角色/管理员账号 create/update/delete 细权限拆分
+- 下一任务：任务图暂无自动下一项；后续建议按对象存储/病毒扫描等生产化边界、需要业务确认的外部集成、更多业务模块 create/update/delete 细权限和审批流，以及更深浏览器/视觉/组件测试单独开任务
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`
@@ -289,7 +289,7 @@ npm run e2e:browser
 - 无主包裹认领已支持脱敏列表、用户认领和后台人工审核；认领凭证规则、争议处理和通知外呼仍需业务确认。
 - 内容 CMS 已支持后台分类/内容、发布/隐藏和三端公开展示；正式服务条款、隐私政策和帮助文案仍需业务/法务确认。
 - 会员注册、账户资料设置、自助改密码和本地 token 找回密码已完成；短信/邮件验证码、真实通知送达、微信登录、多语言和复杂运费公式等保留 `TODO_CONFIRM`。
-- 后台 `/dashboard`、`/roles` 和 `/admin-users` 已使用真实接口与真实数据；角色创建、编辑、权限分配、安全删除、管理员创建、启停、密码重置、角色分配和安全删除已完成，业务写操作已按模块级 `*.manage` / `*.export` 权限拆分，create/update/delete 子权限继续后续增强。
+- 后台 `/dashboard`、`/roles` 和 `/admin-users` 已使用真实接口与真实数据；角色创建、编辑、权限分配、安全删除、管理员创建、启停、密码重置、角色分配和安全删除已完成，IAM 角色/管理员账号已支持 create/update/delete 细权限，其他业务写操作已按模块级 `*.manage` / `*.export` 权限拆分，更多业务模块 create/update/delete 子权限继续后续增强。
 - 后台关键写操作审计日志已完成基础覆盖，并支持 CSV 导出和显式本地留存清理命令；外部 SIEM、自动告警、审计导出审批和更细导出审批流仍属后续生产化增强。
 - 浏览器级 smoke 已覆盖三端登录、关键页面基础可用性、包裹预报/入库/回看旅程、财务汇款审核、客服工单回复和运单后半程跨面板旅程；视觉回归、组件级测试和所有复杂业务路径仍需后续增强。
 - CSV 导出已做基础公式注入防护；导出审批、DLP、水印和外部归档仍属后续生产化增强。

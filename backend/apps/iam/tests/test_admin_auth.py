@@ -72,7 +72,13 @@ def test_super_admin_can_list_roles(client, seeded_iam):
     }
     super_admin_role = next(item for item in body["data"]["items"] if item["code"] == "super_admin")
     assert "iam.role.manage" in super_admin_role["permission_codes"]
+    assert {"iam.role.create", "iam.role.update", "iam.role.delete"}.issubset(
+        set(super_admin_role["permission_codes"])
+    )
     assert "iam.admin.manage" in super_admin_role["permission_codes"]
+    assert {"iam.admin.create", "iam.admin.update", "iam.admin.delete"}.issubset(
+        set(super_admin_role["permission_codes"])
+    )
 
 
 def test_super_admin_can_list_permissions(client, seeded_iam):
@@ -83,7 +89,17 @@ def test_super_admin_can_list_permissions(client, seeded_iam):
 
     assert response.status_code == 200
     codes = {item["code"] for item in response.json()["data"]["items"]}
-    assert {"dashboard.view", "iam.role.view", "iam.role.manage"} <= codes
+    assert {
+        "dashboard.view",
+        "iam.role.view",
+        "iam.role.manage",
+        "iam.role.create",
+        "iam.role.update",
+        "iam.role.delete",
+        "iam.admin.create",
+        "iam.admin.update",
+        "iam.admin.delete",
+    } <= codes
 
 
 def test_super_admin_can_create_role_with_permissions(client, seeded_iam):
@@ -188,6 +204,101 @@ def test_role_viewer_without_manage_cannot_write_roles(client, seeded_iam):
 
     assert response.status_code == 403
     assert response.json()["code"] == "FORBIDDEN"
+
+
+def test_role_create_permission_does_not_grant_update_or_delete(client, seeded_iam):
+    role = Role.objects.create(code="role_creator", name="角色创建员")
+    role.permissions.set(
+        Permission.objects.filter(code__in=["dashboard.view", "iam.role.view", "iam.role.create"])
+    )
+    admin_user = AdminUser.objects.create(
+        email="role-creator@example.com",
+        name="角色创建员",
+        password_hash=make_password("password456"),
+    )
+    admin_user.roles.set([role])
+    login_response = admin_login(client, email="role-creator@example.com", password="password456")
+    token = login_response.json()["data"]["access_token"]
+
+    create_response = client.post(
+        reverse("admin-roles"),
+        {
+            "code": "role_created_only",
+            "name": "仅创建角色",
+            "permission_codes": ["dashboard.view"],
+        },
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+        content_type="application/json",
+    )
+    created_role_id = create_response.json()["data"]["id"]
+    update_response = client.patch(
+        reverse("admin-role-detail", kwargs={"role_id": created_role_id}),
+        {"name": "不能编辑", "permission_codes": ["dashboard.view"]},
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+        content_type="application/json",
+    )
+    delete_response = client.delete(
+        reverse("admin-role-detail", kwargs={"role_id": created_role_id}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert create_response.status_code == 201
+    assert update_response.status_code == 403
+    assert delete_response.status_code == 403
+    assert Role.objects.filter(id=created_role_id).exists()
+
+
+def test_role_update_and_delete_permissions_are_independent(client, seeded_iam):
+    editable_role = Role.objects.create(code="role_edit_target", name="待编辑角色")
+    editable_role.permissions.set(Permission.objects.filter(code__in=["dashboard.view"]))
+    update_role = Role.objects.create(code="role_updater", name="角色编辑员")
+    update_role.permissions.set(
+        Permission.objects.filter(code__in=["dashboard.view", "iam.role.view", "iam.role.update"])
+    )
+    update_admin = AdminUser.objects.create(
+        email="role-updater@example.com",
+        name="角色编辑员",
+        password_hash=make_password("password456"),
+    )
+    update_admin.roles.set([update_role])
+    update_token = admin_login(client, email="role-updater@example.com", password="password456").json()["data"][
+        "access_token"
+    ]
+
+    update_response = client.patch(
+        reverse("admin-role-detail", kwargs={"role_id": editable_role.id}),
+        {"name": "已编辑角色", "permission_codes": ["dashboard.view"]},
+        HTTP_AUTHORIZATION=f"Bearer {update_token}",
+        content_type="application/json",
+    )
+    delete_without_permission = client.delete(
+        reverse("admin-role-detail", kwargs={"role_id": editable_role.id}),
+        HTTP_AUTHORIZATION=f"Bearer {update_token}",
+    )
+
+    delete_role_permission = Role.objects.create(code="role_deleter", name="角色删除员")
+    delete_role_permission.permissions.set(
+        Permission.objects.filter(code__in=["dashboard.view", "iam.role.view", "iam.role.delete"])
+    )
+    delete_admin = AdminUser.objects.create(
+        email="role-deleter@example.com",
+        name="角色删除员",
+        password_hash=make_password("password456"),
+    )
+    delete_admin.roles.set([delete_role_permission])
+    delete_token = admin_login(client, email="role-deleter@example.com", password="password456").json()["data"][
+        "access_token"
+    ]
+    delete_response = client.delete(
+        reverse("admin-role-detail", kwargs={"role_id": editable_role.id}),
+        HTTP_AUTHORIZATION=f"Bearer {delete_token}",
+    )
+
+    assert update_response.status_code == 200
+    assert update_response.json()["data"]["name"] == "已编辑角色"
+    assert delete_without_permission.status_code == 403
+    assert delete_response.status_code == 200
+    assert not Role.objects.filter(id=editable_role.id).exists()
 
 
 def test_super_admin_role_is_protected_from_update(client, seeded_iam):
@@ -403,6 +514,102 @@ def test_admin_viewer_without_manage_cannot_write_admin_accounts(client, seeded_
 
     assert response.status_code == 403
     assert response.json()["code"] == "FORBIDDEN"
+
+
+def test_admin_create_permission_does_not_grant_update_or_delete(client, seeded_iam):
+    role = Role.objects.create(code="admin_creator", name="管理员创建员")
+    role.permissions.set(
+        Permission.objects.filter(code__in=["dashboard.view", "iam.admin.view", "iam.admin.create"])
+    )
+    admin_user = AdminUser.objects.create(
+        email="admin-creator@example.com",
+        name="管理员创建员",
+        password_hash=make_password("password456"),
+    )
+    admin_user.roles.set([role])
+    token = admin_login(client, email="admin-creator@example.com", password="password456").json()["data"][
+        "access_token"
+    ]
+
+    create_response = client.post(
+        reverse("admin-accounts"),
+        {
+            "email": "created-admin@example.com",
+            "name": "被创建管理员",
+            "password": "password456",
+            "role_codes": ["warehouse"],
+        },
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+        content_type="application/json",
+    )
+    created_admin_id = create_response.json()["data"]["id"]
+    update_response = client.patch(
+        reverse("admin-account-detail", kwargs={"admin_id": created_admin_id}),
+        {"name": "不能编辑", "role_codes": ["support"]},
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+        content_type="application/json",
+    )
+    delete_response = client.delete(
+        reverse("admin-account-detail", kwargs={"admin_id": created_admin_id}),
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert create_response.status_code == 201
+    assert update_response.status_code == 403
+    assert delete_response.status_code == 403
+    assert AdminUser.objects.filter(id=created_admin_id).exists()
+
+
+def test_admin_update_and_delete_permissions_are_independent(client, seeded_iam):
+    target = AdminUser.objects.get(email="buyer@example.com")
+    update_role = Role.objects.create(code="admin_updater", name="管理员编辑员")
+    update_role.permissions.set(
+        Permission.objects.filter(code__in=["dashboard.view", "iam.admin.view", "iam.admin.update"])
+    )
+    update_admin = AdminUser.objects.create(
+        email="admin-updater@example.com",
+        name="管理员编辑员",
+        password_hash=make_password("password456"),
+    )
+    update_admin.roles.set([update_role])
+    update_token = admin_login(client, email="admin-updater@example.com", password="password456").json()["data"][
+        "access_token"
+    ]
+
+    update_response = client.patch(
+        reverse("admin-account-detail", kwargs={"admin_id": target.id}),
+        {"name": "采购账号已编辑", "role_codes": ["buyer"]},
+        HTTP_AUTHORIZATION=f"Bearer {update_token}",
+        content_type="application/json",
+    )
+    delete_without_permission = client.delete(
+        reverse("admin-account-detail", kwargs={"admin_id": target.id}),
+        HTTP_AUTHORIZATION=f"Bearer {update_token}",
+    )
+
+    delete_role = Role.objects.create(code="admin_deleter", name="管理员删除员")
+    delete_role.permissions.set(
+        Permission.objects.filter(code__in=["dashboard.view", "iam.admin.view", "iam.admin.delete"])
+    )
+    delete_admin = AdminUser.objects.create(
+        email="admin-deleter@example.com",
+        name="管理员删除员",
+        password_hash=make_password("password456"),
+    )
+    delete_admin.roles.set([delete_role])
+    delete_token = admin_login(client, email="admin-deleter@example.com", password="password456").json()["data"][
+        "access_token"
+    ]
+    delete_response = client.delete(
+        reverse("admin-account-detail", kwargs={"admin_id": target.id}),
+        HTTP_AUTHORIZATION=f"Bearer {delete_token}",
+    )
+
+    assert update_response.status_code == 200
+    assert update_response.json()["data"]["name"] == "采购账号已编辑"
+    assert delete_without_permission.status_code == 403
+    assert delete_response.status_code == 200
+    assert not AdminUser.objects.filter(id=target.id).exists()
 
 
 def test_super_admin_account_is_protected_from_update(client, seeded_iam):

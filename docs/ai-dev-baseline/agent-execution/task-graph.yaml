@@ -323,4 +323,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/QA-BROWSER-005.md
     depends_on: [QA-BROWSER-004, BE-006, BE-007, BE-008, FEA-004, FEU-001C]
+    next: RBAC-IAM-ACTIONS-001
+  - id: RBAC-IAM-ACTIONS-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/RBAC-IAM-ACTIONS-001.md
+    depends_on: [RBAC-ROLES-001, RBAC-ADMIN-USERS-001, RBAC-DELETE-001, QA-BROWSER-005]
     next: null

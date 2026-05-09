@@ -25,6 +25,7 @@
 - 后台管理员账号创建、启停、密码重置和角色分配基础闭环。
 - 后台业务写操作按模块级 `*.manage` / `*.export` action 权限拆分。
 - 角色与管理员账号安全删除，覆盖内置/自删/已分配保护。
+- IAM 角色与管理员账号新增、编辑、删除细权限，兼容既有总管理权限。
 - PostgreSQL/MySQL/Redis/Celery 无连接 DSN 边界检查。
 - `npm run e2e` 自动验收主链路和最小代购链路。
 - `npm run e2e:browser` 自动验收 Admin Web、User Web、Mobile H5 登录、关键页面 smoke、包裹预报/入库/回看、财务汇款审核、客服工单回复和运单后半程跨面板浏览器旅程。
@@ -52,7 +53,7 @@
 | 外部商品链接解析 | 本地已验证 `purchase-links/parse`，User Web/Mobile H5 手工代购入口已整合；真实抓取/自动下单不声明完成 | `docs/agent-runs/2026-05-09-PURCHASE-AUTO-001.md`、`backend/apps/purchases/tests/test_purchases.py` |
 | 会员注册与账户设置 | 本地已验证注册、资料更新、旧密码失效和新密码登录；User Web `/settings`、Mobile H5 `/me/settings` 已整合；短信/邮件验证码不声明完成 | `docs/agent-runs/2026-05-09-ACCOUNT-SETTINGS-001.md`、`backend/apps/members/tests/test_members.py` |
 | 会员找回密码 | 本地已验证 reset token 只保存 hash、过期/一次性消费和新密码登录；User Web/Mobile H5 登录页已整合入口；真实短信/邮件通知不声明完成 | `docs/agent-runs/2026-05-09-ACCOUNT-RESET-001.md`、`backend/apps/members/tests/test_members.py` |
-| 后台占位面板真实化 | Admin Web `/dashboard`、`/roles` 和 `/admin-users` 已改为真实接口面板；角色创建、编辑、权限分配、管理员角色分配和业务模块级 action 权限已补齐 | `docs/agent-runs/2026-05-09-ADMIN-PANELS-001.md`、`docs/agent-runs/2026-05-09-RBAC-ROLES-001.md`、`docs/agent-runs/2026-05-09-RBAC-ADMIN-USERS-001.md`、`docs/agent-runs/2026-05-09-RBAC-BUSINESS-ACTIONS-001.md`、`backend/apps/iam/tests/test_admin_auth.py` |
+| 后台占位面板真实化 | Admin Web `/dashboard`、`/roles` 和 `/admin-users` 已改为真实接口面板；角色创建、编辑、权限分配、管理员角色分配、IAM create/update/delete 细权限和业务模块级 action 权限已补齐 | `docs/agent-runs/2026-05-09-ADMIN-PANELS-001.md`、`docs/agent-runs/2026-05-09-RBAC-ROLES-001.md`、`docs/agent-runs/2026-05-09-RBAC-ADMIN-USERS-001.md`、`docs/agent-runs/2026-05-09-RBAC-BUSINESS-ACTIONS-001.md`、`docs/agent-runs/2026-05-09-RBAC-IAM-ACTIONS-001.md`、`backend/apps/iam/tests/test_admin_auth.py` |
 | Browser Smoke 稳定性 | CDP 导航等待、页面快照诊断和失败服务日志输出已加固；不新增依赖或下载浏览器 | `docs/agent-runs/2026-05-09-QA-BROWSER-003.md`、`scripts/e2e/browser-smoke.mjs` |
 | 浏览器跨面板业务旅程 | Browser Smoke 已覆盖 User Web 创建线下汇款和客服工单、Admin Web 审核汇款入账和回复工单、User Web 回看客服回复，并修复工单回复前后端 URL 契约问题 | `docs/agent-runs/2026-05-09-QA-BROWSER-004.md`、`scripts/e2e/browser-smoke.mjs`、`admin-web/src/features/tickets/api.ts` |
 | 运单后半程浏览器旅程 | Browser Smoke 已覆盖 User Web 从在库包裹创建运单、Admin Web 审核计费、User Web 余额支付、Admin Web 发货并生成轨迹、User Web 回看轨迹并确认收货，并修复运单弹窗 Form 初始化 console error | `docs/agent-runs/2026-05-09-QA-BROWSER-005.md`、`scripts/e2e/browser-smoke.mjs`、`admin-web/src/features/waybills/WaybillOpsPage.tsx` |
@@ -85,7 +86,7 @@
 | 本地文件清理 | `purge_deleted_files` 已验证 dry-run、真实删除、ACTIVE/未到期保护、missing、unsafe 路径和非普通文件跳过 | `docs/agent-runs/2026-05-09-STORAGE-CLEANUP-001.md` |
 | 文件上传内容校验 | 上传阶段已验证扩展名、MIME 和基础文件头一致性，伪装图片和明显非 ZIP `.xlsx` 会被拒绝 | `docs/agent-runs/2026-05-09-FILE-SNIFF-001.md` |
 | 外链代购入口 | `purchase-links/parse` 已验证常见平台识别、未知平台 fallback、敏感 URL 拒绝，并已进入 Web/H5 手工代购页 | `docs/agent-runs/2026-05-09-PURCHASE-AUTO-001.md` |
-| 后台控制台和 RBAC | `/api/v1/admin/dashboard` 按权限返回真实聚合指标，Admin Web `/dashboard`、`/roles` 与 `/admin-users` 不再使用固定假数据占位页；角色、管理员账号、删除保护和业务写操作分别由 `iam.*.manage`、`*.manage` / `*.export` 控制 | `docs/agent-runs/2026-05-09-ADMIN-PANELS-001.md`、`docs/agent-runs/2026-05-09-RBAC-ROLES-001.md`、`docs/agent-runs/2026-05-09-RBAC-ADMIN-USERS-001.md`、`docs/agent-runs/2026-05-09-RBAC-BUSINESS-ACTIONS-001.md`、`docs/agent-runs/2026-05-09-RBAC-DELETE-001.md` |
+| 后台控制台和 RBAC | `/api/v1/admin/dashboard` 按权限返回真实聚合指标，Admin Web `/dashboard`、`/roles` 与 `/admin-users` 不再使用固定假数据占位页；角色、管理员账号、删除保护、IAM create/update/delete 和业务写操作分别由 `iam.*`、`*.manage` / `*.export` 控制 | `docs/agent-runs/2026-05-09-ADMIN-PANELS-001.md`、`docs/agent-runs/2026-05-09-RBAC-ROLES-001.md`、`docs/agent-runs/2026-05-09-RBAC-ADMIN-USERS-001.md`、`docs/agent-runs/2026-05-09-RBAC-BUSINESS-ACTIONS-001.md`、`docs/agent-runs/2026-05-09-RBAC-DELETE-001.md`、`docs/agent-runs/2026-05-09-RBAC-IAM-ACTIONS-001.md` |
 | 外部服务配置边界 | `DATABASE_URL`/`REDIS_URL`/Celery eager 可通过无连接脚本检查，PostgreSQL/MySQL/Redis/Celery 仍不声明真实可用 | `docs/agent-runs/2026-05-09-CONFIG-EXTERNAL-SERVICES-001.md`、`scripts/config/inspect_configured_services.py` |
 
 ## 验收命令
@@ -116,5 +117,5 @@ git diff --check
 - 对象存储生命周期、CDN、缩略图、病毒扫描、EXIF 清理和远程文件归档未验证；当前只完成本地软删除文件清理命令和基础内容签名校验。
 - `npm run e2e:browser` 已纳入仓库，并覆盖包裹预报/入库/回看、财务汇款审核、客服工单回复和运单后半程等真实浏览器旅程；Playwright、组件级测试、视觉回归和所有复杂业务路径仍需后续增强。
 - `npm run inspect:services` 已纳入仓库，但只做无连接 DSN 检查；PostgreSQL/MySQL/Redis/Celery 真实运行仍需后续验证。
-- 真实支付、真实自动采购下单、对象存储、外部 SIEM/审计告警、真实打印硬件、物流 API 和业务 create/update/delete 子权限后续补齐。
+- 真实支付、真实自动采购下单、对象存储、外部 SIEM/审计告警、真实打印硬件、物流 API、其他业务模块 create/update/delete 子权限和审批流后续补齐。
 - 短信/邮件验证码、真实通知送达、微信登录、多语言和复杂业务规则保持 `TODO_CONFIRM`。

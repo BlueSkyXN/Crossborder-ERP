@@ -7,7 +7,7 @@
 - `docs/source-report-gap-map.md`
 - `docs/production-readiness-backlog.md`
 
-`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FILE-SNIFF-001` 已补齐上传文件基础内容签名校验，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 批量预报解析，`CSV-EXPORT-SAFE-001` 已补齐 CSV 导出公式注入防护，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础，`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的一条真实浏览器旅程，`QA-BROWSER-003` 已加固 Browser Smoke 稳定性，`QA-BROWSER-004` 已补齐财务/客服跨面板浏览器旅程，`QA-BROWSER-005` 已补齐运单后半程浏览器旅程，`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础，`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础，`GROWTH-001` 已补齐积分推广返利基础，`AUDITLOG-001` 已补齐后台关键写操作审计日志，`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令，`SECURITY-HEADERS-001` 已补齐基础应用安全响应头，`OPS-READINESS-001` 已补齐运维 readiness 检查，`OPS-SQLITE-BACKUP-001` 已补齐 SQLite 本地备份命令，`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令，`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口，`ACCOUNT-SETTINGS-001` 已补齐会员注册、账户资料设置和自助改密码基础，`ACCOUNT-RESET-001` 已补齐会员找回密码和重置密码闭环，`ADMIN-PANELS-001` 已补齐后台 dashboard/roles 真实接口面板，`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环，`RBAC-ADMIN-USERS-001` 已补齐管理员账号与角色分配闭环，`RBAC-BUSINESS-ACTIONS-001` 已补齐后台业务写操作的模块级 action 权限拆分，`CONFIG-EXTERNAL-SERVICES-001` 已补齐 PostgreSQL/MySQL/Redis/Celery 的无连接 DSN 边界检查，`RBAC-DELETE-001` 已补齐角色与管理员账号安全删除闭环。后续优先按生产化边界、需业务/合规确认的外部集成和测试深度增强逐项收敛。
+`ADDR-001` 已补齐基础地址簿，`FILE-001` 已补齐本地文件上传基础，`FILE-SNIFF-001` 已补齐上传文件基础内容签名校验，`FIN-001` 已补齐用户线下汇款、后台审核和财务中心入口，`MSG-001` 已补齐客服工单，`MEMBER-001` 已补齐后台会员管理，`PARCEL-CLAIM-001` 已补齐无主包裹用户认领，`CONTENT-001` 已补齐内容 CMS 和帮助公告展示，`IMPORT-001` 已补齐 CSV 批量预报导入/导出基础，`IMPORT-XLSX-001` 已补齐 Excel `.xlsx` 批量预报解析，`CSV-EXPORT-SAFE-001` 已补齐 CSV 导出公式注入防护，`QA-BROWSER-001` 已补齐三端浏览器 smoke 基础，`QA-BROWSER-002` 已补齐会员预报、后台扫描入库、会员回看在库的一条真实浏览器旅程，`QA-BROWSER-003` 已加固 Browser Smoke 稳定性，`QA-BROWSER-004` 已补齐财务/客服跨面板浏览器旅程，`QA-BROWSER-005` 已补齐运单后半程浏览器旅程，`SHIP-BATCH-001` 已补齐发货批次、转单号和打印模板数据预览基础，`PAYABLE-001` 已补齐供应商、成本类型和应付状态流基础，`GROWTH-001` 已补齐积分推广返利基础，`AUDITLOG-001` 已补齐后台关键写操作审计日志，`AUDIT-RETENTION-001` 已补齐审计日志脱敏 CSV 导出和显式本地留存清理命令，`SECURITY-HEADERS-001` 已补齐基础应用安全响应头，`OPS-READINESS-001` 已补齐运维 readiness 检查，`OPS-SQLITE-BACKUP-001` 已补齐 SQLite 本地备份命令，`STORAGE-CLEANUP-001` 已补齐本地软删除文件清理命令，`PURCHASE-AUTO-001` 已补齐外部商品链接解析和人工代购 fallback 入口，`ACCOUNT-SETTINGS-001` 已补齐会员注册、账户资料设置和自助改密码基础，`ACCOUNT-RESET-001` 已补齐会员找回密码和重置密码闭环，`ADMIN-PANELS-001` 已补齐后台 dashboard/roles 真实接口面板，`RBAC-ROLES-001` 已补齐角色创建、编辑和权限分配闭环，`RBAC-ADMIN-USERS-001` 已补齐管理员账号与角色分配闭环，`RBAC-BUSINESS-ACTIONS-001` 已补齐后台业务写操作的模块级 action 权限拆分，`CONFIG-EXTERNAL-SERVICES-001` 已补齐 PostgreSQL/MySQL/Redis/Celery 的无连接 DSN 边界检查，`RBAC-DELETE-001` 已补齐角色与管理员账号安全删除闭环，`RBAC-IAM-ACTIONS-001` 已补齐 IAM 角色/管理员账号 create/update/delete 细权限拆分。后续优先按生产化边界、需业务/合规确认的外部集成、业务模块细权限/审批和测试深度增强逐项收敛。
 
 ## 已知问题
 
@@ -69,10 +69,10 @@
 
 ### 审计日志外部归档、告警和细粒度覆盖仍需增强
 
-问题：`AUDITLOG-001` 已完成后台 `/api/v1/admin/**` 写操作请求级审计、财务高风险服务层审计和 Admin Web 查询入口；`AUDIT-RETENTION-001` 已补脱敏 CSV 导出和显式本地留存清理命令；`RBAC-ROLES-001`/`RBAC-ADMIN-USERS-001` 已补角色和管理员账号写权限；`RBAC-DELETE-001` 已补角色和管理员账号安全删除；`RBAC-BUSINESS-ACTIONS-001` 已补业务模块级 `*.manage` / `*.export` 权限。但尚未接外部 SIEM、自动归档、告警规则、导出审批或按每个 create/update/delete 子动作进一步分权。
+问题：`AUDITLOG-001` 已完成后台 `/api/v1/admin/**` 写操作请求级审计、财务高风险服务层审计和 Admin Web 查询入口；`AUDIT-RETENTION-001` 已补脱敏 CSV 导出和显式本地留存清理命令；`RBAC-ROLES-001`/`RBAC-ADMIN-USERS-001` 已补角色和管理员账号写权限；`RBAC-DELETE-001` 已补角色和管理员账号安全删除；`RBAC-BUSINESS-ACTIONS-001` 已补业务模块级 `*.manage` / `*.export` 权限；`RBAC-IAM-ACTIONS-001` 已把 IAM 角色/管理员账号拆为 create/update/delete 细权限。但尚未接外部 SIEM、自动归档、告警规则、导出审批或把其他业务模块按每个 create/update/delete 子动作进一步分权。
 影响：可以支撑 SQLite-first 后台关键操作追溯、导出和本地留存清理验收证明，但不能声明具备完整生产审计合规体系。
 当前临时处理：`audit_logs` 记录操作人、动作、对象、请求方法/路径、状态码、IP、UA、脱敏请求数据和脱敏响应数据；密码/token 等敏感字段不落库；导出使用脱敏后的存量数据；留存清理必须显式执行。
-后续建议：生产化阶段补外部归档、保留期审批、导出审批、告警规则和 create/update/delete 子权限。
+后续建议：生产化阶段补外部归档、保留期审批、导出审批、告警规则、其他业务模块 create/update/delete 子权限和审批流。
 是否阻塞 v0.1：否。
 
 ### 对象存储、缩略图和深度文件安全增强未完成
@@ -154,7 +154,7 @@
 - 在现有 system Chrome CDP smoke 和多条真实业务旅程基础上，补更多浏览器业务旅程、Playwright/组件级测试或视觉回归。
 - 补前端组件级测试和关键表单校验测试。
 - 增加服务端分页、筛选、排序和列表性能优化。
-- 在现有模块级业务 action 权限基础上，按需要继续拆分 create/update/delete 子权限和审批流。
+- 在 IAM 细权限基础上，按需要继续拆分其他业务模块 create/update/delete 子权限和审批流。
 - 增强审计日志外部归档、告警、导出审批和合规报表。
 
 ### P1 生产化基础

@@ -20,7 +20,7 @@ from .serializers import (
     RoleSerializer,
     RoleWriteSerializer,
 )
-from .services import admin_has_permission, get_admin_menus, login_admin
+from .services import get_admin_menus, has_any_permission, login_admin
 
 
 class AdminLoginView(APIView):
@@ -80,6 +80,7 @@ class AdminRolesView(APIView):
     permission_classes = [HasAdminPermission]
     required_permission = "iam.role.view"
     write_permission = "iam.role.manage"
+    method_permissions = {"POST": ("iam.role.create", "iam.role.manage")}
 
     @extend_schema(tags=["admin-auth"], responses={200: RoleSerializer(many=True)})
     def get(self, request):
@@ -92,7 +93,7 @@ class AdminRolesView(APIView):
         responses={201: RoleSerializer},
     )
     def post(self, request):
-        ensure_role_manage_permission(request.user)
+        ensure_admin_action_permission(request.user, ("iam.role.create", "iam.role.manage"), "缺少角色创建权限")
         serializer = RoleWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         role = save_role(serializer.validated_data)
@@ -104,6 +105,10 @@ class AdminRoleDetailView(APIView):
     permission_classes = [HasAdminPermission]
     required_permission = "iam.role.view"
     write_permission = "iam.role.manage"
+    method_permissions = {
+        "PATCH": ("iam.role.update", "iam.role.manage"),
+        "DELETE": ("iam.role.delete", "iam.role.manage"),
+    }
 
     def get_role(self, role_id: int) -> Role:
         try:
@@ -117,7 +122,7 @@ class AdminRoleDetailView(APIView):
 
     @extend_schema(tags=["admin-auth"], request=RoleWriteSerializer, responses={200: RoleSerializer})
     def patch(self, request, role_id: int):
-        ensure_role_manage_permission(request.user)
+        ensure_admin_action_permission(request.user, ("iam.role.update", "iam.role.manage"), "缺少角色编辑权限")
         role = self.get_role(role_id)
         serializer = RoleWriteSerializer(role, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -126,7 +131,7 @@ class AdminRoleDetailView(APIView):
 
     @extend_schema(tags=["admin-auth"], responses={200: OpenApiResponse(description="Deleted role id")})
     def delete(self, request, role_id: int):
-        ensure_role_manage_permission(request.user)
+        ensure_admin_action_permission(request.user, ("iam.role.delete", "iam.role.manage"), "缺少角色删除权限")
         role = self.get_role(role_id)
         deleted_id = delete_role(role)
         return success_response({"deleted_id": deleted_id})
@@ -148,6 +153,7 @@ class AdminAccountsView(APIView):
     permission_classes = [HasAdminPermission]
     required_permission = "iam.admin.view"
     write_permission = "iam.admin.manage"
+    method_permissions = {"POST": ("iam.admin.create", "iam.admin.manage")}
 
     @extend_schema(tags=["admin-auth"], responses={200: AdminAccountSerializer(many=True)})
     def get(self, request):
@@ -156,7 +162,7 @@ class AdminAccountsView(APIView):
 
     @extend_schema(tags=["admin-auth"], request=AdminAccountWriteSerializer, responses={201: AdminAccountSerializer})
     def post(self, request):
-        ensure_admin_manage_permission(request.user)
+        ensure_admin_action_permission(request.user, ("iam.admin.create", "iam.admin.manage"), "缺少管理员账号创建权限")
         serializer = AdminAccountWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         admin_account = save_admin_account(serializer.validated_data, actor=request.user)
@@ -168,6 +174,10 @@ class AdminAccountDetailView(APIView):
     permission_classes = [HasAdminPermission]
     required_permission = "iam.admin.view"
     write_permission = "iam.admin.manage"
+    method_permissions = {
+        "PATCH": ("iam.admin.update", "iam.admin.manage"),
+        "DELETE": ("iam.admin.delete", "iam.admin.manage"),
+    }
 
     def get_admin_account(self, admin_id: int) -> AdminUser:
         try:
@@ -181,7 +191,7 @@ class AdminAccountDetailView(APIView):
 
     @extend_schema(tags=["admin-auth"], request=AdminAccountWriteSerializer, responses={200: AdminAccountSerializer})
     def patch(self, request, admin_id: int):
-        ensure_admin_manage_permission(request.user)
+        ensure_admin_action_permission(request.user, ("iam.admin.update", "iam.admin.manage"), "缺少管理员账号编辑权限")
         admin_account = self.get_admin_account(admin_id)
         serializer = AdminAccountWriteSerializer(admin_account, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -190,20 +200,15 @@ class AdminAccountDetailView(APIView):
 
     @extend_schema(tags=["admin-auth"], responses={200: OpenApiResponse(description="Deleted admin account id")})
     def delete(self, request, admin_id: int):
-        ensure_admin_manage_permission(request.user)
+        ensure_admin_action_permission(request.user, ("iam.admin.delete", "iam.admin.manage"), "缺少管理员账号删除权限")
         admin_account = self.get_admin_account(admin_id)
         deleted_id = delete_admin_account(admin_account, actor=request.user)
         return success_response({"deleted_id": deleted_id})
 
 
-def ensure_role_manage_permission(admin_user):
-    if not admin_has_permission(admin_user, "iam.role.manage"):
-        raise exceptions.PermissionDenied("缺少角色管理权限")
-
-
-def ensure_admin_manage_permission(admin_user):
-    if not admin_has_permission(admin_user, "iam.admin.manage"):
-        raise exceptions.PermissionDenied("缺少管理员账号管理权限")
+def ensure_admin_action_permission(admin_user, permission_codes: tuple[str, ...], message: str) -> None:
+    if not has_any_permission(admin_user, permission_codes):
+        raise exceptions.PermissionDenied(message)
 
 
 @transaction.atomic

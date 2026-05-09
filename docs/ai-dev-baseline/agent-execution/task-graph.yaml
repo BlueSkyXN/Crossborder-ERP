@@ -253,4 +253,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/PURCHASE-AUTO-001.md
     depends_on: [STORAGE-CLEANUP-001]
+    next: ACCOUNT-SETTINGS-001
+  - id: ACCOUNT-SETTINGS-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/ACCOUNT-SETTINGS-001.md
+    depends_on: [PURCHASE-AUTO-001]
     next: null

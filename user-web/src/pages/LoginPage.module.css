@@ -89,6 +89,30 @@
   color: #6b7280;
 }
 
+.modeSwitch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.modeSwitch button {
+  height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #4b5563;
+  font-weight: 800;
+}
+
+.modeSwitch .activeMode {
+  background: #ffffff;
+  color: #1d4ed8;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12);
+}
+
 .card label {
   display: grid;
   gap: 8px;

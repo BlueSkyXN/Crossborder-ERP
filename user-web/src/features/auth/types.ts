@@ -18,8 +18,30 @@ export type LoginPayload = {
   password: string;
 };
 
+export type RegisterPayload = {
+  email: string;
+  password: string;
+  display_name?: string;
+  phone?: string;
+  referral_code?: string;
+};
+
+export type ProfileUpdatePayload = {
+  display_name?: string;
+  phone?: string;
+};
+
+export type ChangePasswordPayload = {
+  current_password: string;
+  new_password: string;
+};
+
 export type LoginResult = {
   access_token: string;
   token_type: "Bearer";
   user: MemberUser;
+};
+
+export type ChangePasswordResult = {
+  changed: boolean;
 };

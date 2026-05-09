@@ -79,8 +79,48 @@ def test_update_profile_only_updates_current_user(client, seeded_member):
 
     assert response.status_code == 200
     assert response.json()["data"]["profile"]["display_name"] == "Updated"
+    clear_response = client.put(
+        reverse("member-profile"),
+        {"display_name": "", "phone": ""},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert clear_response.status_code == 200
+    assert clear_response.json()["data"]["profile"]["display_name"] == ""
+    assert clear_response.json()["data"]["phone"] == ""
     other.refresh_from_db()
     assert other.profile.display_name == "Other"
+
+
+def test_member_can_change_password_and_login_with_new_password(client, seeded_member):
+    token = member_login(client).json()["data"]["access_token"]
+
+    response = client.post(
+        reverse("member-password"),
+        {"current_password": "password123", "new_password": "new-password123"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"]["changed"] is True
+    assert member_login(client).status_code == 403
+    assert member_login(client, password="new-password123").status_code == 200
+
+
+def test_member_change_password_rejects_wrong_current_password(client, seeded_member):
+    token = member_login(client).json()["data"]["access_token"]
+
+    response = client.post(
+        reverse("member-password"),
+        {"current_password": "wrong-password", "new_password": "new-password123"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+
+    assert response.status_code == 400
+    assert "current_password" in response.json()["data"]["field_errors"]
+    assert member_login(client).status_code == 200
 
 
 def test_member_token_cannot_access_admin_api(client, seeded_member):

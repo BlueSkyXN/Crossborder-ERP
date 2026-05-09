@@ -292,6 +292,27 @@ async function clickByText(page, text) {
   return clicked;
 }
 
+async function clickSubmitButton(page, text) {
+  const clicked = await evaluate(
+    page,
+    `(() => {
+      const normalized = (value) => (value || "").replace(/\\s+/g, " ").trim();
+      const compact = (value) => normalized(value).replace(/\\s+/g, "");
+      const targetText = ${JSON.stringify(text)};
+      const targetCompact = compact(targetText);
+      const candidates = Array.from(document.querySelectorAll("button[type='submit']"));
+      const element = candidates.find((candidate) => compact(candidate.textContent).includes(targetCompact));
+      if (!element) {
+        throw new Error("Submit button not found: " + targetText);
+      }
+      element.click();
+      return normalized(element.textContent);
+    })()`,
+  );
+  await delay(250);
+  return clicked;
+}
+
 async function fillByLabel(page, labelText, value) {
   return evaluate(
     page,
@@ -457,7 +478,7 @@ async function runAdmin(debugPort, journey) {
 async function runUser(debugPort, journey) {
   const page = await createPage(debugPort);
   await navigate(page, `${USER_URL}/login?redirect=%2Fparcels`, "会员登录");
-  await clickByText(page, "登录");
+  await clickSubmitButton(page, "登录");
   await waitForPath(page, "/parcels");
   await waitForText(page, "批量预报");
   await waitForText(page, "Excel 模板");
@@ -475,6 +496,9 @@ async function runUser(debugPort, journey) {
   await navigate(page, `${USER_URL}/dashboard`, "会员中心");
   await waitForText(page, "积分推广");
   await waitForText(page, "邀请码");
+  await navigate(page, `${USER_URL}/settings`, "账户设置");
+  await waitForText(page, "保存资料");
+  await waitForText(page, "更新密码");
   await navigate(page, `${USER_URL}/purchases?tab=manual`, "手工代购");
   await waitForText(page, "解析链接");
   assertNoIssues("User Web", page.issues);
@@ -500,13 +524,16 @@ async function verifyUserParcelInStock(debugPort, journey) {
 async function runMobile(debugPort) {
   const page = await createPage(debugPort, { mobile: true });
   await navigate(page, `${MOBILE_URL}/login?redirect=%2Fship`, "登录");
-  await clickByText(page, "登录");
+  await clickSubmitButton(page, "登录");
   await waitForPath(page, "/ship");
   await waitForText(page, "复制地址");
   await waitForText(page, "我的包裹");
   await navigate(page, `${MOBILE_URL}/me`, "我的");
   await waitForText(page, "积分推广");
   await waitForText(page, "邀请码");
+  await navigate(page, `${MOBILE_URL}/me/settings`, "账户设置");
+  await waitForText(page, "保存资料");
+  await waitForText(page, "更新密码");
   await navigate(page, `${MOBILE_URL}/me/purchases/manual`, "手工代购");
   await waitForText(page, "解析链接");
   assertNoIssues("Mobile H5", page.issues);

@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
+import { AccountSettingsPage } from "../pages/AccountSettingsPage";
 import { AddressesPage } from "../pages/AddressesPage";
 import { ContentCenterPage } from "../pages/ContentCenterPage";
 import { DashboardPage } from "../pages/DashboardPage";
@@ -32,6 +33,7 @@ export const router = createBrowserRouter([
       { path: "/purchases", element: <PurchasesPage /> },
       { path: "/content", element: <ContentCenterPage /> },
       { path: "/tickets", element: <TicketsPage /> },
+      { path: "/settings", element: <AccountSettingsPage /> },
     ],
   },
   { path: "*", element: <Navigate to="/dashboard" replace /> },

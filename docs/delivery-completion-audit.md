@@ -16,6 +16,7 @@
 - SQLite-first 本地显式备份命令。
 - 本地软删除文件显式清理命令。
 - 外部商品链接解析入口和人工代购 fallback。
+- 会员注册、账户资料设置和会员自助改密码基础。
 - `npm run e2e` 自动验收主链路和最小代购链路。
 - `npm run e2e:browser` 自动验收 Admin Web、User Web、Mobile H5 登录、关键页面 smoke 和一条真实包裹预报/入库/回看浏览器旅程。
 - CSV 和标准 `.xlsx` 批量预报导入。
@@ -36,6 +37,7 @@
 | SQLite 本地备份 | 本地已验证 `backup_sqlite --dry-run` 和备份测试；生产数据库备份不声明完成 | `docs/agent-runs/2026-05-09-OPS-SQLITE-BACKUP-001.md`、`backend/apps/common/tests/test_backup_sqlite.py` |
 | 本地软删除文件清理 | 本地已验证 `purge_deleted_files --dry-run` 和清理测试；对象存储生命周期不声明完成 | `docs/agent-runs/2026-05-09-STORAGE-CLEANUP-001.md`、`backend/apps/files/tests/test_purge_deleted_files.py` |
 | 外部商品链接解析 | 本地已验证 `purchase-links/parse`，User Web/Mobile H5 手工代购入口已整合；真实抓取/自动下单不声明完成 | `docs/agent-runs/2026-05-09-PURCHASE-AUTO-001.md`、`backend/apps/purchases/tests/test_purchases.py` |
+| 会员注册与账户设置 | 本地已验证注册、资料更新、旧密码失效和新密码登录；User Web `/settings`、Mobile H5 `/me/settings` 已整合；短信/邮件验证码和找回密码不声明完成 | `docs/agent-runs/2026-05-09-ACCOUNT-SETTINGS-001.md`、`backend/apps/members/tests/test_members.py` |
 | 证明纯 AI 驱动全栈 ERP | 每个正式任务留摘要证据，不记录过细过程 | `docs/ai-development-proof.md`、`docs/agent-runs/` |
 | 每轮任务 PR、更新 PR 信息并合并 main | 已按任务分支和 PR 合并推进；最后任务以 PR 合并收口 | GitHub PR 记录、`docs/agent-runs/` |
 
@@ -91,4 +93,4 @@ git diff --check
 - 对象存储生命周期、CDN、缩略图、病毒扫描和远程文件归档未验证；当前只完成本地软删除文件清理命令。
 - `npm run e2e:browser` 已纳入仓库，并覆盖一条真实包裹预报/入库/回看旅程；Playwright、组件级测试、视觉回归和更多业务旅程仍需后续增强。
 - 真实支付、真实自动采购下单、对象存储、外部 SIEM/审计告警、真实打印硬件、物流 API 后续补齐。
-- 复杂业务规则保持 `TODO_CONFIRM`。
+- 短信/邮件验证码、找回密码、微信登录、多语言和复杂业务规则保持 `TODO_CONFIRM`。

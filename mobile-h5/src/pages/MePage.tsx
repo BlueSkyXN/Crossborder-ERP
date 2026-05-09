@@ -102,6 +102,14 @@ export function MePage() {
             <strong>{orders.length}</strong>
           </div>
         </div>
+        <div className={styles.quickGrid}>
+          <button className={styles.primaryButton} type="button" onClick={() => navigate("/me/settings")}>
+            账户设置
+          </button>
+          <button className={styles.secondaryButton} type="button" onClick={() => navigate("/me/addresses")}>
+            地址簿
+          </button>
+        </div>
       </section>
 
       <section className={styles.panel}>

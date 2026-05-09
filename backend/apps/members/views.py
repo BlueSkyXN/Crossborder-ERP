@@ -13,6 +13,7 @@ from .serializers import (
     AdminPointAdjustmentSerializer,
     AdminRebateCreateSerializer,
     AdminReferralCreateSerializer,
+    ChangePasswordSerializer,
     AdminMemberQuerySerializer,
     AdminMemberResetPasswordSerializer,
     AdminMemberSerializer,
@@ -30,6 +31,7 @@ from .serializers import (
 from .services import (
     active_service_admin_options,
     adjust_member_points,
+    change_member_password,
     create_rebate_record,
     create_referral_relation,
     filter_admin_members,
@@ -113,6 +115,22 @@ class MeProfileView(APIView):
         serializer.is_valid(raise_exception=True)
         user = update_member_profile(request.user, **serializer.validated_data)
         return success_response(UserSerializer(user).data)
+
+
+class MePasswordView(APIView):
+    authentication_classes = [MemberTokenAuthentication]
+    permission_classes = [IsMemberAuthenticated]
+
+    @extend_schema(
+        tags=["auth"],
+        request=ChangePasswordSerializer,
+        responses={200: OpenApiResponse(description="Password changed")},
+    )
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        change_member_password(request.user, **serializer.validated_data)
+        return success_response({"changed": True})
 
 
 class GrowthSummaryView(APIView):

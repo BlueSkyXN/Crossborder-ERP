@@ -41,7 +41,7 @@ pnpm --filter mobile-h5 dev
 
 1. 后台登录 Admin Web。
 2. 进入 `/warehouses`，确认至少存在 `深圳仓`、测试空运渠道、纸箱包装和加固服务。
-3. 用户登录 User Web，进入 `/warehouse-address` 或 `/dashboard`，复制专属仓库地址。
+3. 用户注册或登录 User Web，进入 `/dashboard`，复制专属仓库地址；需要维护资料时进入 `/settings`。
 4. 用户进入 `/parcels`，提交包裹预报：
    - 仓库：深圳仓
    - 快递单号：使用唯一值，例如 `DEMO-CN-001`
@@ -66,7 +66,7 @@ pnpm --filter mobile-h5 dev
 
 ## 最小代购链路
 
-1. 用户登录 User Web 或 Mobile H5。
+1. 用户注册或登录 User Web / Mobile H5。
 2. 进入手工代购入口：
    - User Web：`/purchases` 或 `/purchase-orders`
    - Mobile H5：`/me/purchases/manual`
@@ -97,8 +97,9 @@ pnpm --filter mobile-h5 dev
 2. 使用 `user@example.com / password123` 登录。
 3. 在首页查看商品并加入购物车。
 4. 在 `/cart` 提交订单并使用钱包支付。
-5. 在 `/me` 查看代购订单、手工代购、包裹和运单入口。
-6. 在 `/me/purchases/manual` 提交手工代购单。
+5. 在 `/me/settings` 查看账户设置，确认可以维护昵称、手机号和登录密码。
+6. 在 `/me` 查看代购订单、手工代购、包裹和运单入口。
+7. 在 `/me/purchases/manual` 提交手工代购单。
 
 ## 自动化对照
 

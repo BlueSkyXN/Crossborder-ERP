@@ -36,6 +36,7 @@
 | `OPS-SQLITE-BACKUP-001` | P2 | SQLite 本地备份 | `backup_sqlite` 命令、dry-run、覆盖保护、file-backed SQLite 边界测试 | 已完成基础；生产数据库/远程备份仍后续 |
 | `STORAGE-CLEANUP-001` | P2 | 本地文件清理 | `purge_deleted_files` 命令、软删除保留期、dry-run、路径安全 | 已完成基础；对象存储生命周期仍后续 |
 | `PURCHASE-AUTO-001` | P3 | 外链解析/自动采购 | 外部链接解析 provider 接口、人工 fallback、合规边界 | 已完成基础；不抓取真实第三方前不声明自动采购完成 |
+| `ACCOUNT-SETTINGS-001` | P3 | 会员注册与账户设置 | 前台注册入口、会员自助资料设置、会员自助改密码 | 已完成基础；不接短信/邮件/验证码/找回密码 |
 
 ## Completed Production Gap Tasks
 
@@ -60,10 +61,11 @@
 - `OPS-SQLITE-BACKUP-001`：已补 `backup_sqlite` management command，支持 dry-run、输出目录、文件名和显式覆盖，默认输出到 ignored 的 `backend/backups/`；该命令仅覆盖当前 SQLite-first 本地备份，不声明 PostgreSQL/MySQL 或远程备份完成。
 - `STORAGE-CLEANUP-001`：已补 `purge_deleted_files` management command，只清理超过保留期的 `StoredFile.DELETED` 本地物理文件，支持 dry-run、missing/unsafe 统计和路径逃逸保护；对象存储生命周期、病毒扫描、缩略图和 CDN 仍后续补齐。
 - `PURCHASE-AUTO-001`：已补 `purchase-links/parse` 外部商品链接解析入口，User Web 和 Mobile H5 手工代购页可把解析结果填入商品行；当前只做 host/item id/URL 规范化和人工确认备注，不抓取真实第三方页面、不自动下单。
+- `ACCOUNT-SETTINGS-001`：已补会员自助改密码 API、User Web/H5 注册并自动登录入口、Web `/settings` 和 H5 `/me/settings` 账户设置页；当前不接短信/邮件验证码、找回密码或第三方登录。
 
 ## Current Next Task
 
-任务图中的 `PURCHASE-AUTO-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
+任务图中的 `ACCOUNT-SETTINGS-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
 
 - 生产化边界：补对象存储、PostgreSQL/MySQL/Redis 真实验证计划、告警和部署验证。
 - 需业务/合规确认的外部集成：真实支付、真实物流 API、真实自动采购下单和外部商品抓取。

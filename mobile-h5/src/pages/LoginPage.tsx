@@ -4,20 +4,29 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { ApiError } from "../api/types";
-import { loginMember } from "../features/auth/api";
+import { loginMember, registerMember } from "../features/auth/api";
 import { useAuthStore } from "../features/auth/store";
-import type { LoginPayload } from "../features/auth/types";
+import type { LoginPayload, RegisterPayload } from "../features/auth/types";
 import { safeRedirect } from "../routes/redirect";
 import styles from "./LoginPage.module.css";
+
+type AuthMode = "login" | "register";
+
+async function registerThenLogin(payload: RegisterPayload) {
+  await registerMember(payload);
+  return loginMember({ email: payload.email, password: payload.password });
+}
 
 export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const setSession = useAuthStore((state) => state.setSession);
+  const [mode, setMode] = useState<AuthMode>("login");
   const [errorMessage, setErrorMessage] = useState("");
 
   const loginMutation = useMutation({
-    mutationFn: loginMember,
+    mutationFn: (payload: LoginPayload | RegisterPayload) =>
+      mode === "register" ? registerThenLogin(payload as RegisterPayload) : loginMember(payload as LoginPayload),
     onSuccess: (result) => {
       setErrorMessage("");
       setSession(result.access_token, result.user);
@@ -29,9 +38,14 @@ export function LoginPage() {
     },
   });
 
-  const handleFinish = (values: LoginPayload) => {
+  const handleFinish = (values: LoginPayload | RegisterPayload) => {
     setErrorMessage("");
-    loginMutation.mutate(values);
+    loginMutation.mutate({
+      ...values,
+      email: values.email.trim(),
+      display_name: "display_name" in values ? values.display_name?.trim() : undefined,
+      phone: "phone" in values ? values.phone?.trim() : undefined,
+    });
   };
 
   return (
@@ -43,10 +57,23 @@ export function LoginPage() {
       </section>
 
       <section className={styles.card}>
+        <div className={styles.modeSwitch} aria-label="登录注册切换">
+          <button className={mode === "login" ? styles.activeMode : ""} type="button" onClick={() => setMode("login")}>
+            登录
+          </button>
+          <button className={mode === "register" ? styles.activeMode : ""} type="button" onClick={() => setMode("register")}>
+            注册
+          </button>
+        </div>
         <Form
+          key={mode}
           layout="vertical"
           requiredMarkStyle="none"
-          initialValues={{ email: "user@example.com", password: "password123" }}
+          initialValues={
+            mode === "login"
+              ? { email: "user@example.com", password: "password123" }
+              : { email: "", password: "", display_name: "", phone: "" }
+          }
           onFinish={handleFinish}
           footer={
             <Button
@@ -56,7 +83,7 @@ export function LoginPage() {
               type="submit"
               className={styles.submit}
             >
-              登录
+              {mode === "register" ? "注册并登录" : "登录"}
             </Button>
           }
         >
@@ -68,6 +95,16 @@ export function LoginPage() {
           >
             <Input clearable type="email" autoComplete="email" placeholder="user@example.com" />
           </Form.Item>
+          {mode === "register" && (
+            <>
+              <Form.Item name="display_name" label="昵称">
+                <Input clearable autoComplete="name" placeholder="用于会员中心展示" />
+              </Form.Item>
+              <Form.Item name="phone" label="手机号">
+                <Input clearable autoComplete="tel" placeholder="可选" />
+              </Form.Item>
+            </>
+          )}
           <Form.Item
             name="password"
             label="密码"

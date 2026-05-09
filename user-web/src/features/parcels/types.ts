@@ -8,6 +8,7 @@ export type ParcelStatus =
   | "PROBLEM";
 
 export type UnclaimedParcelStatus = "UNCLAIMED" | "CLAIM_PENDING" | "CLAIMED";
+export type ParcelImportStatus = "COMPLETED" | "FAILED";
 
 export type ParcelItem = {
   id: number;
@@ -61,6 +62,27 @@ export type ParcelForecastPayload = {
     product_url?: string;
     remark?: string;
   }>;
+};
+
+export type ParcelImportError = {
+  row: number;
+  field: string;
+  message: string;
+  value: string;
+};
+
+export type ParcelImportJob = {
+  id: number;
+  job_no: string;
+  file_id: string;
+  original_name: string;
+  status: ParcelImportStatus;
+  total_rows: number;
+  success_count: number;
+  error_count: number;
+  errors_json: ParcelImportError[];
+  created_at: string;
+  updated_at: string;
 };
 
 export type PublicUnclaimedParcel = {

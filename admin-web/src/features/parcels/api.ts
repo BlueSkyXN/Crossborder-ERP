@@ -1,4 +1,4 @@
-import { requestData } from "../../api/client";
+import { apiClient, requestData } from "../../api/client";
 import type {
   InboundPayload,
   Parcel,
@@ -20,6 +20,14 @@ function listItems<T>(url: string) {
 
 export const parcelWmsApi = {
   listParcels: () => listItems<Parcel>("/admin/parcels"),
+  exportParcels: () =>
+    apiClient
+      .request<Blob>({
+        method: "GET",
+        url: "/admin/parcels/export",
+        responseType: "blob",
+      })
+      .then((response) => response.data),
   inboundParcel: (parcelId: number, payload: InboundPayload) =>
     requestData<Parcel>({ method: "POST", url: `/admin/parcels/${parcelId}/inbound`, data: payload }),
   scanInbound: (payload: ScanInboundPayload) =>

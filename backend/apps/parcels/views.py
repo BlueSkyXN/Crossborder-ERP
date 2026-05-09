@@ -1,4 +1,7 @@
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils.encoding import escape_uri_path
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.views import APIView
@@ -10,10 +13,18 @@ from apps.members.authentication import MemberTokenAuthentication
 from apps.members.permissions import IsMemberAuthenticated
 
 from .models import Parcel, ParcelStatus, UnclaimedParcel, UnclaimedParcelStatus
+from .import_export import (
+    build_parcel_export_csv,
+    build_parcel_import_template_csv,
+    import_parcel_forecasts,
+    list_member_import_jobs,
+)
 from .serializers import (
     AdminUnclaimedParcelCreateSerializer,
     AdminUnclaimedParcelApproveResponseSerializer,
     InboundRequestSerializer,
+    ParcelImportCreateSerializer,
+    ParcelImportJobSerializer,
     ParcelForecastSerializer,
     ParcelSerializer,
     PublicUnclaimedParcelSerializer,
@@ -38,6 +49,47 @@ from .services import (
 
 def state_conflict_response(exc: StateConflictError):
     return error_response("STATE_CONFLICT", str(exc), status=status.HTTP_409_CONFLICT)
+
+
+def csv_response(content: str, filename: str) -> HttpResponse:
+    response = HttpResponse(content, content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f"attachment; filename*=UTF-8''{escape_uri_path(filename)}"
+    return response
+
+
+class ParcelImportTemplateView(APIView):
+    authentication_classes = [MemberTokenAuthentication]
+    permission_classes = [IsMemberAuthenticated]
+
+    @extend_schema(tags=["parcels"], responses={200: OpenApiTypes.BINARY})
+    def get(self, request):
+        return csv_response(build_parcel_import_template_csv(), "parcel-import-template.csv")
+
+
+class ParcelImportListCreateView(APIView):
+    authentication_classes = [MemberTokenAuthentication]
+    permission_classes = [IsMemberAuthenticated]
+
+    @extend_schema(tags=["parcels"], responses={200: ParcelImportJobSerializer(many=True)})
+    def get(self, request):
+        jobs = list_member_import_jobs(user=request.user)
+        return success_response({"items": ParcelImportJobSerializer(jobs, many=True).data})
+
+    @extend_schema(tags=["parcels"], request=ParcelImportCreateSerializer, responses={201: ParcelImportJobSerializer})
+    def post(self, request):
+        serializer = ParcelImportCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        job = import_parcel_forecasts(user=request.user, file_id=serializer.validated_data["file_id"])
+        return success_response(ParcelImportJobSerializer(job).data, status=status.HTTP_201_CREATED)
+
+
+class ParcelExportView(APIView):
+    authentication_classes = [MemberTokenAuthentication]
+    permission_classes = [IsMemberAuthenticated]
+
+    @extend_schema(tags=["parcels"], responses={200: OpenApiTypes.BINARY})
+    def get(self, request):
+        return csv_response(build_parcel_export_csv(user=request.user), "member-parcels-export.csv")
 
 
 class ParcelForecastView(APIView):
@@ -144,6 +196,16 @@ class AdminParcelListView(APIView):
     def get(self, request):
         parcels = Parcel.objects.select_related("warehouse", "user").prefetch_related("items", "photos")
         return success_response({"items": ParcelSerializer(parcels, many=True).data})
+
+
+class AdminParcelExportView(APIView):
+    authentication_classes = [AdminTokenAuthentication]
+    permission_classes = [HasAdminPermission]
+    required_permission = "parcels.view"
+
+    @extend_schema(tags=["admin-parcels"], responses={200: OpenApiTypes.BINARY})
+    def get(self, request):
+        return csv_response(build_parcel_export_csv(), "admin-parcels-export.csv")
 
 
 class AdminParcelInboundView(APIView):

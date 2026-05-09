@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.warehouses.models import ConfigStatus, Warehouse
 
-from .models import InboundRecord, Parcel, ParcelItem, ParcelPhoto, UnclaimedParcel
+from .models import InboundRecord, Parcel, ParcelImportJob, ParcelItem, ParcelPhoto, UnclaimedParcel
 from .services import mask_tracking_no
 
 
@@ -93,6 +93,29 @@ class ParcelForecastSerializer(serializers.Serializer):
     carrier = serializers.CharField(max_length=80, required=False, allow_blank=True)
     remark = serializers.CharField(required=False, allow_blank=True)
     items = ParcelItemSerializer(many=True, required=False)
+
+
+class ParcelImportCreateSerializer(serializers.Serializer):
+    file_id = serializers.CharField(max_length=120)
+
+
+class ParcelImportJobSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ParcelImportJob
+        fields = [
+            "id",
+            "job_no",
+            "file_id",
+            "original_name",
+            "status",
+            "total_rows",
+            "success_count",
+            "error_count",
+            "errors_json",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
 
 
 class InboundRequestSerializer(serializers.Serializer):

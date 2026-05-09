@@ -1,21 +1,31 @@
 import {
   ArrowLeftOutlined,
   BoxPlotOutlined,
+  DownloadOutlined,
   FileSearchOutlined,
   InboxOutlined,
   LogoutOutlined,
   PlusOutlined,
   ReloadOutlined,
   SendOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { fetchMe } from "../features/auth/api";
 import { useAuthStore } from "../features/auth/store";
-import { createParcelForecast, fetchParcels } from "../features/parcels/api";
-import type { Parcel, ParcelForecastPayload, ParcelStatus } from "../features/parcels/types";
+import { memberFilesApi } from "../features/files/api";
+import {
+  createParcelForecast,
+  downloadParcelImportTemplate,
+  exportParcelsCsv,
+  fetchParcelImportJobs,
+  fetchParcels,
+  importParcelForecasts,
+} from "../features/parcels/api";
+import type { Parcel, ParcelForecastPayload, ParcelImportJob, ParcelStatus } from "../features/parcels/types";
 import { fetchWarehouses } from "../features/warehouses/api";
 import styles from "./ParcelsPage.module.css";
 
@@ -100,6 +110,17 @@ function buildForecastPayload(form: ForecastFormState): ParcelForecastPayload {
   };
 }
 
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 function StatusBadge({ status }: { status: ParcelStatus }) {
   const meta = statusMeta[status];
   return <span className={`${styles.statusBadge} ${styles[meta.tone]}`}>{meta.label}</span>;
@@ -116,6 +137,8 @@ export function ParcelsPage() {
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
   const [selectedParcelId, setSelectedParcelId] = useState<number | null>(null);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<ParcelImportJob | null>(null);
 
   const meQuery = useQuery({
     queryKey: ["member", "me"],
@@ -128,6 +151,10 @@ export function ParcelsPage() {
   const parcelsQuery = useQuery({
     queryKey: ["member", "parcels"],
     queryFn: fetchParcels,
+  });
+  const importJobsQuery = useQuery({
+    queryKey: ["member", "parcel-imports"],
+    queryFn: fetchParcelImportJobs,
   });
 
   const warehouses = useMemo(() => warehousesQuery.data ?? [], [warehousesQuery.data]);
@@ -160,6 +187,34 @@ export function ParcelsPage() {
     },
   });
 
+  const templateMutation = useMutation({
+    mutationFn: downloadParcelImportTemplate,
+    onSuccess: (blob) => downloadBlob(blob, "parcel-import-template.csv"),
+  });
+
+  const exportMutation = useMutation({
+    mutationFn: exportParcelsCsv,
+    onSuccess: (blob) => downloadBlob(blob, "member-parcels-export.csv"),
+  });
+
+  const importMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const storedFile = await memberFilesApi.uploadFile(file, "IMPORT_FILE");
+      return importParcelForecasts(storedFile.file_id);
+    },
+    onSuccess: (job) => {
+      setImportResult(job);
+      setImportFile(null);
+      queryClient.invalidateQueries({ queryKey: ["member", "parcels"] });
+      queryClient.invalidateQueries({ queryKey: ["member", "parcel-imports"] });
+      if (job.status === "COMPLETED") {
+        setStatusFilter("ALL");
+        setKeyword("");
+        setPage(1);
+      }
+    },
+  });
+
   const filteredParcels = useMemo(() => {
     const normalized = keyword.trim().toLowerCase();
     return parcels.filter((parcel) => {
@@ -178,7 +233,14 @@ export function ParcelsPage() {
   const currentPage = Math.min(page, totalPages);
   const pagedParcels = filteredParcels.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const user = meQuery.data ?? persistedUser;
-  const hasError = meQuery.isError || warehousesQuery.isError || parcelsQuery.isError || forecastMutation.isError;
+  const hasError =
+    meQuery.isError ||
+    warehousesQuery.isError ||
+    parcelsQuery.isError ||
+    forecastMutation.isError ||
+    importMutation.isError ||
+    templateMutation.isError ||
+    exportMutation.isError;
 
   const handleLogout = () => {
     logout();
@@ -189,6 +251,18 @@ export function ParcelsPage() {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     forecastMutation.mutate(buildForecastPayload({ ...form, warehouse_id: effectiveWarehouseId }));
+  };
+
+  const handleImportFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setImportFile(event.target.files?.[0] ?? null);
+    event.target.value = "";
+  };
+
+  const handleImportSubmit = () => {
+    if (!importFile) {
+      return;
+    }
+    importMutation.mutate(importFile);
   };
 
   return (
@@ -333,6 +407,76 @@ export function ParcelsPage() {
             <SendOutlined />
             {forecastMutation.isPending ? "提交中" : "提交预报"}
           </button>
+
+          <div className={styles.importSection}>
+            <div className={styles.importHeader}>
+              <div>
+                <strong>批量预报</strong>
+                <span>CSV 模板导入，失败时不会创建部分包裹。</span>
+              </div>
+            </div>
+            <div className={styles.importToolbar}>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                disabled={templateMutation.isPending}
+                onClick={() => templateMutation.mutate()}
+              >
+                <DownloadOutlined />
+                模板
+              </button>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                disabled={exportMutation.isPending}
+                onClick={() => exportMutation.mutate()}
+              >
+                <DownloadOutlined />
+                导出
+              </button>
+            </div>
+            <label className={styles.filePicker}>
+              <span>{importFile?.name || "选择 CSV 文件"}</span>
+              <input type="file" accept=".csv,text/csv" onChange={handleImportFileChange} />
+            </label>
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              disabled={!importFile || importMutation.isPending}
+              onClick={handleImportSubmit}
+            >
+              <UploadOutlined />
+              {importMutation.isPending ? "导入中" : "导入 CSV"}
+            </button>
+            {importResult && (
+              <div className={importResult.status === "COMPLETED" ? styles.importSuccess : styles.importFailed}>
+                <strong>
+                  {importResult.status === "COMPLETED"
+                    ? `导入成功 ${importResult.success_count}/${importResult.total_rows}`
+                    : `导入失败 ${importResult.error_count} 项错误`}
+                </strong>
+                {importResult.errors_json.length > 0 && (
+                  <ul>
+                    {importResult.errors_json.slice(0, 5).map((error) => (
+                      <li key={`${error.row}-${error.field}-${error.message}`}>
+                        第 {error.row} 行 {error.field}: {error.message}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+            {importJobsQuery.data && importJobsQuery.data.length > 0 && (
+              <div className={styles.importHistory}>
+                <span>最近导入</span>
+                {importJobsQuery.data.slice(0, 3).map((job) => (
+                  <small key={job.id}>
+                    {job.job_no} / {job.status === "COMPLETED" ? "成功" : "失败"} / {job.total_rows} 行
+                  </small>
+                ))}
+              </div>
+            )}
+          </div>
         </form>
 
         <div className={styles.listCard}>

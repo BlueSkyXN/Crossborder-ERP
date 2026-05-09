@@ -13,6 +13,11 @@ class ParcelStatus(models.TextChoices):
     PROBLEM = "PROBLEM", "问题包裹"
 
 
+class ParcelImportStatus(models.TextChoices):
+    COMPLETED = "COMPLETED", "已完成"
+    FAILED = "FAILED", "失败"
+
+
 class UnclaimedParcelStatus(models.TextChoices):
     UNCLAIMED = "UNCLAIMED", "待认领"
     CLAIM_PENDING = "CLAIM_PENDING", "认领待审"
@@ -65,6 +70,31 @@ class ParcelItem(models.Model):
     class Meta:
         db_table = "parcel_items"
         ordering = ["id"]
+
+
+class ParcelImportJob(models.Model):
+    job_no = models.CharField(max_length=30, unique=True)
+    user = models.ForeignKey("members.User", on_delete=models.PROTECT, related_name="parcel_import_jobs")
+    file_id = models.CharField(max_length=120)
+    original_name = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=ParcelImportStatus.choices)
+    total_rows = models.PositiveIntegerField(default=0)
+    success_count = models.PositiveIntegerField(default=0)
+    error_count = models.PositiveIntegerField(default=0)
+    errors_json = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "parcel_import_jobs"
+        ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["user", "status"], name="idx_parcel_import_user_status"),
+            models.Index(fields=["file_id"], name="idx_parcel_import_file_id"),
+        ]
+
+    def __str__(self) -> str:
+        return self.job_no
 
 
 class ParcelPhoto(models.Model):

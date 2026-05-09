@@ -141,6 +141,66 @@ def _upload_member_message_attachment(member_client: APIClient, suffix: str) -> 
     )
 
 
+def _upload_member_import_file(member_client: APIClient, suffix: str, content: bytes) -> dict:
+    return _api_data(
+        member_client.post(
+            "/api/v1/files",
+            {
+                "usage": "IMPORT_FILE",
+                "file": SimpleUploadedFile(
+                    f"e2e-{suffix.lower()}-forecast.csv",
+                    content,
+                    content_type="text/csv",
+                ),
+            },
+            format="multipart",
+        ),
+        expected_status=201,
+    )
+
+
+def _run_parcel_import_flow(
+    *,
+    admin_client: APIClient,
+    member_client: APIClient,
+    run_id: str,
+) -> dict:
+    tracking_no = f"E2E-IMPORT-{run_id}"
+    csv_content = (
+        "warehouse_code,tracking_no,carrier,item_name,quantity,declared_value,product_url,remark\n"
+        f"SZ,{tracking_no},E2E Import,T-shirt,1,11.00,https://example.com/import,E2E batch import\n"
+    ).encode("utf-8")
+    stored_file = _upload_member_import_file(member_client, "IMPORT", csv_content)
+    job = _api_data(
+        member_client.post(
+            "/api/v1/parcels/imports",
+            {"file_id": stored_file["file_id"]},
+            format="json",
+        ),
+        expected_status=201,
+    )
+    assert job["status"] == "COMPLETED"
+    assert job["success_count"] == 1
+
+    parcels = _api_data(member_client.get("/api/v1/parcels"))["items"]
+    imported = next(item for item in parcels if item["tracking_no"] == tracking_no)
+    assert imported["status"] == "PENDING_INBOUND"
+    assert imported["items"][0]["name"] == "T-shirt"
+
+    member_export = member_client.get("/api/v1/parcels/export")
+    assert member_export.status_code == 200
+    assert tracking_no in member_export.content.decode("utf-8-sig")
+
+    admin_export = admin_client.get("/api/v1/admin/parcels/export")
+    assert admin_export.status_code == 200
+    assert tracking_no in admin_export.content.decode("utf-8-sig")
+    return {
+        "job_no": job["job_no"],
+        "tracking_no": tracking_no,
+        "parcel_no": imported["parcel_no"],
+    }
+
+
 def _run_ticket_flow(*, admin_client: APIClient, member_client: APIClient, suffix: str) -> dict:
     attachment = _upload_member_message_attachment(member_client, suffix)
     ticket = _api_data(
@@ -739,6 +799,11 @@ def test_p0_forwarding_and_purchase_e2e():
     admin_client, _admin = _login_admin()
     member_client, member = _login_member()
     warehouse, channel = _confirm_demo_configs(admin_client, member_client, member)
+    import_result = _run_parcel_import_flow(
+        admin_client=admin_client,
+        member_client=member_client,
+        run_id=run_id,
+    )
     unclaimed_result = _run_unclaimed_claim_flow(
         admin_client=admin_client,
         member_client=member_client,
@@ -780,12 +845,14 @@ def test_p0_forwarding_and_purchase_e2e():
     )
 
     print("[E2E-001] 主链路完成:", main_result)
+    print("[IMPORT-001] 批量导入导出链路完成:", import_result)
     print("[PARCEL-CLAIM-001] 无主包裹认领链路完成:", unclaimed_result)
     print("[E2E-001] 代购链路完成:", purchase_result)
     print("[MSG-001] 工单链路完成:", ticket_result)
     print("[MEMBER-001] 会员后台链路完成:", member_admin_result)
     print("[CONTENT-001] 内容 CMS 链路完成:", content_result)
     assert main_result["status"] == "SIGNED"
+    assert import_result["job_no"].startswith("IMP")
     assert unclaimed_result["status"] == "CLAIMED"
     assert purchase_result["waybill_status"] == "PENDING_REVIEW"
     assert ticket_result["status"] == "PROCESSING"

@@ -32,6 +32,9 @@ from apps.waybills.models import WaybillStatus
 from apps.waybills.services import create_waybill, review_waybill, set_waybill_fee
 
 
+JPEG_BYTES = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00\x48\x00\x48\x00\x00\xff\xd9"
+
+
 @pytest.fixture
 def seeded_finance(db):
     seed_iam_demo_data()
@@ -53,7 +56,7 @@ def upload_remittance_proof(client, token, name="remittance.jpg"):
         reverse("file-list"),
         {
             "usage": FileUsage.REMITTANCE_PROOF,
-            "file": SimpleUploadedFile(name, b"remittance-proof", content_type="image/jpeg"),
+            "file": SimpleUploadedFile(name, JPEG_BYTES, content_type="image/jpeg"),
         },
         HTTP_AUTHORIZATION=f"Bearer {token}",
     )

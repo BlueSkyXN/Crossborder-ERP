@@ -40,6 +40,17 @@ IMPORT_CONTENT_TYPES = frozenset(
     }
 )
 IMPORT_EXTENSIONS = frozenset({".csv", ".xls", ".xlsx"})
+EXTENSION_CONTENT_TYPES: dict[str, frozenset[str]] = {
+    ".jpg": frozenset({"image/jpeg"}),
+    ".jpeg": frozenset({"image/jpeg"}),
+    ".png": frozenset({"image/png"}),
+    ".webp": frozenset({"image/webp"}),
+    ".gif": frozenset({"image/gif"}),
+    ".pdf": frozenset({"application/pdf"}),
+    ".csv": frozenset({"text/csv", "application/csv", "application/vnd.ms-excel"}),
+    ".xls": frozenset({"application/vnd.ms-excel"}),
+    ".xlsx": frozenset({"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),
+}
 
 FILE_POLICIES: dict[str, FilePolicy] = {
     FileUsage.PARCEL_PHOTO: FilePolicy(5 * MB, IMAGE_EXTENSIONS, IMAGE_CONTENT_TYPES),
@@ -87,6 +98,69 @@ def _content_type(uploaded_file, original_name: str) -> str:
     return declared or guessed
 
 
+def _read_upload_head(uploaded_file, size: int = 512) -> bytes:
+    position = None
+    if hasattr(uploaded_file, "tell"):
+        try:
+            position = uploaded_file.tell()
+        except (OSError, ValueError):
+            position = None
+
+    head = uploaded_file.read(size)
+
+    if hasattr(uploaded_file, "seek"):
+        try:
+            uploaded_file.seek(position or 0)
+        except (OSError, ValueError):
+            pass
+    return head or b""
+
+
+def _is_jpeg(head: bytes) -> bool:
+    return head.startswith(b"\xff\xd8\xff")
+
+
+def _is_png(head: bytes) -> bool:
+    return head.startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def _is_webp(head: bytes) -> bool:
+    return len(head) >= 12 and head[:4] == b"RIFF" and head[8:12] == b"WEBP"
+
+
+def _is_gif(head: bytes) -> bool:
+    return head.startswith((b"GIF87a", b"GIF89a"))
+
+
+def _is_pdf(head: bytes) -> bool:
+    return head.startswith(b"%PDF-")
+
+
+def _is_xls(head: bytes) -> bool:
+    return head.startswith(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1")
+
+
+def _is_xlsx(head: bytes) -> bool:
+    return head.startswith((b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08"))
+
+
+def _is_text_like(head: bytes) -> bool:
+    return b"\x00" not in head
+
+
+SIGNATURE_VALIDATORS = {
+    ".jpg": _is_jpeg,
+    ".jpeg": _is_jpeg,
+    ".png": _is_png,
+    ".webp": _is_webp,
+    ".gif": _is_gif,
+    ".pdf": _is_pdf,
+    ".csv": _is_text_like,
+    ".xls": _is_xls,
+    ".xlsx": _is_xlsx,
+}
+
+
 def validate_uploaded_file(*, uploaded_file, usage: str) -> dict[str, object]:
     usage = _normalize_usage(usage)
     original_name = _safe_original_name(getattr(uploaded_file, "name", ""))
@@ -104,6 +178,12 @@ def validate_uploaded_file(*, uploaded_file, usage: str) -> dict[str, object]:
         errors["extension"] = ["文件扩展名不支持"]
     if content_type not in policy.content_types:
         errors["content_type"] = ["文件 MIME 类型不支持"]
+    expected_content_types = EXTENSION_CONTENT_TYPES.get(extension)
+    if expected_content_types and content_type not in expected_content_types:
+        errors.setdefault("content_type", []).append("文件 MIME 类型与扩展名不匹配")
+    signature_validator = SIGNATURE_VALIDATORS.get(extension)
+    if signature_validator and not signature_validator(_read_upload_head(uploaded_file)):
+        errors["file_signature"] = ["文件内容与扩展名不匹配"]
     if errors:
         raise exceptions.ValidationError(errors)
 

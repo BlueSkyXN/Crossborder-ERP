@@ -180,7 +180,7 @@ uv run python manage.py backup_sqlite --database default --force
 
 - 默认来自 `.env.example`：`MEDIA_ROOT=./media`。
 - 本地开发不依赖对象存储。
-- `FILE-001` 已提供本地上传、文件元数据、大小/MIME/扩展名限制、鉴权下载和软删除。
+- `FILE-001` 已提供本地上传、文件元数据、大小/MIME/扩展名限制、鉴权下载和软删除；`FILE-SNIFF-001` 已补扩展名、MIME 和基础文件头一致性校验。
 - 包裹入库图片已校验真实 `PARCEL_PHOTO` file id；包裹所属会员可通过鉴权 endpoint 下载被业务引用的图片。
 - API 只返回 `file_id`、元数据和下载 endpoint，不返回本地 `storage_key`。
 - 线下汇款凭证使用 `REMITTANCE_PROOF` 文件用途；用户只能引用自己的有效凭证，后台审核入账后才更新钱包余额。
@@ -190,7 +190,7 @@ uv run python manage.py backup_sqlite --database default --force
 - 批量导入使用 `IMPORT_FILE` 文件用途，支持 CSV 和标准 `.xlsx` parser；导入模板/导出 CSV 是即时响应，不持久化到 git 或 media，上传的源 CSV/Excel 按本地 `MEDIA_ROOT` 文件策略保存。
 - 外部商品链接解析只识别 host、商品 ID 和规范化 URL，结果进入手工代购商品行；当前不抓取真实第三方页面、不自动下单、不保存平台账号或凭证。
 - 会员注册、账户资料设置和登录态内改密码已完成；短信/邮件验证码、找回密码和微信登录仍需真实通道确认后单独接入。
-- 后台 `/dashboard` 使用 `GET /api/v1/admin/dashboard` 返回当前管理员可见模块的真实聚合数据；`/roles` 和 `/admin-users` 读取真实 IAM 数据。业务写操作按模块级 `*.manage` / `*.export` 权限控制，角色/管理员删除和 create/update/delete 子权限后续单独增强。
+- 后台 `/dashboard` 使用 `GET /api/v1/admin/dashboard` 返回当前管理员可见模块的真实聚合数据；`/roles` 和 `/admin-users` 读取真实 IAM 数据。业务写操作按模块级 `*.manage` / `*.export` 权限控制，角色/管理员安全删除已完成，create/update/delete 子权限后续单独增强。
 - 软删除文件可用 `purge_deleted_files --older-than-days N --dry-run` 预演清理，再显式执行真实清理。该命令只删除已软删除且超过保留期的本地物理文件，不删除数据库记录。
 
 本地软删除文件清理：
@@ -212,7 +212,7 @@ uv run python manage.py purge_deleted_files --older-than-days 30
 
 - media 目录必须持久化。
 - 对象存储需要签名 URL、生命周期策略和备份策略。
-- 缩略图、病毒扫描、图片处理和 CDN 仍需后续补齐。
+- 缩略图、病毒扫描、EXIF 清理、图片真实解码和 CDN 仍需后续补齐。
 
 ## 安全响应头
 

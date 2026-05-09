@@ -1,4 +1,5 @@
-from io import BytesIO
+import csv
+from io import BytesIO, StringIO
 from zipfile import ZipFile
 
 import pytest
@@ -111,6 +112,37 @@ def test_member_imports_parcel_forecast_csv_and_exports_own_rows(client, seeded_
     assert export.status_code == 200
     assert "IMPORT-TRACK-001" in csv_body
     assert "OTHER-EXPORT-TRACK" not in csv_body
+
+
+@override_settings(MEDIA_ROOT="/tmp/crossborder-erp-test-media")
+def test_parcel_csv_export_escapes_formula_like_cells(client, seeded_imports):
+    user = register_user("formula-export@example.com", "password123")
+    warehouse = Warehouse.objects.get(code="SZ")
+    forecast_parcel(
+        user=user,
+        warehouse=warehouse,
+        tracking_no="FORMULA-EXPORT-TRACK",
+        carrier="@carrier",
+        remark="+SUM(1,1)",
+        items=[
+            {
+                "name": '=HYPERLINK("https://example.com")',
+                "quantity": 1,
+                "declared_value": "9.90",
+                "product_url": "",
+                "remark": "",
+            }
+        ],
+    )
+    token = issue_member_access_token(user)
+
+    export = client.get(reverse("parcel-export"), HTTP_AUTHORIZATION=f"Bearer {token}")
+    rows = list(csv.DictReader(StringIO(export.content.decode("utf-8-sig"))))
+
+    assert export.status_code == 200
+    assert rows[0]["carrier"] == "'@carrier"
+    assert rows[0]["items"].startswith("'=HYPERLINK")
+    assert rows[0]["remark"] == "'+SUM(1,1)"
 
 
 @override_settings(MEDIA_ROOT="/tmp/crossborder-erp-test-media")

@@ -46,6 +46,7 @@
 | `CONFIG-EXTERNAL-SERVICES-001` | P3 | 外部服务 DSN 边界检查 | `DATABASE_URL`/`REDIS_URL`/Celery eager 的无连接检查脚本、settings helper 和测试 | 已完成配置解析；不安装驱动、不连接 PostgreSQL/MySQL/Redis |
 | `RBAC-DELETE-001` | P3 | 角色与管理员安全删除 | 角色删除、管理员账号删除、内置/自删/已分配保护、Admin Web 删除入口 | 已完成基础；外部 IAM 和审批流后续 |
 | `FILE-SNIFF-001` | P3 | 文件上传内容签名校验 | 扩展名/MIME/文件头一致性校验，拦截伪装图片/PDF/XLS/XLSX | 已完成基础；病毒扫描、缩略图、对象存储后续 |
+| `CSV-EXPORT-SAFE-001` | P3 | CSV 导出公式注入防护 | 包裹导出和审计日志导出统一转义公式样式字段 | 已完成基础；导出审批、DLP、水印后续 |
 
 ## Completed Production Gap Tasks
 
@@ -80,10 +81,11 @@
 - `CONFIG-EXTERNAL-SERVICES-001`：已补 `npm run inspect:services` 和 `inspect_configured_services`，可在不执行 Django setup、不安装数据库驱动、不连接外部服务的情况下检查 SQLite/PostgreSQL/MySQL/Redis/Celery 配置边界；PostgreSQL/MySQL/Redis/Celery 仍为 `configured_unverified`。
 - `RBAC-DELETE-001`：已补 `DELETE /api/v1/admin/roles/{id}` 和 `DELETE /api/v1/admin/admin-users/{id}`，Admin Web `/roles` 和 `/admin-users` 已显示删除入口；内置超级管理员角色/账号、当前登录管理员和已分配角色受保护。
 - `FILE-SNIFF-001`：已补上传文件扩展名、MIME 和基础内容签名一致性校验，覆盖 JPEG/PNG/WEBP/GIF/PDF/旧 `.xls`/标准 `.xlsx`，CSV 轻量拦截 NUL 二进制内容；不新增依赖，不声明病毒扫描或对象存储完成。
+- `CSV-EXPORT-SAFE-001`：已补共享 CSV 导出 sanitizer，包裹 CSV 导出和审计日志 CSV 导出会把公式样式字段前置单引号，降低用 Excel/表格软件打开导出文件时的公式解释风险。
 
 ## Current Next Task
 
-任务图中的 `FILE-SNIFF-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
+任务图中的 `CSV-EXPORT-SAFE-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
 
 - 生产化边界：补对象存储、病毒扫描、PostgreSQL/MySQL/Redis 真实连接/迁移验证计划、告警和部署验证。
 - 需业务/合规确认的外部集成：真实支付、真实物流 API、真实自动采购下单和外部商品抓取。

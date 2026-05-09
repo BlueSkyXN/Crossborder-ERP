@@ -303,4 +303,9 @@ tasks:
     phase: P6_PRODUCTION_GAP
     file: tasks/FILE-SNIFF-001.md
     depends_on: [FILE-001, IMPORT-XLSX-001, STORAGE-CLEANUP-001]
+    next: CSV-EXPORT-SAFE-001
+  - id: CSV-EXPORT-SAFE-001
+    phase: P6_PRODUCTION_GAP
+    file: tasks/CSV-EXPORT-SAFE-001.md
+    depends_on: [IMPORT-001, AUDIT-RETENTION-001, FILE-SNIFF-001]
     next: null

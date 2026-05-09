@@ -15,6 +15,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework import exceptions
 
+from apps.common.csv_exports import safe_csv_row
 from apps.files.models import FileOwnerType, FileUsage, StoredFile
 from apps.files.services import get_member_file, get_storage_path
 from apps.members.models import User
@@ -89,7 +90,7 @@ def _csv_with_bom(headers: list[str], rows: list[dict[str, object]]) -> str:
     writer = csv.DictWriter(buffer, fieldnames=headers, extrasaction="ignore", lineterminator="\n")
     writer.writeheader()
     for row in rows:
-        writer.writerow(row)
+        writer.writerow(safe_csv_row(row))
     return buffer.getvalue()
 
 

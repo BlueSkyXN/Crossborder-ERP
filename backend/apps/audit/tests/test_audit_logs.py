@@ -1,3 +1,4 @@
+import csv
 from datetime import timedelta
 from io import StringIO
 
@@ -9,6 +10,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.audit.models import AuditLog, AuditOperatorType
+from apps.audit.services import export_audit_logs_csv
 from apps.iam.models import AdminUser, Permission, Role
 from apps.iam.services import seed_iam_demo_data
 from apps.members.services import seed_member_demo_data
@@ -142,6 +144,29 @@ def test_audit_log_export_csv_requires_permission_and_keeps_redaction(api_client
     assert "***REDACTED***" in body
     assert "should-not-leak" not in body
     assert "access_token" not in body
+
+
+def test_audit_csv_export_escapes_formula_like_cells(db):
+    AuditLog.objects.create(
+        operator_type=AuditOperatorType.ADMIN,
+        operator_id=1,
+        operator_label="=cmd",
+        action="@action",
+        target_type="parcels",
+        target_id="-1",
+        request_method="POST",
+        request_path="+/api/v1/admin/parcels",
+        user_agent="\t=agent",
+        request_data={"remark": "=unsafe"},
+    )
+
+    rows = list(csv.DictReader(StringIO(export_audit_logs_csv({}))))
+
+    assert rows[0]["operator_label"] == "'=cmd"
+    assert rows[0]["action"] == "'@action"
+    assert rows[0]["target_id"] == "'-1"
+    assert rows[0]["request_path"] == "'+/api/v1/admin/parcels"
+    assert rows[0]["user_agent"] == "'\t=agent"
 
 
 def test_purge_audit_logs_management_command_dry_run_and_delete(db):

@@ -11,6 +11,7 @@
 - 仓库配置、会员、包裹、运单、钱包、商品、购物车、代购等 P0 模块。
 - 后台关键写操作审计日志和 Admin Web 查询面板。
 - 审计日志脱敏 CSV 导出和显式本地留存清理命令。
+- CSV 导出公式注入基础防护。
 - 基础应用安全响应头，包括 `nosniff`、Referrer Policy、COOP、X-Frame-Options 和 Permissions Policy。
 - 运维 readiness endpoint，当前检查默认数据库连接。
 - SQLite-first 本地显式备份命令。
@@ -46,6 +47,7 @@
 | SQLite 本地备份 | 本地已验证 `backup_sqlite --dry-run` 和备份测试；生产数据库备份不声明完成 | `docs/agent-runs/2026-05-09-OPS-SQLITE-BACKUP-001.md`、`backend/apps/common/tests/test_backup_sqlite.py` |
 | 本地软删除文件清理 | 本地已验证 `purge_deleted_files --dry-run` 和清理测试；对象存储生命周期不声明完成 | `docs/agent-runs/2026-05-09-STORAGE-CLEANUP-001.md`、`backend/apps/files/tests/test_purge_deleted_files.py` |
 | 文件上传内容签名 | 本地已验证扩展名、MIME 与基础文件头一致性校验；病毒扫描/对象存储不声明完成 | `docs/agent-runs/2026-05-09-FILE-SNIFF-001.md`、`backend/apps/files/tests/test_files.py` |
+| CSV 导出公式防护 | 本地已验证包裹导出和审计日志导出转义公式样式字段；导出审批/DLP 不声明完成 | `docs/agent-runs/2026-05-09-CSV-EXPORT-SAFE-001.md`、`backend/apps/common/tests/test_csv_exports.py` |
 | 外部商品链接解析 | 本地已验证 `purchase-links/parse`，User Web/Mobile H5 手工代购入口已整合；真实抓取/自动下单不声明完成 | `docs/agent-runs/2026-05-09-PURCHASE-AUTO-001.md`、`backend/apps/purchases/tests/test_purchases.py` |
 | 会员注册与账户设置 | 本地已验证注册、资料更新、旧密码失效和新密码登录；User Web `/settings`、Mobile H5 `/me/settings` 已整合；短信/邮件验证码和找回密码不声明完成 | `docs/agent-runs/2026-05-09-ACCOUNT-SETTINGS-001.md`、`backend/apps/members/tests/test_members.py` |
 | 后台占位面板真实化 | Admin Web `/dashboard`、`/roles` 和 `/admin-users` 已改为真实接口面板；角色创建、编辑、权限分配、管理员角色分配和业务模块级 action 权限已补齐 | `docs/agent-runs/2026-05-09-ADMIN-PANELS-001.md`、`docs/agent-runs/2026-05-09-RBAC-ROLES-001.md`、`docs/agent-runs/2026-05-09-RBAC-ADMIN-USERS-001.md`、`docs/agent-runs/2026-05-09-RBAC-BUSINESS-ACTIONS-001.md`、`backend/apps/iam/tests/test_admin_auth.py` |
@@ -72,6 +74,7 @@
 | Parcel 继续走集运链路 | E2E 验证转出包裹可继续申请打包 | `docs/agent-runs/2026-05-09-E2E-001.md` |
 | 后台关键操作审计 | 后台写操作请求级审计、财务高风险服务层审计和 Admin Web 查询入口已覆盖 | `docs/agent-runs/2026-05-09-AUDITLOG-001.md` |
 | 审计导出和本地留存 | 后台审计日志 CSV 导出和 `purge_audit_logs` 显式清理命令已覆盖 | `docs/agent-runs/2026-05-09-AUDIT-RETENTION-001.md` |
+| CSV 导出公式防护 | 包裹导出和审计日志导出会把公式样式字段作为文本输出 | `docs/agent-runs/2026-05-09-CSV-EXPORT-SAFE-001.md` |
 | 基础安全响应头 | 后端 health endpoint 已回归验证最小安全 header；HSTS/TLS 仍后续验证 | `docs/agent-runs/2026-05-09-SECURITY-HEADERS-001.md` |
 | 运维 readiness | 后端 `/api/v1/health/ready` 已验证默认数据库连接检查和 503 脱敏失败响应 | `docs/agent-runs/2026-05-09-OPS-READINESS-001.md` |
 | SQLite 本地备份 | `backup_sqlite` 已验证可生成可读取备份，并支持 dry-run、覆盖保护和边界失败 | `docs/agent-runs/2026-05-09-OPS-SQLITE-BACKUP-001.md` |

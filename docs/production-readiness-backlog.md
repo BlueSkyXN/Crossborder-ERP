@@ -90,15 +90,28 @@
 - `FILE-SNIFF-001`：已补上传文件扩展名、MIME 和基础内容签名一致性校验，覆盖 JPEG/PNG/WEBP/GIF/PDF/旧 `.xls`/标准 `.xlsx`，CSV 轻量拦截 NUL 二进制内容；不新增依赖，不声明病毒扫描或对象存储完成。
 - `CSV-EXPORT-SAFE-001`：已补共享 CSV 导出 sanitizer，包裹 CSV 导出和审计日志 CSV 导出会把公式样式字段前置单引号，降低用 Excel/表格软件打开导出文件时的公式解释风险。
 - `RBAC-IAM-ACTIONS-001`：已补 `iam.role.create/update/delete` 和 `iam.admin.create/update/delete`，角色与管理员账号 API 按动作校验细权限并保留 `iam.role.manage` / `iam.admin.manage` 兼容；Admin Web `/roles` 和 `/admin-users` 的新增、编辑、删除入口已按细权限分别控制。
+- `ERP-ENHANCE-001`：已补国家地区层级管理、商品翻译与属性体系、运费估算、细粒度权限、API 限流、领域事件信号和三端国际化框架。
+- `NEXT-DOCS-001`：已补下一阶段控制文档，包括启动清单、边界声明、通用规则、路线图和人工确认登记。
+- `NEXT-ADR-001`：已补 5 篇 ADR 文档（ADR-0001 到 ADR-0005），覆盖单体架构、Provider 抽象、PostgreSQL 目标、增量重构和能力状态标记。
+- `PROD-SETTINGS-001`：已加固 production.py，添加启动验证（拒绝 dev secret key 和默认 ALLOWED_HOSTS）、安全 cookie、SSL proxy header、HSTS/SSL 默认值和密码重置 token 强制关闭。
+- `AUTH-HARDEN-001`：已补 `password_changed_at` 字段、JWT token iat 校验、密码变更后旧 token 自动失效、强密码验证器（大小写+数字+弱密码黑名单）、统一登录错误消息（防用户状态泄露）和 dummy hash 防枚举。
+- `STORAGE-PROVIDER-001`：已补 StorageProvider 和 VirusScanProvider 抽象，包括 Local/FakeObject/Disabled 存储 provider 和 Fake/Disabled 病毒扫描 provider，含注册表和 20 个单元测试。
+- `OBSERVABILITY-001`：已补结构化 JSON 日志格式器、生产 LOGGING 配置、readiness endpoint 扩展（包含 provider 健康检查）和告警 runbook 文档。
+- `ARCH-BACKEND-001`：已在 content app 上示范 selectors/services 分层模式，拆出 `selectors.py` 包含所有只读查询、`services.py` 只保留写命令，views 从 selectors 读取数据。
+- `PAYMENT-PROVIDER-001`：已补 PaymentProvider 抽象，包括 Offline/Fake/Disabled provider、注册表和 10 个单元测试。
+- `LOGISTICS-PROVIDER-001`：已补 LogisticsProvider 抽象，包括 Manual/Fake/Disabled provider、注册表和 8 个单元测试。
+- `NOTIFICATION-PROVIDER-001`：已补 NotificationProvider 抽象，包括 Disabled/Console/Fake provider、注册表和 8 个单元测试。
+- `AUDIT-APPROVAL-001`：已补 ApprovalRequest 模型、审批创建/通过/驳回服务、高风险动作清单、自审保护和 8 个单元测试。
 
 ## Current Next Task
 
-任务图中的 `RBAC-IAM-ACTIONS-001` 已完成，当前没有自动确定的下一张任务卡。后续如果继续补生产级差距，建议优先从以下方向单独开任务：
+任务图中的 next-phase 本地可验证任务已全部完成（含 NEXT-ADR-001 到 AUDIT-APPROVAL-001）。后续需要外部环境或人工确认才能推进的任务包括：
 
-- 生产化边界：补对象存储、病毒扫描、PostgreSQL/MySQL/Redis 真实连接/迁移验证计划、告警和部署验证。
-- 需业务/合规确认的外部集成：真实支付、真实物流 API、真实自动采购下单和外部商品抓取。
-- 权限与审批深度增强：在 IAM 细权限之后，继续拆业务模块 create/update/delete 权限、审批流和导出审批。
-- 测试深度增强：在现有 system Chrome CDP smoke、多条真实浏览器旅程之外，补视觉回归、组件级测试或更多复杂浏览器流。
+- **DB-POSTGRES-001**：需要 PostgreSQL 实例，验证迁移和并发钱包扣款。
+- **DEPLOY-STAGING-001**：需要 staging 环境，优先按 no-Docker 部署口径验证 Nginx/TLS/HSTS；Docker 仅在后续重新确认后纳入。
+- **TEST-PLAYWRIGHT-001**：需确认是否引入 Playwright 替代 CDP smoke。
+- **PERF-BASELINE-001**：需确认数据规模和基准指标。
+- **外部 Provider 真实集成**：对象存储（S3/OSS）、病毒扫描（ClamAV）、真实支付网关、真实物流 API、真实通知渠道（短信/邮件）。
 
 ## Completion Boundary
 

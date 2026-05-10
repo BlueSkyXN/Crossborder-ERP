@@ -57,6 +57,13 @@ class LocalStorageProviderTests(TestCase):
             with self.assertRaises(ValueError):
                 provider.save("../../etc/passwd", io.BytesIO(b"bad"))
 
+    def test_sibling_prefix_traversal_blocked(self):
+        """Sibling dir whose name starts with MEDIA_ROOT dirname must be rejected."""
+        with self.settings(MEDIA_ROOT=self.tmpdir):
+            provider = LocalStorageProvider()
+            with self.assertRaises(ValueError):
+                provider.save("../media_evil/file.txt", io.BytesIO(b"bad"))
+
     def test_open_nonexistent_raises(self):
         with self.settings(MEDIA_ROOT=self.tmpdir):
             provider = LocalStorageProvider()

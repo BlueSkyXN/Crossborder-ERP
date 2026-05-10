@@ -17,7 +17,7 @@ class LocalStorageProvider(StorageProvider):
     def _resolve(self, storage_key: str) -> Path:
         path = (Path(settings.MEDIA_ROOT) / storage_key).resolve()
         media_root = Path(settings.MEDIA_ROOT).resolve()
-        if not str(path).startswith(str(media_root)):
+        if not path.is_relative_to(media_root):
             raise ValueError("storage_key escapes MEDIA_ROOT")
         return path
 

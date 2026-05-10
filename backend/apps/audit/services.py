@@ -6,6 +6,7 @@ from decimal import Decimal
 from io import StringIO
 from typing import Any
 
+from django.db import transaction
 from django.db.models import QuerySet
 from django.utils import timezone
 from rest_framework_simplejwt.exceptions import TokenError
@@ -331,6 +332,7 @@ def create_approval_request(
     )
 
 
+@transaction.atomic
 def approve_request(
     *,
     approval: ApprovalRequest,
@@ -340,8 +342,14 @@ def approve_request(
     """Approve a pending request."""
     from rest_framework import exceptions as drf_exceptions
 
-    if approval.status != ApprovalStatus.PENDING:
-        raise drf_exceptions.ValidationError({"status": [f"Cannot approve: current status is {approval.status}"]})
+    # Refetch with row lock to prevent race conditions
+    try:
+        approval = ApprovalRequest.objects.select_for_update().get(
+            id=approval.id, status=ApprovalStatus.PENDING,
+        )
+    except ApprovalRequest.DoesNotExist:
+        raise drf_exceptions.ValidationError({"status": ["Cannot approve: request is no longer pending"]})
+
     if approval.requester_id == approver.id:
         raise drf_exceptions.PermissionDenied("Cannot approve your own request")
 
@@ -363,6 +371,7 @@ def approve_request(
     return approval
 
 
+@transaction.atomic
 def reject_request(
     *,
     approval: ApprovalRequest,
@@ -372,8 +381,13 @@ def reject_request(
     """Reject a pending request."""
     from rest_framework import exceptions as drf_exceptions
 
-    if approval.status != ApprovalStatus.PENDING:
-        raise drf_exceptions.ValidationError({"status": [f"Cannot reject: current status is {approval.status}"]})
+    # Refetch with row lock to prevent race conditions
+    try:
+        approval = ApprovalRequest.objects.select_for_update().get(
+            id=approval.id, status=ApprovalStatus.PENDING,
+        )
+    except ApprovalRequest.DoesNotExist:
+        raise drf_exceptions.ValidationError({"status": ["Cannot reject: request is no longer pending"]})
 
     approval.status = ApprovalStatus.REJECTED
     approval.approver_id = approver.id

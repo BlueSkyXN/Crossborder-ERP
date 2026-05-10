@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from .models import CountryRegion, RegionLevel
@@ -32,7 +33,8 @@ class CountryRegionTreeSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_children(self, obj: CountryRegion):
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
+    def get_children(self, obj: CountryRegion) -> list[dict]:
         children = obj.children.filter(is_active=True).order_by("sort_order", "id")
         return CountryRegionTreeSerializer(children, many=True).data
 

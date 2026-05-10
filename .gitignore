@@ -45,6 +45,7 @@ backend/openapi.yaml
 # Node / pnpm / Vite
 node_modules/
 **/node_modules/
+package-lock.json
 .pnpm-store/
 .npm/
 .yarn/

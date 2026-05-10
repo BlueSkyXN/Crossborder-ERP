@@ -55,6 +55,26 @@ class MemberWarehouseAddressSerializer(serializers.Serializer):
     full_address = serializers.CharField()
 
 
+class FreightEstimateRequestSerializer(serializers.Serializer):
+    channel_id = serializers.IntegerField()
+    weight_kg = serializers.DecimalField(max_digits=10, decimal_places=3)
+    length_cm = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
+    width_cm = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
+    height_cm = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
+
+
+class FreightEstimateResponseSerializer(serializers.Serializer):
+    channel_code = serializers.CharField(required=False)
+    channel_name = serializers.CharField(required=False)
+    actual_weight_kg = serializers.DecimalField(max_digits=10, decimal_places=3, required=False)
+    volumetric_weight_kg = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    billable_weight_kg = serializers.DecimalField(max_digits=10, decimal_places=3, required=False)
+    fee = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, allow_null=True)
+    currency = serializers.CharField(required=False)
+    rate_plan = serializers.CharField(required=False)
+    error = serializers.CharField(required=False, allow_null=True)
+
+
 class ShippingChannelSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingChannel

@@ -10,6 +10,7 @@ REPO_ROOT = BASE_DIR.parent
 env = environ.Env(
     DJANGO_DEBUG=(bool, True),
     DJANGO_ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1", "testserver"]),
+    DJANGO_DISABLE_API_THROTTLE=(bool, False),
 )
 
 for env_file in (REPO_ROOT / ".env", BASE_DIR / ".env"):
@@ -140,6 +141,10 @@ REST_FRAMEWORK = {
         "login": "10/minute",
     },
 }
+
+if env.bool("DJANGO_DISABLE_API_THROTTLE", default=False):
+    REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = []
+    REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {"login": "1000/minute"}
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "CrossBorder ERP API",

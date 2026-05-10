@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Iterable
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import exceptions
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -10,6 +12,15 @@ from .models import AdminUser, AdminUserStatus, Permission, PermissionType, Role
 
 
 ADMIN_TOKEN_SCOPE = "admin"
+DUMMY_PASSWORD_HASH = make_password("DummyPass123")
+
+
+def next_password_changed_at(current):
+    changed_at = timezone.now()
+    if current and int(changed_at.timestamp()) <= int(current.timestamp()):
+        return current + timedelta(seconds=1)
+    return changed_at
+
 
 MENU_PERMISSIONS = [
     ("dashboard.view", "控制台", "dashboard", 10),
@@ -169,19 +180,21 @@ def issue_admin_access_token(admin_user: AdminUser) -> str:
     token["token_scope"] = ADMIN_TOKEN_SCOPE
     token["admin_user_id"] = admin_user.id
     token["email"] = admin_user.email
+    if admin_user.password_changed_at:
+        token["pwd_ts"] = int(admin_user.password_changed_at.timestamp())
     return str(token)
 
 
 def login_admin(email: str, password: str) -> LoginResult:
     try:
         admin_user = AdminUser.objects.get(email=email)
-    except AdminUser.DoesNotExist as exc:
-        raise exceptions.AuthenticationFailed("邮箱或密码错误") from exc
+        password_hash = admin_user.password_hash
+    except AdminUser.DoesNotExist:
+        admin_user = None
+        password_hash = DUMMY_PASSWORD_HASH
 
-    if not admin_user.is_active:
-        raise exceptions.PermissionDenied("管理员已停用")
-
-    if not check_password(password, admin_user.password_hash):
+    password_matches = check_password(password, password_hash)
+    if admin_user is None or not admin_user.is_active or not password_matches:
         raise exceptions.AuthenticationFailed("邮箱或密码错误")
 
     mark_admin_login(admin_user)
@@ -266,7 +279,8 @@ def seed_iam_demo_data(password: str = "password123") -> None:
         )
         if created or not admin_user.password_hash:
             admin_user.password_hash = make_password(password)
-            admin_user.save(update_fields=["password_hash", "updated_at"])
+            admin_user.password_changed_at = next_password_changed_at(admin_user.password_changed_at)
+            admin_user.save(update_fields=["password_hash", "password_changed_at", "updated_at"])
         admin_user.roles.set([role_by_code[role_code]])
 
 

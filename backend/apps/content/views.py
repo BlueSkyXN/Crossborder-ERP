@@ -17,13 +17,16 @@ from .serializers import (
     PublicContentPageDetailSerializer,
     PublicContentPageListSerializer,
 )
+from .selectors import (
+    get_admin_categories,
+    get_admin_pages,
+    get_public_categories,
+    get_public_pages,
+    get_public_page_by_slug,
+)
 from .services import (
-    admin_categories_queryset,
-    admin_pages_queryset,
     create_content_page,
     hide_content_page,
-    public_categories_queryset,
-    public_pages_queryset,
     publish_content_page,
     update_content_page,
 )
@@ -32,10 +35,8 @@ from .services import (
 class ContentCategoryListView(APIView):
     @extend_schema(tags=["content"], responses={200: ContentCategorySerializer(many=True)})
     def get(self, request):
-        categories = public_categories_queryset()
         content_type = request.query_params.get("type", "").strip()
-        if content_type:
-            categories = categories.filter(type=content_type)
+        categories = get_public_categories(content_type=content_type)
         return success_response({"items": ContentCategorySerializer(categories, many=True).data})
 
 
@@ -48,23 +49,18 @@ class ContentPageListView(APIView):
     def get(self, request):
         serializer = ContentPageQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
-        pages = public_pages_queryset()
-        content_type = serializer.validated_data.get("type")
-        category_slug = serializer.validated_data.get("category_slug", "").strip()
-        keyword = serializer.validated_data.get("keyword", "").strip()
-        if content_type:
-            pages = pages.filter(type=content_type)
-        if category_slug:
-            pages = pages.filter(category__slug=category_slug)
-        if keyword:
-            pages = pages.filter(title__icontains=keyword)
+        pages = get_public_pages(
+            content_type=serializer.validated_data.get("type", ""),
+            category_slug=serializer.validated_data.get("category_slug", "").strip(),
+            keyword=serializer.validated_data.get("keyword", "").strip(),
+        )
         return success_response({"items": PublicContentPageListSerializer(pages, many=True).data})
 
 
 class ContentPageDetailView(APIView):
     @extend_schema(tags=["content"], responses={200: PublicContentPageDetailSerializer})
     def get(self, request, slug: str):
-        page = get_object_or_404(public_pages_queryset(), slug=slug)
+        page = get_object_or_404(get_public_pages(), slug=slug)
         return success_response(PublicContentPageDetailSerializer(page).data)
 
 
@@ -76,7 +72,7 @@ class AdminContentCategoryListCreateView(APIView):
 
     @extend_schema(tags=["admin-content"], responses={200: ContentCategorySerializer(many=True)})
     def get(self, request):
-        return success_response({"items": ContentCategorySerializer(admin_categories_queryset(), many=True).data})
+        return success_response({"items": ContentCategorySerializer(get_admin_categories(), many=True).data})
 
     @extend_schema(tags=["admin-content"], request=ContentCategoryInputSerializer, responses={201: ContentCategorySerializer})
     def post(self, request):
@@ -118,7 +114,7 @@ class AdminContentPageListCreateView(APIView):
 
     @extend_schema(tags=["admin-content"], responses={200: ContentPageSerializer(many=True)})
     def get(self, request):
-        return success_response({"items": ContentPageSerializer(admin_pages_queryset(), many=True).data})
+        return success_response({"items": ContentPageSerializer(get_admin_pages(), many=True).data})
 
     @extend_schema(tags=["admin-content"], request=ContentPageInputSerializer, responses={201: ContentPageSerializer})
     def post(self, request):

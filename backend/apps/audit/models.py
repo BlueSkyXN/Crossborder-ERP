@@ -40,3 +40,48 @@ class AuditLog(models.Model):
     def __str__(self) -> str:
         return f"{self.action} {self.target_type}:{self.target_id}"
 
+
+class ApprovalStatus(models.TextChoices):
+    PENDING = "PENDING", "待审批"
+    APPROVED = "APPROVED", "已通过"
+    REJECTED = "REJECTED", "已驳回"
+    EXPIRED = "EXPIRED", "已过期"
+
+
+class ApprovalRequest(models.Model):
+    """Approval gate for high-risk operations (REQ-IAM-001, REQ-AUDIT-001).
+
+    When a high-risk action (large refund, role escalation, etc.) is attempted,
+    an ApprovalRequest is created instead of executing immediately. A senior
+    admin must approve before the action proceeds.
+    """
+    action = models.CharField(max_length=180)
+    target_type = models.CharField(max_length=120)
+    target_id = models.CharField(max_length=80, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=ApprovalStatus.choices,
+        default=ApprovalStatus.PENDING,
+    )
+    requester_id = models.PositiveBigIntegerField()
+    requester_label = models.CharField(max_length=160, blank=True)
+    approver_id = models.PositiveBigIntegerField(null=True, blank=True)
+    approver_label = models.CharField(max_length=160, blank=True)
+    payload = models.JSONField(default=dict, blank=True)
+    reason = models.TextField(blank=True)
+    decision_note = models.TextField(blank=True)
+    requested_at = models.DateTimeField(auto_now_add=True)
+    decided_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "approval_requests"
+        ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["status"], name="idx_approval_status"),
+            models.Index(fields=["action"], name="idx_approval_action"),
+            models.Index(fields=["requester_id"], name="idx_approval_requester"),
+        ]
+
+    def __str__(self) -> str:
+        return f"[{self.status}] {self.action} {self.target_type}:{self.target_id}"
+

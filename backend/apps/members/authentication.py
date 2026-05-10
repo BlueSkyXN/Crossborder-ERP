@@ -38,4 +38,9 @@ class MemberTokenAuthentication(authentication.BaseAuthentication):
         if not user.is_active:
             raise exceptions.PermissionDenied("用户已冻结")
 
+        pwd_ts = token.get("pwd_ts")
+        if user.password_changed_at:
+            if not pwd_ts or int(user.password_changed_at.timestamp()) != pwd_ts:
+                raise exceptions.AuthenticationFailed("密码已变更，请重新登录")
+
         return (user, token)

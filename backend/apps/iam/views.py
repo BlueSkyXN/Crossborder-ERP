@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
+from django.utils import timezone
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import exceptions
 from rest_framework import status
@@ -22,6 +25,13 @@ from .serializers import (
     RoleWriteSerializer,
 )
 from .services import get_admin_menus, has_any_permission, login_admin
+
+
+def next_password_changed_at(current):
+    changed_at = timezone.now()
+    if current and int(changed_at.timestamp()) <= int(current.timestamp()):
+        return current + timedelta(seconds=1)
+    return changed_at
 
 
 class AdminLoginView(APIView):
@@ -268,6 +278,7 @@ def save_admin_account(
             status=validated_data.get("status", AdminUserStatus.ACTIVE),
             is_super_admin=False,
             password_hash=make_password(raw_password),
+            password_changed_at=next_password_changed_at(None),
         )
     else:
         for field in ["name", "status"]:
@@ -275,9 +286,10 @@ def save_admin_account(
                 setattr(admin_account, field, validated_data[field])
         if raw_password:
             admin_account.password_hash = make_password(raw_password)
+            admin_account.password_changed_at = next_password_changed_at(admin_account.password_changed_at)
         update_fields = ["name", "status", "updated_at"]
         if raw_password:
-            update_fields.append("password_hash")
+            update_fields.extend(["password_hash", "password_changed_at"])
         admin_account.save(update_fields=update_fields)
 
     if role_codes is not None:

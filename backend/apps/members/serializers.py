@@ -3,6 +3,7 @@ from decimal import Decimal
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.common.validators import validate_password_strength
 from apps.iam.models import AdminUser
 
 from .models import (
@@ -24,6 +25,13 @@ class RegisterSerializer(serializers.Serializer):
     display_name = serializers.CharField(required=False, allow_blank=True)
     phone = serializers.CharField(required=False, allow_blank=True)
     referral_code = serializers.CharField(required=False, allow_blank=True)
+
+    def validate_password(self, value: str) -> str:
+        try:
+            validate_password_strength(value)
+        except serializers.ValidationError as exc:
+            raise serializers.ValidationError(exc.detail.get("password", exc.detail)) from exc
+        return value
 
 
 class MemberLoginSerializer(serializers.Serializer):
@@ -71,6 +79,13 @@ class ChangePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(trim_whitespace=False)
     new_password = serializers.CharField(min_length=8, trim_whitespace=False)
 
+    def validate_new_password(self, value: str) -> str:
+        try:
+            validate_password_strength(value)
+        except serializers.ValidationError as exc:
+            raise serializers.ValidationError(exc.detail.get("password", exc.detail)) from exc
+        return value
+
     def validate(self, attrs):
         if attrs["current_password"] == attrs["new_password"]:
             raise serializers.ValidationError({"new_password": ["新密码不能与当前密码相同"]})
@@ -85,6 +100,13 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     email = serializers.EmailField()
     token = serializers.CharField(trim_whitespace=False, max_length=200)
     new_password = serializers.CharField(min_length=8, trim_whitespace=False)
+
+    def validate_new_password(self, value: str) -> str:
+        try:
+            validate_password_strength(value)
+        except serializers.ValidationError as exc:
+            raise serializers.ValidationError(exc.detail.get("password", exc.detail)) from exc
+        return value
 
 
 class AdminMemberServiceSummarySerializer(serializers.Serializer):
@@ -138,6 +160,13 @@ class AdminMemberUpdateSerializer(serializers.Serializer):
 
 class AdminMemberResetPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(required=False, min_length=8, trim_whitespace=False)
+
+    def validate_password(self, value: str) -> str:
+        try:
+            validate_password_strength(value)
+        except serializers.ValidationError as exc:
+            raise serializers.ValidationError(exc.detail.get("password", exc.detail)) from exc
+        return value
 
 
 class AdminSupportUserSerializer(serializers.ModelSerializer):

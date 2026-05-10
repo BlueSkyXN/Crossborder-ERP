@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.common.validators import validate_password_strength
+
 from .models import AdminUser, AdminUserStatus, Permission, Role
 
 
@@ -120,6 +122,14 @@ class AdminAccountWriteSerializer(serializers.Serializer):
             return self.instance.email
         if AdminUser.objects.filter(email=value).exists():
             raise serializers.ValidationError("管理员邮箱已存在")
+        return value
+
+    def validate_password(self, value: str) -> str:
+        if value:
+            try:
+                validate_password_strength(value)
+            except serializers.ValidationError as exc:
+                raise serializers.ValidationError(exc.detail.get("password", exc.detail)) from exc
         return value
 
     def validate_role_codes(self, value: list[str]) -> list[str]:

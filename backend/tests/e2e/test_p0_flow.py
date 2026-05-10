@@ -11,6 +11,7 @@ from apps.warehouses.services import seed_warehouse_demo_data
 ADMIN_EMAIL = "admin@example.com"
 MEMBER_EMAIL = "user@example.com"
 PASSWORD = "password123"
+RESET_PASSWORD = "MemberReset123"
 JPEG_BYTES = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00\x48\x00\x48\x00\x00\xff\xd9"
 
 
@@ -49,12 +50,12 @@ def _login_admin() -> tuple[APIClient, dict]:
     return _authorized_client(data["access_token"]), data["admin_user"]
 
 
-def _login_member() -> tuple[APIClient, dict]:
+def _login_member(password: str = PASSWORD) -> tuple[APIClient, dict]:
     client = APIClient()
     data = _api_data(
         client.post(
             "/api/v1/auth/login",
-            {"email": MEMBER_EMAIL, "password": PASSWORD},
+            {"email": MEMBER_EMAIL, "password": password},
             format="json",
         )
     )
@@ -278,7 +279,7 @@ def _run_member_admin_flow(*, admin_client: APIClient, member_client: APIClient,
     reset = _api_data(
         admin_client.post(
             f"/api/v1/admin/members/{admin_member['id']}/reset-password",
-            {"password": PASSWORD},
+            {"password": RESET_PASSWORD},
             format="json",
         )
     )
@@ -297,7 +298,7 @@ def _run_growth_flow(*, admin_client: APIClient, member_client: APIClient, membe
             "/api/v1/auth/register",
             {
                 "email": f"growth-{run_id.lower()}@example.com",
-                "password": PASSWORD,
+                "password": "GrowthPass123",
                 "display_name": "E2E 被邀请会员",
             },
             format="json",
@@ -1068,6 +1069,7 @@ def test_p0_forwarding_and_purchase_e2e():
         member_client=member_client,
         member=member,
     )
+    member_client, member = _login_member(password=RESET_PASSWORD)
     growth_result = _run_growth_flow(
         admin_client=admin_client,
         member_client=member_client,

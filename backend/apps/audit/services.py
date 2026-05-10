@@ -15,7 +15,7 @@ from apps.common.csv_exports import safe_csv_row
 from apps.iam.models import AdminUser
 from apps.iam.services import ADMIN_TOKEN_SCOPE
 
-from .models import AuditLog, AuditOperatorType
+from .models import AuditLog, AuditOperatorType, ApprovalRequest, ApprovalStatus
 
 
 SENSITIVE_KEYS = {
@@ -290,3 +290,112 @@ def export_audit_logs_csv(params) -> str:
             )
         )
     return output.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# Approval flow (AUDIT-APPROVAL-001)
+# ---------------------------------------------------------------------------
+
+# Actions that require approval before execution
+HIGH_RISK_ACTIONS = frozenset({
+    "finance.large_refund",
+    "iam.role_escalation",
+    "members.bulk_delete",
+    "finance.manual_wallet_adjust",
+})
+
+
+def is_high_risk_action(action: str) -> bool:
+    """Check if an action requires approval."""
+    return action in HIGH_RISK_ACTIONS
+
+
+def create_approval_request(
+    *,
+    action: str,
+    target_type: str,
+    target_id: str = "",
+    requester: AdminUser,
+    payload: dict | None = None,
+    reason: str = "",
+) -> ApprovalRequest:
+    """Create a pending approval request for a high-risk action."""
+    return ApprovalRequest.objects.create(
+        action=action,
+        target_type=target_type,
+        target_id=target_id,
+        requester_id=requester.id,
+        requester_label=requester.email,
+        payload=payload or {},
+        reason=reason,
+    )
+
+
+def approve_request(
+    *,
+    approval: ApprovalRequest,
+    approver: AdminUser,
+    decision_note: str = "",
+) -> ApprovalRequest:
+    """Approve a pending request."""
+    from rest_framework import exceptions as drf_exceptions
+
+    if approval.status != ApprovalStatus.PENDING:
+        raise drf_exceptions.ValidationError({"status": [f"Cannot approve: current status is {approval.status}"]})
+    if approval.requester_id == approver.id:
+        raise drf_exceptions.PermissionDenied("Cannot approve your own request")
+
+    approval.status = ApprovalStatus.APPROVED
+    approval.approver_id = approver.id
+    approval.approver_label = approver.email
+    approval.decision_note = decision_note
+    approval.decided_at = timezone.now()
+    approval.save(update_fields=["status", "approver_id", "approver_label", "decision_note", "decided_at"])
+
+    log_audit_event(
+        action="approval.approved",
+        module="audit",
+        actor_admin=approver,
+        target_type="approval_request",
+        target_id=approval.id,
+        metadata={"original_action": approval.action, "note": decision_note},
+    )
+    return approval
+
+
+def reject_request(
+    *,
+    approval: ApprovalRequest,
+    approver: AdminUser,
+    decision_note: str = "",
+) -> ApprovalRequest:
+    """Reject a pending request."""
+    from rest_framework import exceptions as drf_exceptions
+
+    if approval.status != ApprovalStatus.PENDING:
+        raise drf_exceptions.ValidationError({"status": [f"Cannot reject: current status is {approval.status}"]})
+
+    approval.status = ApprovalStatus.REJECTED
+    approval.approver_id = approver.id
+    approval.approver_label = approver.email
+    approval.decision_note = decision_note
+    approval.decided_at = timezone.now()
+    approval.save(update_fields=["status", "approver_id", "approver_label", "decision_note", "decided_at"])
+
+    log_audit_event(
+        action="approval.rejected",
+        module="audit",
+        actor_admin=approver,
+        target_type="approval_request",
+        target_id=approval.id,
+        metadata={"original_action": approval.action, "note": decision_note},
+    )
+    return approval
+
+
+def list_approval_requests(*, status: str = "") -> QuerySet[ApprovalRequest]:
+    """List approval requests, optionally filtered by status."""
+    qs = ApprovalRequest.objects.all()
+    if status:
+        qs = qs.filter(status=status)
+    return qs

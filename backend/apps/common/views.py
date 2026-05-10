@@ -68,14 +68,28 @@ class ReadinessView(APIView):
     )
     def get(self, request):
         database_ready = check_database_ready()
-        data = {
-            "status": "ok" if database_ready else "unavailable",
-            "service": "crossborder-erp-backend",
-            "checks": {
-                "database": "ok" if database_ready else "unavailable",
-            },
+        checks: dict = {
+            "database": "ok" if database_ready else "unavailable",
         }
-        if database_ready:
+        # Provider health checks
+        try:
+            from apps.files.providers.registry import get_storage_provider, get_virus_scan_provider
+
+            storage_health = get_storage_provider().health_check()
+            checks["storage"] = "ok" if storage_health.get("healthy") else "degraded"
+            scan_health = get_virus_scan_provider().health_check()
+            checks["virus_scan"] = "ok" if scan_health.get("healthy") else "disabled"
+        except Exception:
+            checks["storage"] = "unknown"
+            checks["virus_scan"] = "unknown"
+
+        all_ok = database_ready
+        data = {
+            "status": "ok" if all_ok else "unavailable",
+            "service": "crossborder-erp-backend",
+            "checks": checks,
+        }
+        if all_ok:
             return success_response(data)
         return error_response(
             code="SERVICE_UNAVAILABLE",

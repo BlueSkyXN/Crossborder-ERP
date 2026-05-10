@@ -68,16 +68,25 @@ export function ParcelLabelButton({ parcel }: { parcel: ParcelLabelData }) {
     if (!printRef.current) return;
     const printWindow = window.open("", "_blank", "width=500,height=600");
     if (!printWindow) return;
-    printWindow.document.write(`
-      <html><head><title>包裹标签 - ${parcel.parcel_no}</title>
-      <style>body{margin:0;padding:20px;font-family:monospace}
-      .ant-descriptions-bordered .ant-descriptions-item-label{font-weight:600}
-      </style></head><body>
-      ${printRef.current.innerHTML}
-      <script>window.onload=function(){window.print();window.close()}</script>
-      </body></html>
-    `);
-    printWindow.document.close();
+    const printDocument = printWindow.document;
+    printDocument.open();
+    printDocument.write("<!doctype html><html><head><title></title></head><body></body></html>");
+    printDocument.close();
+    printDocument.title = `包裹标签 - ${parcel.parcel_no}`;
+
+    const style = printDocument.createElement("style");
+    style.textContent = [
+      "body{margin:0;padding:20px;font-family:monospace}",
+      ".ant-descriptions-bordered .ant-descriptions-item-label{font-weight:600}",
+    ].join("");
+    printDocument.head.appendChild(style);
+    printDocument.body.appendChild(printRef.current.cloneNode(true));
+
+    printWindow.setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }, 50);
   }, [parcel.parcel_no]);
 
   return (

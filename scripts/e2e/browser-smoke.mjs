@@ -532,6 +532,7 @@ async function fillByLabel(page, labelText, value) {
 }
 
 async function fillByPlaceholder(page, placeholder, value) {
+  await waitForPlaceholder(page, placeholder);
   return evaluate(
     page,
     `(() => {

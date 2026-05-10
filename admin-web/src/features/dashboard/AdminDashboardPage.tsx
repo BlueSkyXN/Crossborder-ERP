@@ -9,13 +9,16 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Card, Col, Empty, Row, Space, Statistic, Table, Tag, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useMemo } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 
 import { ForbiddenPage } from "../../pages/ForbiddenPage";
 import { fetchAdminDashboard } from "./api";
-import { DashboardCharts } from "./DashboardCharts";
 import type { DashboardAuditLog, DashboardCard, DashboardModule, DashboardQueueItem, DashboardTone } from "./types";
+
+const DashboardCharts = lazy(() =>
+  import("./DashboardCharts").then((module) => ({ default: module.DashboardCharts })),
+);
 
 type WorkspaceContext = {
   allowedCodes: Set<string>;
@@ -209,7 +212,9 @@ export function AdminDashboardPage() {
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <Card title="月度趋势">
-            <DashboardCharts />
+            <Suspense fallback={<Empty description="加载趋势图" />}>
+              <DashboardCharts />
+            </Suspense>
           </Card>
         </Col>
       </Row>

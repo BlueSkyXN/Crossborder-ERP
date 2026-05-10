@@ -18,6 +18,8 @@ from .models import (
     Warehouse,
 )
 from .serializers import (
+    FreightEstimateRequestSerializer,
+    FreightEstimateResponseSerializer,
     MemberWarehouseAddressSerializer,
     PackagingMethodSerializer,
     RatePlanSerializer,
@@ -123,7 +125,11 @@ class FreightEstimateView(APIView):
     authentication_classes = []
     permission_classes = []
 
-    @extend_schema(tags=["freight"])
+    @extend_schema(
+        tags=["freight"],
+        request=FreightEstimateRequestSerializer,
+        responses={200: FreightEstimateResponseSerializer, 400: FreightEstimateResponseSerializer},
+    )
     def post(self, request):
         channel_id = request.data.get("channel_id")
         weight_kg = request.data.get("weight_kg")

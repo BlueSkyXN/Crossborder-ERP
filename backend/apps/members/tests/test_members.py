@@ -28,7 +28,7 @@ def test_register_creates_user_and_member_profile(client, db):
         reverse("member-register"),
         {
             "email": "new-user@example.com",
-            "password": "password123",
+            "password": "TestPass123",
             "display_name": "新用户",
             "phone": "13800000000",
         },
@@ -101,7 +101,7 @@ def test_member_can_change_password_and_login_with_new_password(client, seeded_m
 
     response = client.post(
         reverse("member-password"),
-        {"current_password": "password123", "new_password": "new-password123"},
+        {"current_password": "password123", "new_password": "NewPass123"},
         content_type="application/json",
         HTTP_AUTHORIZATION=f"Bearer {token}",
     )
@@ -109,7 +109,7 @@ def test_member_can_change_password_and_login_with_new_password(client, seeded_m
     assert response.status_code == 200
     assert response.json()["data"]["changed"] is True
     assert member_login(client).status_code == 403
-    assert member_login(client, password="new-password123").status_code == 200
+    assert member_login(client, password="NewPass123").status_code == 200
 
 
 @override_settings(MEMBER_PASSWORD_RESET_EXPOSE_TOKEN=True)
@@ -130,7 +130,7 @@ def test_member_can_reset_password_with_one_time_token(client, seeded_member):
 
     confirm_response = client.post(
         reverse("member-password-reset-confirm"),
-        {"email": "user@example.com", "token": reset_token, "new_password": "reset-password123"},
+        {"email": "user@example.com", "token": reset_token, "new_password": "ResetPass123"},
         content_type="application/json",
     )
 
@@ -139,11 +139,11 @@ def test_member_can_reset_password_with_one_time_token(client, seeded_member):
     stored_token.refresh_from_db()
     assert stored_token.consumed_at is not None
     assert member_login(client).status_code == 403
-    assert member_login(client, password="reset-password123").status_code == 200
+    assert member_login(client, password="ResetPass123").status_code == 200
 
     reuse_response = client.post(
         reverse("member-password-reset-confirm"),
-        {"email": "user@example.com", "token": reset_token, "new_password": "another-password123"},
+        {"email": "user@example.com", "token": reset_token, "new_password": "AnotherPass123"},
         content_type="application/json",
     )
     assert reuse_response.status_code == 400
@@ -177,7 +177,7 @@ def test_member_password_reset_rejects_expired_token(client, seeded_member):
 
     response = client.post(
         reverse("member-password-reset-confirm"),
-        {"email": "user@example.com", "token": reset_token, "new_password": "reset-password123"},
+        {"email": "user@example.com", "token": reset_token, "new_password": "ResetPass123"},
         content_type="application/json",
     )
 
@@ -191,7 +191,7 @@ def test_member_change_password_rejects_wrong_current_password(client, seeded_me
 
     response = client.post(
         reverse("member-password"),
-        {"current_password": "wrong-password", "new_password": "new-password123"},
+        {"current_password": "wrong-password", "new_password": "NewPass123"},
         content_type="application/json",
         HTTP_AUTHORIZATION=f"Bearer {token}",
     )
@@ -231,3 +231,37 @@ def test_seed_creates_required_demo_user(db):
     user = User.objects.get(email="user@example.com")
     assert user.profile.member_no
     assert user.profile.warehouse_code
+
+
+def test_member_old_token_rejected_after_password_change_and_new_login_works(client, seeded_member):
+    old_token = member_login(client).json()["data"]["access_token"]
+
+    response = client.post(
+        reverse("member-password"),
+        {"current_password": "password123", "new_password": "TokenPass123"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {old_token}",
+    )
+    assert response.status_code == 200
+
+    old_token_response = client.get(reverse("member-me"), HTTP_AUTHORIZATION=f"Bearer {old_token}")
+    assert old_token_response.status_code == 401
+    assert old_token_response.json()["code"] == "UNAUTHORIZED"
+
+    new_login = member_login(client, password="TokenPass123")
+    assert new_login.status_code == 200
+    new_token = new_login.json()["data"]["access_token"]
+    assert client.get(reverse("member-me"), HTTP_AUTHORIZATION=f"Bearer {new_token}").status_code == 200
+
+
+def test_frozen_member_login_uses_same_error_as_wrong_password(client, seeded_member):
+    user = User.objects.get(email="user@example.com")
+    user.status = "FROZEN"
+    user.save(update_fields=["status", "updated_at"])
+
+    frozen_response = member_login(client)
+    wrong_password_response = member_login(client, password="WrongPass123")
+
+    assert frozen_response.status_code == wrong_password_response.status_code
+    assert frozen_response.json()["code"] == wrong_password_response.json()["code"] == "UNAUTHORIZED"
+    assert frozen_response.json()["message"] == wrong_password_response.json()["message"]

@@ -188,22 +188,38 @@ def test_freeze_blocks_existing_member_token_and_unfreeze_restores_access(client
 
 def test_reset_member_test_password_allows_login_with_new_password(client, seeded_admin_members):
     user = User.objects.get(email="user@example.com")
-    user.password_hash = make_password("old-password123")
+    user.password_hash = make_password("OldPass123")
     user.save(update_fields=["password_hash", "updated_at"])
     admin = admin_token(client)
 
     response = client.post(
         reverse("admin-member-reset-password", kwargs={"user_id": user.id}),
-        {"password": "new-password123"},
+        {"password": "NewPass123"},
         content_type="application/json",
         HTTP_AUTHORIZATION=f"Bearer {admin}",
     )
 
     assert response.status_code == 200
-    old_login = member_login(client, password="old-password123")
+    old_login = member_login(client, password="OldPass123")
     assert old_login.status_code in {401, 403}
     assert old_login.json()["code"] == "UNAUTHORIZED"
-    assert member_login(client, password="new-password123").status_code == 200
+    assert member_login(client, password="NewPass123").status_code == 200
+
+
+def test_admin_member_reset_password_rejects_weak_password(client, seeded_admin_members):
+    user = User.objects.get(email="user@example.com")
+    admin = admin_token(client)
+
+    response = client.post(
+        reverse("admin-member-reset-password", kwargs={"user_id": user.id}),
+        {"password": "password123"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {admin}",
+    )
+
+    assert response.status_code == 400
+    assert response.json()["code"] == "VALIDATION_ERROR"
+    assert "password" in response.json()["data"]["field_errors"]
 
 
 def test_service_admin_options_only_include_member_managers(client, seeded_admin_members):

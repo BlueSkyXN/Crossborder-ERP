@@ -43,6 +43,8 @@ def test_readiness_response_shape(client):
             "service": "crossborder-erp-backend",
             "checks": {
                 "database": "ok",
+                "storage": "ok",
+                "virus_scan": "disabled",
             },
         },
     }
@@ -63,6 +65,8 @@ def test_readiness_returns_503_without_sensitive_details(client, monkeypatch):
             "service": "crossborder-erp-backend",
             "checks": {
                 "database": "unavailable",
+                "storage": "ok",
+                "virus_scan": "disabled",
             },
         },
     }

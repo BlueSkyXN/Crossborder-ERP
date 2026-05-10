@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import timedelta
 from decimal import Decimal
 import hashlib
 import secrets
@@ -30,7 +31,16 @@ from .models import (
 
 
 MEMBER_TOKEN_SCOPE = "member"
-DEFAULT_TEST_MEMBER_PASSWORD = "password123"
+DUMMY_PASSWORD_HASH = make_password("DummyPass123")
+DEFAULT_TEST_MEMBER_PASSWORD = "TestPass123"
+
+
+def next_password_changed_at(current):
+    changed_at = timezone.now()
+    if current and int(changed_at.timestamp()) <= int(current.timestamp()):
+        return current + timedelta(seconds=1)
+    return changed_at
+
 TODO_CONFIRM_POINTS_RULE = "TODO_CONFIRM: 积分获取和兑换比例待业务确认；当前仅记录可审计流水和余额。"
 TODO_CONFIRM_REBATE_RULE = "TODO_CONFIRM: 返利比例、结算周期、提现和税务规则待业务确认；当前不进入钱包余额。"
 
@@ -53,6 +63,8 @@ def issue_member_access_token(user: User) -> str:
     token["token_scope"] = MEMBER_TOKEN_SCOPE
     token["user_id"] = user.id
     token["email"] = user.email
+    if user.password_changed_at:
+        token["pwd_ts"] = int(user.password_changed_at.timestamp())
     return str(token)
 
 
@@ -76,6 +88,7 @@ def register_user(email: str, password: str, display_name: str = "", phone: str 
             email=email,
             phone=phone,
             password_hash=make_password(password),
+            password_changed_at=next_password_changed_at(None),
             status=UserStatus.ACTIVE,
         )
     except IntegrityError as exc:
@@ -323,13 +336,13 @@ def create_rebate_record(
 def login_user(email: str, password: str) -> MemberLoginResult:
     try:
         user = User.objects.select_related("profile").get(email=email)
-    except User.DoesNotExist as exc:
-        raise exceptions.AuthenticationFailed("邮箱或密码错误") from exc
+        password_hash = user.password_hash
+    except User.DoesNotExist:
+        user = None
+        password_hash = DUMMY_PASSWORD_HASH
 
-    if not user.is_active:
-        raise exceptions.PermissionDenied("用户已冻结")
-
-    if not check_password(password, user.password_hash):
+    password_matches = check_password(password, password_hash)
+    if user is None or not user.is_active or not password_matches:
         raise exceptions.AuthenticationFailed("邮箱或密码错误")
 
     User.objects.filter(id=user.id).update(last_login_at=timezone.now())
@@ -398,7 +411,8 @@ def confirm_member_password_reset(*, email: str, token: str, new_password: str) 
         raise exceptions.ValidationError({"new_password": ["新密码不能与当前密码相同"]})
 
     user.password_hash = make_password(new_password)
-    user.save(update_fields=["password_hash", "updated_at"])
+    user.password_changed_at = next_password_changed_at(user.password_changed_at)
+    user.save(update_fields=["password_hash", "password_changed_at", "updated_at"])
     reset_token.consumed_at = now
     reset_token.save(update_fields=["consumed_at"])
     return user
@@ -422,7 +436,8 @@ def change_member_password(user: User, *, current_password: str, new_password: s
     if check_password(new_password, locked.password_hash):
         raise exceptions.ValidationError({"new_password": ["新密码不能与当前密码相同"]})
     locked.password_hash = make_password(new_password)
-    locked.save(update_fields=["password_hash", "updated_at"])
+    locked.password_changed_at = next_password_changed_at(locked.password_changed_at)
+    locked.save(update_fields=["password_hash", "password_changed_at", "updated_at"])
     return locked
 
 
@@ -543,7 +558,8 @@ def set_member_status(*, user: User, status: UserStatus) -> User:
 def reset_member_password(*, user: User, password: str = DEFAULT_TEST_MEMBER_PASSWORD) -> User:
     locked = User.objects.select_for_update().get(id=user.id)
     locked.password_hash = make_password(password or DEFAULT_TEST_MEMBER_PASSWORD)
-    locked.save(update_fields=["password_hash", "updated_at"])
+    locked.password_changed_at = next_password_changed_at(locked.password_changed_at)
+    locked.save(update_fields=["password_hash", "password_changed_at", "updated_at"])
     return get_admin_member(user_id=locked.id)
 
 
@@ -552,6 +568,7 @@ def seed_member_demo_data(password: str = "password123") -> None:
         email="user@example.com",
         defaults={
             "password_hash": make_password(password),
+            "password_changed_at": timezone.now(),
             "status": UserStatus.ACTIVE,
         },
     )
@@ -570,7 +587,8 @@ def seed_member_demo_data(password: str = "password123") -> None:
         update_fields.extend(["status", "updated_at"])
     if not check_password(password, user.password_hash):
         user.password_hash = make_password(password)
-        update_fields.extend(["password_hash", "updated_at"])
+        user.password_changed_at = next_password_changed_at(user.password_changed_at)
+        update_fields.extend(["password_hash", "password_changed_at", "updated_at"])
     if update_fields:
         user.save(update_fields=sorted(set(update_fields)))
 

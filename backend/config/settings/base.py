@@ -124,6 +124,13 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
 MEDIA_ROOT = Path(env("MEDIA_ROOT", default=str(BASE_DIR / "media")))
 
+# -- Provider settings (ADR-0002) --
+STORAGE_PROVIDER = env("STORAGE_PROVIDER", default="local")
+VIRUS_SCAN_PROVIDER = env("VIRUS_SCAN_PROVIDER", default="disabled")
+PAYMENT_PROVIDER = env("PAYMENT_PROVIDER", default="offline")
+LOGISTICS_PROVIDER = env("LOGISTICS_PROVIDER", default="manual")
+NOTIFICATION_PROVIDER = env("NOTIFICATION_PROVIDER", default="disabled")
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {

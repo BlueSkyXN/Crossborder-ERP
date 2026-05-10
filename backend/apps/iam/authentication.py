@@ -38,4 +38,9 @@ class AdminTokenAuthentication(authentication.BaseAuthentication):
         if not admin_user.is_active:
             raise exceptions.PermissionDenied("管理员已停用")
 
+        pwd_ts = token.get("pwd_ts")
+        if admin_user.password_changed_at:
+            if not pwd_ts or int(admin_user.password_changed_at.timestamp()) != pwd_ts:
+                raise exceptions.AuthenticationFailed("密码已变更，请重新登录")
+
         return (admin_user, token)

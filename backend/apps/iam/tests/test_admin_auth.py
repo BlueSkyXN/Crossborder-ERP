@@ -214,10 +214,10 @@ def test_role_create_permission_does_not_grant_update_or_delete(client, seeded_i
     admin_user = AdminUser.objects.create(
         email="role-creator@example.com",
         name="角色创建员",
-        password_hash=make_password("password456"),
+        password_hash=make_password("TestPass456"),
     )
     admin_user.roles.set([role])
-    login_response = admin_login(client, email="role-creator@example.com", password="password456")
+    login_response = admin_login(client, email="role-creator@example.com", password="TestPass456")
     token = login_response.json()["data"]["access_token"]
 
     create_response = client.post(
@@ -258,10 +258,10 @@ def test_role_update_and_delete_permissions_are_independent(client, seeded_iam):
     update_admin = AdminUser.objects.create(
         email="role-updater@example.com",
         name="角色编辑员",
-        password_hash=make_password("password456"),
+        password_hash=make_password("TestPass456"),
     )
     update_admin.roles.set([update_role])
-    update_token = admin_login(client, email="role-updater@example.com", password="password456").json()["data"][
+    update_token = admin_login(client, email="role-updater@example.com", password="TestPass456").json()["data"][
         "access_token"
     ]
 
@@ -283,10 +283,10 @@ def test_role_update_and_delete_permissions_are_independent(client, seeded_iam):
     delete_admin = AdminUser.objects.create(
         email="role-deleter@example.com",
         name="角色删除员",
-        password_hash=make_password("password456"),
+        password_hash=make_password("TestPass456"),
     )
     delete_admin.roles.set([delete_role_permission])
-    delete_token = admin_login(client, email="role-deleter@example.com", password="password456").json()["data"][
+    delete_token = admin_login(client, email="role-deleter@example.com", password="TestPass456").json()["data"][
         "access_token"
     ]
     delete_response = client.delete(
@@ -409,7 +409,7 @@ def test_super_admin_can_create_admin_account_with_roles(client, seeded_iam):
         {
             "email": "ops-admin@example.com",
             "name": "运营管理员",
-            "password": "password456",
+            "password": "TestPass456",
             "status": "ACTIVE",
             "role_codes": ["warehouse", "support", "warehouse"],
         },
@@ -422,7 +422,7 @@ def test_super_admin_can_create_admin_account_with_roles(client, seeded_iam):
     assert data["email"] == "ops-admin@example.com"
     assert data["is_super_admin"] is False
     assert data["roles"] == ["warehouse", "support"]
-    login_created = admin_login(client, email="ops-admin@example.com", password="password456")
+    login_created = admin_login(client, email="ops-admin@example.com", password="TestPass456")
     assert login_created.status_code == 200
 
 
@@ -436,7 +436,7 @@ def test_super_admin_can_update_admin_account_roles_status_and_password(client, 
         {
             "name": "采购与财务",
             "status": "DISABLED",
-            "password": "password789",
+            "password": "TestPass789",
             "role_codes": ["finance"],
         },
         HTTP_AUTHORIZATION=f"Bearer {token}",
@@ -448,7 +448,7 @@ def test_super_admin_can_update_admin_account_roles_status_and_password(client, 
     assert data["name"] == "采购与财务"
     assert data["status"] == "DISABLED"
     assert data["roles"] == ["finance"]
-    assert admin_login(client, email="buyer@example.com", password="password789").status_code == 403
+    assert admin_login(client, email="buyer@example.com", password="TestPass789").status_code == 403
 
 
 def test_admin_account_write_rejects_missing_role_code(client, seeded_iam):
@@ -460,7 +460,7 @@ def test_admin_account_write_rejects_missing_role_code(client, seeded_iam):
         {
             "email": "bad-admin@example.com",
             "name": "错误管理员",
-            "password": "password456",
+            "password": "TestPass456",
             "role_codes": ["missing_role"],
         },
         HTTP_AUTHORIZATION=f"Bearer {token}",
@@ -480,7 +480,7 @@ def test_admin_account_write_rejects_super_admin_role_assignment(client, seeded_
         {
             "email": "privileged-admin@example.com",
             "name": "越权管理员",
-            "password": "password456",
+            "password": "TestPass456",
             "role_codes": ["super_admin"],
         },
         HTTP_AUTHORIZATION=f"Bearer {token}",
@@ -505,7 +505,7 @@ def test_admin_viewer_without_manage_cannot_write_admin_accounts(client, seeded_
         {
             "email": "viewer-admin@example.com",
             "name": "只读管理员",
-            "password": "password456",
+            "password": "TestPass456",
             "role_codes": ["warehouse"],
         },
         HTTP_AUTHORIZATION=f"Bearer {token}",
@@ -524,10 +524,10 @@ def test_admin_create_permission_does_not_grant_update_or_delete(client, seeded_
     admin_user = AdminUser.objects.create(
         email="admin-creator@example.com",
         name="管理员创建员",
-        password_hash=make_password("password456"),
+        password_hash=make_password("TestPass456"),
     )
     admin_user.roles.set([role])
-    token = admin_login(client, email="admin-creator@example.com", password="password456").json()["data"][
+    token = admin_login(client, email="admin-creator@example.com", password="TestPass456").json()["data"][
         "access_token"
     ]
 
@@ -536,7 +536,7 @@ def test_admin_create_permission_does_not_grant_update_or_delete(client, seeded_
         {
             "email": "created-admin@example.com",
             "name": "被创建管理员",
-            "password": "password456",
+            "password": "TestPass456",
             "role_codes": ["warehouse"],
         },
         HTTP_AUTHORIZATION=f"Bearer {token}",
@@ -569,10 +569,10 @@ def test_admin_update_and_delete_permissions_are_independent(client, seeded_iam)
     update_admin = AdminUser.objects.create(
         email="admin-updater@example.com",
         name="管理员编辑员",
-        password_hash=make_password("password456"),
+        password_hash=make_password("TestPass456"),
     )
     update_admin.roles.set([update_role])
-    update_token = admin_login(client, email="admin-updater@example.com", password="password456").json()["data"][
+    update_token = admin_login(client, email="admin-updater@example.com", password="TestPass456").json()["data"][
         "access_token"
     ]
 
@@ -594,10 +594,10 @@ def test_admin_update_and_delete_permissions_are_independent(client, seeded_iam)
     delete_admin = AdminUser.objects.create(
         email="admin-deleter@example.com",
         name="管理员删除员",
-        password_hash=make_password("password456"),
+        password_hash=make_password("TestPass456"),
     )
     delete_admin.roles.set([delete_role])
-    delete_token = admin_login(client, email="admin-deleter@example.com", password="password456").json()["data"][
+    delete_token = admin_login(client, email="admin-deleter@example.com", password="TestPass456").json()["data"][
         "access_token"
     ]
     delete_response = client.delete(
@@ -636,10 +636,10 @@ def test_admin_manager_cannot_modify_self_lockout_fields(client, seeded_iam):
     manager = AdminUser.objects.create(
         email="iam-manager@example.com",
         name="IAM 管理员",
-        password_hash=make_password("password456"),
+        password_hash=make_password("TestPass456"),
     )
     manager.roles.set([manager_role])
-    login_response = admin_login(client, email="iam-manager@example.com", password="password456")
+    login_response = admin_login(client, email="iam-manager@example.com", password="TestPass456")
     token = login_response.json()["data"]["access_token"]
 
     response = client.patch(
@@ -692,10 +692,10 @@ def test_admin_manager_cannot_delete_self(client, seeded_iam):
     manager = AdminUser.objects.create(
         email="iam-delete-manager@example.com",
         name="IAM 删除管理员",
-        password_hash=make_password("password456"),
+        password_hash=make_password("TestPass456"),
     )
     manager.roles.set([manager_role])
-    login_response = admin_login(client, email="iam-delete-manager@example.com", password="password456")
+    login_response = admin_login(client, email="iam-delete-manager@example.com", password="TestPass456")
     token = login_response.json()["data"]["access_token"]
 
     response = client.delete(
@@ -776,3 +776,40 @@ def test_seed_creates_required_demo_admins(seeded_iam):
     assert AdminUser.objects.filter(email="finance@example.com").exists()
     assert AdminUser.objects.filter(email="buyer@example.com").exists()
     assert AdminUser.objects.filter(email="support@example.com").exists()
+
+
+def test_admin_old_token_rejected_after_password_change_and_new_login_works(client, seeded_iam):
+    old_login = admin_login(client, email="buyer@example.com")
+    old_token = old_login.json()["data"]["access_token"]
+    super_token = admin_login(client).json()["data"]["access_token"]
+    account = AdminUser.objects.get(email="buyer@example.com")
+
+    response = client.patch(
+        reverse("admin-account-detail", kwargs={"admin_id": account.id}),
+        {"name": account.name, "status": "ACTIVE", "password": "TokenAdmin123", "role_codes": ["buyer"]},
+        HTTP_AUTHORIZATION=f"Bearer {super_token}",
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+
+    old_token_response = client.get(reverse("admin-me"), HTTP_AUTHORIZATION=f"Bearer {old_token}")
+    assert old_token_response.status_code == 401
+    assert old_token_response.json()["code"] == "UNAUTHORIZED"
+
+    new_login = admin_login(client, email="buyer@example.com", password="TokenAdmin123")
+    assert new_login.status_code == 200
+    new_token = new_login.json()["data"]["access_token"]
+    assert client.get(reverse("admin-me"), HTTP_AUTHORIZATION=f"Bearer {new_token}").status_code == 200
+
+
+def test_disabled_admin_login_uses_same_error_as_wrong_password(client, seeded_iam):
+    admin_user = AdminUser.objects.get(email="buyer@example.com")
+    admin_user.status = "DISABLED"
+    admin_user.save(update_fields=["status", "updated_at"])
+
+    disabled_response = admin_login(client, email="buyer@example.com")
+    wrong_password_response = admin_login(client, email="buyer@example.com", password="WrongPass123")
+
+    assert disabled_response.status_code == wrong_password_response.status_code
+    assert disabled_response.json()["code"] == wrong_password_response.json()["code"] == "UNAUTHORIZED"
+    assert disabled_response.json()["message"] == wrong_password_response.json()["message"]

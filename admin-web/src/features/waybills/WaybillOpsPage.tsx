@@ -40,7 +40,7 @@ import {
   Typography,
 } from "antd";
 import type { TableColumnsType } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
 import { ForbiddenPage } from "../../pages/ForbiddenPage";
@@ -420,54 +420,51 @@ export function WaybillOpsPage() {
     setBatchAction({ type, batchId: batch?.id });
   };
 
-  useEffect(() => {
-    if (!action || !actionWaybill) {
+  const resetActionForm = (type: ActionType) => {
+    if (!actionWaybill) {
       return;
     }
-    if (action.type === "review") {
+    if (type === "review") {
       reviewForm.resetFields();
       reviewForm.setFieldsValue({ review_remark: actionWaybill.review_remark || "" });
     }
-    if (action.type === "fee") {
+    if (type === "fee") {
       feeForm.resetFields();
       feeForm.setFieldsValue({
         fee_total: Number(actionWaybill.fee_total || 0) || undefined,
         fee_remark: actionWaybill.fee_remark || "",
       });
     }
-    if (action.type === "recharge") {
+    if (type === "recharge") {
       rechargeForm.resetFields();
       rechargeForm.setFieldsValue({
         amount: Number(actionWaybill.fee_total || 0) || undefined,
         remark: `${actionWaybill.waybill_no} 运费充值`,
       });
     }
-    if (action.type === "ship") {
+    if (type === "ship") {
       trackingForm.resetFields();
       trackingForm.setFieldsValue({ status_text: "已发货", location: "", description: "" });
     }
-    if (action.type === "tracking") {
+    if (type === "tracking") {
       trackingForm.resetFields();
       trackingForm.setFieldsValue({ status_text: "运输中", location: "", description: "" });
     }
-  }, [action, actionWaybill, feeForm, rechargeForm, reviewForm, trackingForm]);
+  };
 
-  useEffect(() => {
-    if (!batchAction) {
-      return;
-    }
+  const resetBatchActionForm = (type: BatchActionType) => {
     batchForm.resetFields();
     trackingForm.resetFields();
-    if (batchAction.type === "addWaybills" && actionBatch) {
+    if (type === "addWaybills" && actionBatch) {
       batchForm.setFieldsValue({ waybill_ids: [] });
     }
-    if (batchAction.type === "ship") {
+    if (type === "ship") {
       trackingForm.setFieldsValue({ status_text: "批次已发货", location: "", description: "" });
     }
-    if (batchAction.type === "tracking") {
+    if (type === "tracking") {
       trackingForm.setFieldsValue({ status_text: "运输中", location: "", description: "" });
     }
-  }, [actionBatch, batchAction, batchForm, trackingForm]);
+  };
 
   const reviewMutation = useMutation({
     mutationFn: ({ waybillId, payload }: { waybillId: number; payload: ReviewFormValues }) =>
@@ -1195,6 +1192,11 @@ export function WaybillOpsPage() {
         okText="审核通过"
         confirmLoading={reviewMutation.isPending}
         onCancel={closeAction}
+        afterOpenChange={(open) => {
+          if (open) {
+            resetActionForm("review");
+          }
+        }}
         onOk={() => {
           reviewForm.validateFields().then((values) => {
             if (actionWaybill) {
@@ -1220,6 +1222,11 @@ export function WaybillOpsPage() {
         okText="确认计费"
         confirmLoading={feeMutation.isPending}
         onCancel={closeAction}
+        afterOpenChange={(open) => {
+          if (open) {
+            resetActionForm("fee");
+          }
+        }}
         onOk={() => {
           feeForm.validateFields().then((values) => {
             if (actionWaybill) {
@@ -1265,6 +1272,11 @@ export function WaybillOpsPage() {
         okText="确认充值"
         confirmLoading={rechargeMutation.isPending}
         onCancel={closeAction}
+        afterOpenChange={(open) => {
+          if (open) {
+            resetActionForm("recharge");
+          }
+        }}
         onOk={() => {
           rechargeForm.validateFields().then((values) => {
             if (actionWaybill) {
@@ -1299,6 +1311,11 @@ export function WaybillOpsPage() {
         okText={action?.type === "ship" ? "确认发货" : "添加轨迹"}
         confirmLoading={shipMutation.isPending || trackingMutation.isPending}
         onCancel={closeAction}
+        afterOpenChange={(open) => {
+          if (open && action) {
+            resetActionForm(action.type);
+          }
+        }}
         onOk={() => {
           trackingForm.validateFields().then((values) => {
             if (!actionWaybill || !action) {
@@ -1333,6 +1350,11 @@ export function WaybillOpsPage() {
         okText="创建批次"
         confirmLoading={createBatchMutation.isPending}
         onCancel={closeBatchAction}
+        afterOpenChange={(open) => {
+          if (open) {
+            resetBatchActionForm("create");
+          }
+        }}
         onOk={() => {
           batchForm.validateFields().then((values) => {
             createBatchMutation.mutate(buildBatchPayload(values));
@@ -1380,6 +1402,11 @@ export function WaybillOpsPage() {
         okText="加入批次"
         confirmLoading={addBatchWaybillsMutation.isPending}
         onCancel={closeBatchAction}
+        afterOpenChange={(open) => {
+          if (open) {
+            resetBatchActionForm("addWaybills");
+          }
+        }}
         onOk={() => {
           batchForm.validateFields().then((values) => {
             if (actionBatch) {
@@ -1413,6 +1440,11 @@ export function WaybillOpsPage() {
         okText={batchAction?.type === "ship" ? "确认发货" : "添加轨迹"}
         confirmLoading={shipBatchMutation.isPending || batchTrackingMutation.isPending}
         onCancel={closeBatchAction}
+        afterOpenChange={(open) => {
+          if (open && batchAction) {
+            resetBatchActionForm(batchAction.type);
+          }
+        }}
         onOk={() => {
           trackingForm.validateFields().then((values) => {
             if (!actionBatch || !batchAction) {

@@ -1,14 +1,35 @@
-# CrossBorder ERP
+# CrossBorder — 轻量跨境代购与集运平台
 
-本项目是一个独立实现的跨境代购与集运 ERP。第一版目标是跑通集运主链路、最小代购链路、钱包支付、三端联调、测试和部署交付。
+> 轻量、美观、好用的跨境代购与集运平台，借鉴 KINGANT（金蚁）等平台的核心业务闭环，只实现当前阶段最有价值的功能。
 
-本项目同时用于证明：复杂 ERP 全栈系统可以在极低人工介入下，由 AI Agent 按规格、任务图、测试和交付证据持续推进。证明口径见 `docs/ai-development-proof.md`。
+## 产品定位
+
+本项目**不是**重型 ERP，也不是纯发卡平台。它是一个：
+
+- **轻量跨境代购/集运服务平台**
+- SQLite-first，本地可验证
+- P0 主链路完成，生产化能力逐步验证
+
+核心业务闭环：
+
+```text
+用户端：注册/登录 -> 仓库地址 -> 包裹预报 -> 我的包裹 -> 申请打包 -> 运单支付 -> 查看轨迹
+后台端：登录 -> 入库 -> 运单审核计费 -> 汇款审核 -> 发货 -> 审计日志
+代购：用户提交万能代购 -> 后台采购到货 -> 转包裹
+```
+
+详细产品规格见 `docs/light-kingant/`。
+
+本项目同时用于证明：复杂全栈系统可以在极低人工介入下，由 AI Agent 按规格、任务图、测试和交付证据持续推进。证明口径见 `docs/ai-development-proof.md`。
 
 ## 当前状态
 
-- 项目阶段：`P6_PRODUCTION_GAP`
-- 当前已完成：SQLite-first P0 主链路、`AUDIT-001` 差距地图、`ADDR-001` 地址簿、`FILE-001` 本地文件服务、`FIN-001` 线下汇款与财务中心、`MSG-001` 客服消息与工单入口、`MEMBER-001` 后台会员管理增强、`PARCEL-CLAIM-001` 无主包裹用户认领、`CONTENT-001` 内容 CMS、`IMPORT-001` CSV 批量导入/导出基础、`IMPORT-XLSX-001` Excel `.xlsx` 批量预报解析、`QA-BROWSER-001` 三端浏览器 smoke、`QA-BROWSER-002` 浏览器真实包裹预报/入库旅程、`QA-BROWSER-003` Browser Smoke 稳定性加固、`QA-BROWSER-004` 财务/客服跨面板浏览器旅程、`QA-BROWSER-005` 运单后半程浏览器旅程、`CI-EVIDENCE-001` Agent 证据 CI 门禁、`SHIP-BATCH-001` 发货批次/转单/打印模板数据、`PAYABLE-001` 供应商/成本/应付基础、`GROWTH-001` 积分/推广/返利基础、`AUDITLOG-001` 后台操作审计日志、`AUDIT-RETENTION-001` 审计日志导出与本地留存命令、`SECURITY-HEADERS-001` 基础安全响应头、`OPS-READINESS-001` 运维 readiness 检查、`OPS-SQLITE-BACKUP-001` SQLite 本地备份命令、`STORAGE-CLEANUP-001` 本地软删除文件清理命令、`PURCHASE-AUTO-001` 外部商品链接解析入口、`ACCOUNT-SETTINGS-001` 会员注册与账户设置闭环、`ACCOUNT-RESET-001` 会员找回密码与重置密码闭环、`ADMIN-PANELS-001` 后台 dashboard/roles 真实面板、`RBAC-ROLES-001` 角色创建/编辑/权限分配闭环、`RBAC-ADMIN-USERS-001` 管理员账号与角色分配闭环、`RBAC-BUSINESS-ACTIONS-001` 后台业务写操作权限拆分、`CONFIG-EXTERNAL-SERVICES-001` 外部服务 DSN 边界检查、`RBAC-DELETE-001` 角色与管理员安全删除闭环、`FILE-SNIFF-001` 文件上传内容签名校验、`CSV-EXPORT-SAFE-001` CSV 导出公式注入防护、`RBAC-IAM-ACTIONS-001` IAM 角色/管理员账号 create/update/delete 细权限拆分、`ERP-ENHANCE-001` 国家地区层级管理、商品多语言翻译、商品属性体系、运费估算引擎、细粒度CRUD权限、API限流、领域事件信号、前端国际化框架、Admin仪表盘图表与地区管理、用户端运费估算与成长体系、移动端首页轮播瀑布流与分类优化
-- 下一任务：任务图暂无自动下一项；后续建议按对象存储/病毒扫描等生产化边界、需要业务确认的外部集成、更多业务模块 create/update/delete 细权限和审批流，以及更深浏览器/视觉/组件测试单独开任务
+- 项目阶段：`LIGHT_KINGANT_MVP`
+- 产品定位：轻量 KINGANT-like 跨境代购/集运平台
+- 当前已完成：P0 主链路后端 API 全覆盖、三端前端（admin-web / user-web / mobile-h5）、统一前端多业务页面初版（web-app）、统一 API Client（packages/api-client）、会员海外地址簿、创建运单地址选择、web-app 后台角色/管理员账号 CRUD、RBAC/审计/安全/文件/CMS/工单/积分/推广等基础能力
+- 当前阶段目标：统一前端 web-app 串联更完整的 P0 业务闭环，并逐步替代旧三端的日常使用入口
+- 轻量化规格：`docs/light-kingant/`
+- 下一任务：WEB-WAYBILL-FINANCE-001（运单、钱包、线下汇款、余额支付、轨迹和确认收货在 web-app 中联测）
 - 规格入口：`docs/ai-dev-baseline/agent-execution/README.md`
 - 实施决策：`docs/implementation-decisions.md`
 - AI 驱动证明：`docs/ai-development-proof.md`
@@ -36,9 +57,11 @@
 | Database | SQLite first；PostgreSQL/MySQL 配置兼容后置且暂不真实验证 |
 | Cache/Task | 本地内存/同步任务 first；Redis/Celery 配置后置且暂不真实验证 |
 | API Doc | drf-spectacular / OpenAPI |
-| Admin Web | React + Vite + TypeScript + Ant Design |
-| User Web | React + Vite + TypeScript + CSS Modules + shared tokens |
-| Mobile H5 | React + Vite + TypeScript + Ant Design Mobile |
+| **Unified Web** | **React + Vite + TypeScript + Ant Design（统一前端，推荐）** |
+| Admin Web (legacy) | React + Vite + TypeScript + Ant Design |
+| User Web (legacy) | React + Vite + TypeScript + CSS Modules + shared tokens |
+| Mobile H5 (legacy) | React + Vite + TypeScript + Ant Design Mobile |
+| API Client | TypeScript + Axios（workspace 共享包） |
 | Frontend routing | React Router |
 | Frontend package manager | pnpm workspace |
 | Request/data | TanStack Query + Axios |
@@ -50,11 +73,13 @@
 
 ```text
 backend/        Django/DRF 后端
-admin-web/      后台管理端
-user-web/       用户 Web
-mobile-h5/      移动 H5
-packages/       OpenAPI 类型、共享类型、UI token
+web-app/        统一前端（用户端 + 后台，推荐）
+admin-web/      后台管理端（legacy，保留）
+user-web/       用户 Web（legacy，保留）
+mobile-h5/      移动 H5（legacy，保留）
+packages/       共享包（api-client、OpenAPI 类型、UI token）
 docs/           规格、实施决策、部署文档
+docs/light-kingant/  轻量 KINGANT-like 产品规格
 infra/          后续部署、Nginx、脚本
 ```
 
@@ -65,9 +90,10 @@ infra/          后续部署、Nginx、脚本
 | 服务 | 地址 |
 | --- | --- |
 | Backend | `http://localhost:8000` |
-| Admin Web | `http://localhost:3001` |
-| User Web | `http://localhost:3002` |
-| Mobile H5 | `http://localhost:3003` |
+| **Web App (统一前端)** | **`http://localhost:3000`** |
+| Admin Web (legacy) | `http://localhost:3001` |
+| User Web (legacy) | `http://localhost:3002` |
+| Mobile H5 (legacy) | `http://localhost:3003` |
 | Local DB | `backend/db.sqlite3` |
 | Local DB backups | `backend/backups/`，默认 ignored |
 | Redis/Celery | 当前阶段同步/禁用外部 Redis |
@@ -83,10 +109,16 @@ pnpm install --frozen-lockfile
 (cd backend && uv run python manage.py seed_demo)
 ```
 
-启动后端和三端前端：
+启动后端和统一前端（推荐）：
 
 ```bash
 (cd backend && uv run python manage.py runserver)
+pnpm --filter web-app dev
+```
+
+或启动旧三端前端：
+
+```bash
 pnpm --filter admin-web dev
 pnpm --filter user-web dev
 pnpm --filter mobile-h5 dev
@@ -101,6 +133,7 @@ pnpm --filter mobile-h5 dev
 | Readiness | `http://localhost:8000/api/v1/health/ready` |
 | OpenAPI | `http://localhost:8000/api/v1/schema/` |
 | Swagger UI | `http://localhost:8000/api/v1/docs/` |
+| Web App | `http://localhost:3000` |
 | Admin Web | `http://localhost:3001` |
 | User Web | `http://localhost:3002` |
 | Mobile H5 | `http://localhost:3003` |
@@ -166,6 +199,7 @@ npm run inspect:services
 ```bash
 npm run e2e
 npm run e2e:browser
+npm run e2e:web-app
 npm run evidence
 (cd backend && uv run python manage.py check)
 (cd backend && uv run python manage.py makemigrations --check --dry-run)
@@ -255,6 +289,14 @@ npm run e2e:browser
 - 退出时清理临时 profile、数据库、media、日志和测试进程，不使用用户日常 Chrome profile。
 
 该 smoke 是浏览器基础可用性和多条关键业务旅程 gate，不替代后续视觉回归、组件级测试或所有复杂业务路径覆盖。
+
+统一前端 `web-app` 另有独立 smoke：
+
+```bash
+npm run e2e:web-app
+```
+
+该命令同样不下载浏览器二进制，会在 `.tmp/web-app-e2e/` 下创建隔离 SQLite、media、日志和 Chrome profile，自动启动 backend 与 `web-app`。当前覆盖会员登录、仓库地址加载、海外收件地址新增、创建运单地址簿展示、后台登录、后台控制台、角色权限页、管理员账号页，并在隔离 SQLite 中创建和清理临时 IAM 角色/管理员账号，检查浏览器 runtime exception、console warning/error 和 `>=400` network response。
 
 ## 演示流程
 
